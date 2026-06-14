@@ -1,1 +1,189 @@
+```html
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>
+پنل مدیریت تردد
+</title>
+
+<style>
+
+body{
+    font-family:tahoma;
+    background:#f4f7fa;
+    padding:20px;
+}
+
+.container{
+    max-width:900px;
+    margin:auto;
+}
+
+.card{
+
+    background:white;
+    border-radius:12px;
+    padding:15px;
+    margin-bottom:15px;
+
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+img{
+
+    width:100%;
+    border-radius:10px;
+    margin-top:10px;
+}
+
+button{
+
+    background:#c62828;
+    color:white;
+    border:none;
+    padding:10px;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+h2{
+    text-align:center;
+    color:#1a2a6c;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>
+پنل مدیریت ترددها
+</h2>
+
+<div id="records">
+در حال دریافت اطلاعات...
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+
+const SUPABASE_URL =
+'https://kddhnohquohbnemmegdy.supabase.co';
+
+const SUPABASE_ANON_KEY =
+'PASTE_YOUR_KEY';
+
+const supabaseClient =
+supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
+
+loadRecords();
+
+async function loadRecords(){
+
+    const { data, error } =
+    await supabaseClient
+    .from('eagle')
+    .select('*')
+    .order('id', { ascending:false });
+
+    if(error){
+
+        document.getElementById(
+            'records'
+        ).innerHTML =
+        'خطا در دریافت اطلاعات';
+
+        console.log(error);
+
+        return;
+    }
+
+    let html = '';
+
+    data.forEach(item => {
+
+        html += `
+
+        <div class="card">
+
+        <h3>
+        ${item.fullname}
+        </h3>
+
+        <p>
+        کد پرسنلی:
+        ${item.personnel_code}
+        </p>
+
+        <p>
+        زمان:
+        ${item.entry_time}
+        </p>
+
+        <p>
+        GPS:
+        ${item.latitude}
+        ,
+        ${item.longitude}
+        </p>
+
+        ${
+            item.photo_url
+            ?
+            `
+            <img src="${item.photo_url}">
+            `
+            :
+            ''
+        }
+
+        <br><br>
+
+        <button onclick="deleteRecord(${item.id})">
+        حذف
+        </button>
+
+        </div>
+
+        `;
+    });
+
+    document.getElementById(
+        'records'
+    ).innerHTML = html;
+}
+
+async function deleteRecord(id){
+
+    if(!confirm('حذف شود؟')) return;
+
+    await supabaseClient
+    .from('eagle')
+    .delete()
+    .eq('id', id);
+
+    loadRecords();
+}
+
+</script>
+
+</body>
+</html>
+```
 
