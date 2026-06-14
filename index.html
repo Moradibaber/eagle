@@ -118,6 +118,34 @@ const SUPABASE_URL = 'https://kddhnohquohbnemmegdy.supabase.co';
 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
 
+window.onload = function(){
+
+    const savedName =
+    localStorage.getItem(
+        'employee_fullname'
+    );
+
+    const savedCode =
+    localStorage.getItem(
+        'employee_code'
+    );
+
+    if(savedName){
+
+        document.getElementById(
+            'fullname'
+        ).value = savedName;
+    }
+
+    if(savedCode){
+
+        document.getElementById(
+            'personnel_code'
+        ).value = savedCode;
+    }
+}
+
+
 const supabaseClient = supabase.createClient(
     SUPABASE_URL,
     SUPABASE_ANON_KEY
@@ -132,6 +160,13 @@ function openCamera(){
 async function saveAttendance(){
 
     const fullname = document.getElementById('fullname').value;
+    
+localStorage.setItem(
+    'employee_fullname',
+    fullname
+);
+
+
 
     const personnel_code = document.getElementById('personnel_code').value;
 
