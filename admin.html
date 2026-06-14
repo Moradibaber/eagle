@@ -203,6 +203,63 @@ async function deleteRecord(id){
     loadRecords();
 }
 
+async function exportExcel(){
+
+    const { data, error } =
+    await supabaseClient
+    .from('eagle')
+    .select('*')
+    .order('id', { ascending:false });
+
+    if(error){
+
+        alert('خطا در دریافت اطلاعات');
+
+        return;
+    }
+
+    const excelData = data.map(item => ({
+
+        'نام':
+        item.fullname,
+
+        'کد پرسنلی':
+        item.personnel_code,
+
+        'زمان':
+        item.entry_time,
+
+        'عرض جغرافیایی':
+        item.latitude,
+
+        'طول جغرافیایی':
+        item.longitude,
+
+        'لینک عکس':
+        item.photo_url
+    }));
+
+    const worksheet =
+    XLSX.utils.json_to_sheet(
+        excelData
+    );
+
+    const workbook =
+    XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        'Attendance'
+    );
+
+    XLSX.writeFile(
+        workbook,
+        'attendance.xlsx'
+    );
+}
+
+
 </script>
 
 </body>
