@@ -97,6 +97,14 @@ style="display:none"
 <button onclick="saveAttendance()">
 ثبت ورود
 </button>
+ html id="btn994"
+<button onclick="loadRecords()">
+مشاهده ترددها
+</button>
+
+<div id="records"></div>
+
+
 
 <div id="status"></div>
 
@@ -219,6 +227,78 @@ console.log(uploadError);
 
 }
 
+
+
+async function loadRecords(){
+
+    const { data, error } =
+    await supabaseClient
+    .from('eagle')
+    .select('*')
+    .order('id', { ascending:false });
+
+    if(error){
+
+        alert('خطا در دریافت اطلاعات');
+
+        console.log(error);
+
+        return;
+    }
+
+    let html = '';
+
+    data.forEach(item => {
+
+        html += `
+        <div style="
+        background:white;
+        padding:15px;
+        margin-top:15px;
+        border-radius:10px;
+        border:1px solid #ddd;
+        ">
+
+        <h3>${item.fullname}</h3>
+
+        <p>
+        کد پرسنلی:
+        ${item.personnel_code}
+        </p>
+
+        <p>
+        زمان:
+        ${item.entry_time}
+        </p>
+
+        <p>
+        موقعیت:
+        ${item.latitude}
+        ,
+        ${item.longitude}
+        </p>
+
+        ${
+            item.photo_url
+            ?
+            `<img
+            src="${item.photo_url}"
+            style="
+            width:100%;
+            border-radius:10px;
+            margin-top:10px;
+            "
+            >`
+            :
+            ''
+        }
+
+        </div>
+        `;
+    });
+
+    document.getElementById('records').innerHTML = html;
+}
 
 
 </script>
