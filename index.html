@@ -178,7 +178,7 @@ console.log(uploadError);
 
             const { data } =
             supabaseClient.storage
-            .from('photos')
+            .from('photo')
             .getPublicUrl(fileName);
 
             photo_url = data.publicUrl;
