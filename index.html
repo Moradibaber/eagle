@@ -151,7 +151,17 @@ async function saveAttendance(){
             const { error: uploadError } =
             await supabaseClient.storage
             .from('photos')
-            .upload(fileName, photoFile);
+           
+.upload(
+    fileName,
+    photoFile,
+    {
+        contentType: photoFile.type,
+        upsert: true
+    }
+);
+
+
 
             if(uploadError){
                 console.log(uploadError);
