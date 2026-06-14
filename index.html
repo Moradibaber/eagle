@@ -145,8 +145,11 @@ async function saveAttendance(){
 
         if(photoFile){
 
-            const fileName =
-            Date.now() + '_' + photoFile.name;
+           
+const fileName =
+Date.now() + '.jpg';
+
+
 
             const { error: uploadError } =
             await supabaseClient.storage
