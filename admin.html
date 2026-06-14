@@ -92,7 +92,21 @@ supabase.createClient(
     SUPABASE_ANON_KEY
 );
 
-loadRecords();
+
+const password =
+prompt('رمز مدیریت را وارد کنید');
+
+if(password !== '12345'){
+
+    document.body.innerHTML =
+    '<h2 style="text-align:center;color:red;">دسترسی غیر مجاز</h2>';
+
+}else{
+
+    loadRecords();
+}
+
+
 
 async function loadRecords(){
 
