@@ -1,0 +1,211 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سیستم ثبت تردد پرسنل</title>
+
+<style>
+
+body{
+    font-family:tahoma;
+    background:#f4f7fa;
+    margin:0;
+    padding:20px;
+}
+
+.container{
+    max-width:500px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 0 15px rgba(0,0,0,0.1);
+}
+
+h2{
+    text-align:center;
+    color:#1a2a6c;
+    margin-bottom:25px;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin-bottom:15px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:16px;
+    box-sizing:border-box;
+}
+
+button{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:8px;
+    background:#1a2a6c;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+    margin-top:10px;
+}
+
+button:hover{
+    background:#0f1c4f;
+}
+
+#status{
+    margin-top:20px;
+    text-align:center;
+    font-weight:bold;
+    color:green;
+}
+
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+<h2>سیستم ثبت تردد پرسنل</h2>
+
+<input type="text" id="fullname" placeholder="نام و نام خانوادگی">
+
+<input type="text" id="personnel_code" placeholder="کد پرسنلی">
+
+
+
+<input
+type="file"
+id="photo"
+accept="image/*"
+capture="user"
+style="display:none"
+>
+
+<button type="button" onclick="openCamera()">
+📷 گرفتن عکس
+</button>
+
+
+
+
+
+<button onclick="saveAttendance()">
+ثبت ورود
+</button>
+
+<div id="status"></div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+
+const SUPABASE_URL = 'https://kddhnohquohbnemmegdy.supabase.co';
+
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
+
+const supabaseClient = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
+
+function openCamera(){
+    document.getElementById('photo').click();
+}
+
+
+
+async function saveAttendance(){
+
+    const fullname = document.getElementById('fullname').value;
+
+    const personnel_code = document.getElementById('personnel_code').value;
+
+    const photoFile = document.getElementById('photo').files[0];
+
+    if(fullname === '' || personnel_code === ''){
+        alert('اطلاعات را کامل وارد کنید');
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async position => {
+
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        const now = new Date().toLocaleString('fa-IR');
+
+        let photo_url = '';
+
+        if(photoFile){
+
+            const fileName =
+            Date.now() + '_' + photoFile.name;
+
+            const { error: uploadError } =
+            await supabaseClient.storage
+            .from('photos')
+            .upload(fileName, photoFile);
+
+            if(uploadError){
+                console.log(uploadError);
+                alert('خطا در آپلود عکس');
+                return;
+            }
+
+            const { data } =
+            supabaseClient.storage
+            .from('photos')
+            .getPublicUrl(fileName);
+
+            photo_url = data.publicUrl;
+        }
+
+        const { error } = await supabaseClient
+        .from('eagle')
+        .insert([
+            {
+                fullname: fullname,
+                personnel_code: personnel_code,
+                entry_time: now,
+                latitude: latitude.toString(),
+                longitude: longitude.toString(),
+                photo_url: photo_url
+            }
+        ]);
+
+        if(error){
+
+            console.log(error);
+
+            document.getElementById('status').innerHTML =
+            'خطا در ثبت اطلاعات';
+
+        }else{
+
+            document.getElementById('status').innerHTML =
+            'اطلاعات با موفقیت ثبت شد';
+
+            document.getElementById('fullname').value = '';
+            document.getElementById('personnel_code').value = '';
+            document.getElementById('photo').value = '';
+
+        }
+
+    });
+
+}
+
+
+
+</script>
+
+</body>
+</html>
+
