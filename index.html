@@ -164,7 +164,11 @@ async function saveAttendance(){
 
 
             if(uploadError){
-                console.log(uploadError);
+              
+alert(JSON.stringify(uploadError));
+console.log(uploadError);
+
+
                 alert('خطا در آپلود عکس');
                 return;
             }
