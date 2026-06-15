@@ -570,71 +570,39 @@ window.addEventListener(
             return;
         }
 
-        for(
-            let item of offlinePhotos
-        ){
+   
+for(
+    let item of offlinePhotos
+){
 
-            let fileName =
+    await supabaseClient
 
-            Date.now() + '.jpg';
+    .from('eagle')
 
-            const response =
+    .insert([
 
-            await fetch(item.photo);
+        {
 
-            const blob =
+            fullname:
+            item.fullname,
 
-            await response.blob();
+            personnel_code:
+            item.personnel_code,
 
-            const file =
+            entry_time:
+            item.entry_time,
 
-            new File(
+            latitude:
+            item.latitude,
 
-                [blob],
+            longitude:
+            item.longitude,
 
-                fileName,
+            photo_url:''
+        }
+    ]);
+}
 
-                {
-                    type:'image/jpeg'
-                }
-            );
-
-            const { error:
-            uploadError } =
-
-            await supabaseClient.storage
-
-            .from('photo')
-
-            .upload(
-
-                fileName,
-
-                file,
-
-                {
-                    upsert:true
-                }
-            );
-
-            if(uploadError){
-
-                console.log(
-                    uploadError
-                );
-
-                continue;
-            }
-
-            const { data } =
-
-            supabaseClient.storage
-
-            .from('photo')
-
-            .getPublicUrl(
-                fileName
-            );
 
             await supabaseClient
 
