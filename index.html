@@ -540,6 +540,136 @@ async function loadRecords(){
     document.getElementById('records').innerHTML = html;
 }
 
+window.addEventListener(
+
+    'online',
+
+    async function(){
+
+        let offlinePhotos =
+
+        JSON.parse(
+
+            localStorage.getItem(
+                'offline_photos'
+            ) || '[]'
+        );
+
+        if(
+            offlinePhotos.length === 0
+        ){
+
+            return;
+        }
+
+        for(
+            let item of offlinePhotos
+        ){
+
+            let fileName =
+
+            Date.now() + '.jpg';
+
+            const response =
+
+            await fetch(item.photo);
+
+            const blob =
+
+            await response.blob();
+
+            const file =
+
+            new File(
+
+                [blob],
+
+                fileName,
+
+                {
+                    type:'image/jpeg'
+                }
+            );
+
+            const { error:
+            uploadError } =
+
+            await supabaseClient.storage
+
+            .from('photo')
+
+            .upload(
+
+                fileName,
+
+                file,
+
+                {
+                    upsert:true
+                }
+            );
+
+            if(uploadError){
+
+                console.log(
+                    uploadError
+                );
+
+                continue;
+            }
+
+            const { data } =
+
+            supabaseClient.storage
+
+            .from('photo')
+
+            .getPublicUrl(
+                fileName
+            );
+
+            await supabaseClient
+
+            .from('eagle')
+
+            .insert([
+
+                {
+
+                    fullname:
+                    item.fullname,
+
+                    personnel_code:
+                    item.personnel_code,
+
+                    entry_time:
+                    item.entry_time,
+
+                    latitude:
+                    item.latitude,
+
+                    longitude:
+                    item.longitude,
+
+                    photo_url:
+                    data.publicUrl
+                }
+            ]);
+        }
+
+        localStorage.removeItem(
+            'offline_photos'
+        );
+
+        document.getElementById(
+            'status'
+        ).innerHTML =
+
+        'اطلاعات آفلاین ارسال شد';
+    }
+);
+
+
 if('serviceWorker' in navigator){
 
     navigator.serviceWorker.register(
