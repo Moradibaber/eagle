@@ -548,6 +548,119 @@ async function loadRecords(){
     ).innerHTML = html;
 }
 
+async function loadMyRecords(){
+
+    const personnel_code =
+
+    localStorage.getItem(
+        'employee_code'
+    );
+
+    if(!personnel_code){
+
+        return;
+    }
+
+    const { data, error } =
+
+    await supabaseClient
+
+    .from('eagle')
+
+    .select('*')
+
+    .eq(
+        'personnel_code',
+        personnel_code
+    )
+
+    .order(
+        'id',
+        {
+            ascending:false
+        }
+    )
+
+    .limit(20);
+
+    if(error){
+
+        console.log(error);
+
+        return;
+    }
+
+    let html = `
+
+    <h3 style="
+    margin-top:30px;
+    text-align:center;
+    color:#1a2a6c;
+    ">
+    ۳ روز اخیر
+    </h3>
+    `;
+
+    const grouped = {};
+
+    data.forEach(item => {
+
+        const date =
+        item.entry_time.split(',')[0];
+
+        if(!grouped[date]){
+
+            grouped[date] = [];
+        }
+
+        grouped[date].push(item);
+    });
+
+    Object.keys(grouped)
+
+    .slice(0,3)
+
+    .forEach(date => {
+
+        const records =
+        grouped[date];
+
+        const first =
+        records[
+            records.length - 1
+        ];
+
+        const last =
+        records[0];
+
+        html += `
+
+        <div class="record">
+
+        <h4>
+        ${date}
+        </h4>
+
+        <p>
+        اولین تردد:
+        ${first.entry_time}
+        </p>
+
+        <p>
+        آخرین تردد:
+        ${last.entry_time}
+        </p>
+
+        </div>
+        `;
+    });
+
+    document.getElementById(
+        'status'
+    ).innerHTML += html;
+}
+
+
 if('serviceWorker' in navigator){
 
     navigator.serviceWorker.register(
