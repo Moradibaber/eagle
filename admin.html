@@ -149,9 +149,23 @@ async function loadRecords(){
     data.forEach(item => {
 
     
+
 const date =
 
-item.entry_time.split('،')[0];
+item.entry_time
+.replaceAll('۰','0')
+.replaceAll('۱','1')
+.replaceAll('۲','2')
+.replaceAll('۳','3')
+.replaceAll('۴','4')
+.replaceAll('۵','5')
+.replaceAll('۶','6')
+.replaceAll('۷','7')
+.replaceAll('۸','8')
+.replaceAll('۹','9')
+.substring(0,10);
+
+
 
 
 
