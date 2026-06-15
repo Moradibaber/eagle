@@ -36,12 +36,14 @@ body{
     box-shadow:0 0 10px rgba(0,0,0,0.1);
 }
 
+
 img{
 
-    width:100%;
     border-radius:10px;
     margin-top:10px;
 }
+
+
 
 button{
 
@@ -139,12 +141,10 @@ async function loadRecords(){
 
         'خطا در دریافت اطلاعات';
 
-        console.log(error);
-
         return;
     }
 
-    const grouped = {};
+    const groupedByDate = {};
 
     data.forEach(item => {
 
@@ -152,141 +152,160 @@ async function loadRecords(){
 
         item.entry_time.substring(0,10);
 
-        const key =
+        if(!groupedByDate[date]){
 
-        item.personnel_code +
-        '_' +
-        date;
-
-        if(!grouped[key]){
-
-            grouped[key] = [];
+            groupedByDate[date] = {};
         }
 
-        grouped[key].push(item);
+        const personKey =
+        item.personnel_code;
+
+        if(
+            !groupedByDate[date][personKey]
+        ){
+
+            groupedByDate[date][personKey] = [];
+        }
+
+        groupedByDate[date][personKey]
+        .push(item);
     });
 
     let html = '';
 
-    Object.keys(grouped)
+    Object.keys(groupedByDate)
 
-    .slice(0,300)
+    .slice(0,7)
 
-    .forEach(key => {
-
-        const records =
-        grouped[key];
-
-        const first =
-        records[
-            records.length - 1
-        ];
-
-        const last =
-        records[0];
+    .forEach(date => {
 
         html += `
 
         <div class="card">
 
-        <div style="
-        display:flex;
-        align-items:center;
-        gap:10px;
+        <h2 style="
+        color:#1a2a6c;
+        margin-bottom:20px;
         ">
-
-        ${
-            last.photo_url
-            ?
-
-            `
-            <img
-
-            src="${last.photo_url}"
-
-            onclick="
-            window.open(
-            this.src
-            )
-            "
-
-            style="
-            width:45px;
-            height:45px;
-            object-fit:cover;
-            border-radius:50%;
-            cursor:pointer;
-            margin-top:0;
-            "
-            >
-            `
-
-            :
-
-            ''
-        }
-
-        <div>
-
-        <h3 style="
-        margin:0;
-        ">
-        ${last.fullname}
-        </h3>
-
-        <p style="
-        margin:5px 0;
-        ">
-        کد پرسنلی:
-        ${last.personnel_code}
-        </p>
-
-        </div>
-
-        </div>
-
-        <hr>
-
-        <p>
-        تاریخ:
-        ${last.entry_time.substring(0,10)}
-        </p>
-
-        <p>
-        اولین تردد:
-        ${first.entry_time}
-        </p>
-
-        <p>
-        آخرین تردد:
-        ${last.entry_time}
-        </p>
-
-        <p>
-        GPS:
-        ${last.latitude}
-        ,
-        ${last.longitude}
-        </p>
-
-        <br>
-
-        <button onclick="
-        deleteRecord(
-        ${last.id}
-        )
-        ">
-        حذف
-        </button>
-
-        </div>
+        ${date}
+        </h2>
         `;
+
+        const persons =
+
+        groupedByDate[date];
+
+        Object.keys(persons)
+
+        .forEach(personKey => {
+
+            const records =
+            persons[personKey];
+
+            const first =
+            records[
+                records.length - 1
+            ];
+
+            const last =
+            records[0];
+
+            html += `
+
+            <div style="
+            border:1px solid #ddd;
+            border-radius:10px;
+            padding:10px;
+            margin-bottom:10px;
+            ">
+
+            <div style="
+            display:flex;
+            align-items:center;
+            gap:10px;
+            ">
+
+            ${
+                last.photo_url
+                ?
+
+                `
+                <img
+
+                src="${last.photo_url}"
+
+                onclick="
+                window.open(
+                this.src
+                )
+                "
+
+                style="
+                width:45px;
+                height:45px;
+                border-radius:50%;
+                object-fit:cover;
+                cursor:pointer;
+                margin-top:0;
+                flex-shrink:0;
+                "
+                >
+                `
+
+                :
+
+                ''
+            }
+
+            <div>
+
+            <h3 style="
+            margin:0;
+            ">
+            ${last.fullname}
+            </h3>
+
+            <p style="
+            margin:5px 0;
+            ">
+            کد:
+            ${last.personnel_code}
+            </p>
+
+            </div>
+
+            </div>
+
+            <p>
+            اولین تردد:
+            ${first.entry_time}
+            </p>
+
+            <p>
+            آخرین تردد:
+            ${last.entry_time}
+            </p>
+
+            <button onclick="
+            deleteRecord(
+            ${last.id}
+            )
+            ">
+            حذف
+            </button>
+
+            </div>
+            `;
+        });
+
+        html += `</div>`;
     });
 
     document.getElementById(
         'records'
     ).innerHTML = html;
 }
+
 
 
 async function deleteRecord(id){
