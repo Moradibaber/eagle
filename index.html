@@ -472,84 +472,7 @@ async function sendOfflineData(){
     'اطلاعات آفلاین ارسال شد';
 }
 
-async function loadRecords(){
 
-    const { data, error } =
-
-    await supabaseClient
-
-    .from('eagle')
-
-    .select('*')
-
-    .order(
-        'id',
-        {
-            ascending:false
-        }
-    );
-
-    if(error){
-
-        console.log(error);
-
-        return;
-    }
-
-    let html = '';
-
-    data.forEach(item => {
-
-        html += `
-
-        <div class="record">
-
-        <h3>
-        ${item.fullname}
-        </h3>
-
-        <p>
-        کد پرسنلی:
-        ${item.personnel_code}
-        </p>
-
-        <p>
-        زمان:
-        ${item.entry_time}
-        </p>
-
-        <p>
-        موقعیت:
-        ${item.latitude}
-        ,
-        ${item.longitude}
-        </p>
-
-        ${
-            item.photo_url
-            ?
-            `
-            <img
-            src="${item.photo_url}"
-            style="
-            width:100%;
-            border-radius:10px;
-            margin-top:10px;
-            "
-            >
-            `
-            :
-            ''
-        }
-
-        </div>
-        `;
-    });
-
-    document.getElementById(
-        'records'
-    ).innerHTML = html;
-}
 
 async function loadMyRecords(){
 
@@ -582,9 +505,7 @@ async function loadMyRecords(){
         {
             ascending:false
         }
-    )
-
-    .limit(20);
+    );
 
     if(error){
 
@@ -608,22 +529,24 @@ async function loadMyRecords(){
 
     data.forEach(item => {
 
-        const date =
-        item.entry_time.split(',')[0];
+        const fullDate =
+        item.entry_time;
 
-        if(!grouped[date]){
+        const onlyDate =
+        fullDate.substring(0,10);
 
-            grouped[date] = [];
+        if(!grouped[onlyDate]){
+
+            grouped[onlyDate] = [];
         }
 
-        grouped[date].push(item);
+        grouped[onlyDate].push(item);
     });
 
-    Object.keys(grouped)
+    const dates =
+    Object.keys(grouped).slice(0,3);
 
-    .slice(0,3)
-
-    .forEach(date => {
+    dates.forEach(date => {
 
         const records =
         grouped[date];
@@ -658,14 +581,10 @@ async function loadMyRecords(){
         `;
     });
 
-   
-document.getElementById(
-    'myRecords'
-).innerHTML = html;
-
-
+    document.getElementById(
+        'myRecords'
+    ).innerHTML = html;
 }
-
 
 if('serviceWorker' in navigator){
 
