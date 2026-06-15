@@ -210,11 +210,22 @@ async function loadRecords(){
             const last =
             records[0];
           
-            const photoRecord =
+         
+let photo_url = '';
 
-           records.find(
-           r => r.photo_url
-            );
+records.forEach(r => {
+
+    if(
+        r.photo_url &&
+        photo_url === ''
+    ){
+
+        photo_url =
+        r.photo_url;
+    }
+});
+
+
 
 
             html += `
