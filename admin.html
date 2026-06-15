@@ -114,21 +114,29 @@ if(password !== '12345'){
     loadRecords();
 }
 
-
-
 async function loadRecords(){
 
     const { data, error } =
+
     await supabaseClient
+
     .from('eagle')
+
     .select('*')
-    .order('id', { ascending:false });
+
+    .order(
+        'id',
+        {
+            ascending:false
+        }
+    );
 
     if(error){
 
         document.getElementById(
             'records'
         ).innerHTML =
+
         'خطا در دریافت اطلاعات';
 
         console.log(error);
@@ -136,53 +144,142 @@ async function loadRecords(){
         return;
     }
 
-    let html = '';
+    const grouped = {};
 
     data.forEach(item => {
+
+        const date =
+
+        item.entry_time.substring(0,10);
+
+        const key =
+
+        item.personnel_code +
+        '_' +
+        date;
+
+        if(!grouped[key]){
+
+            grouped[key] = [];
+        }
+
+        grouped[key].push(item);
+    });
+
+    let html = '';
+
+    Object.keys(grouped)
+
+    .slice(0,300)
+
+    .forEach(key => {
+
+        const records =
+        grouped[key];
+
+        const first =
+        records[
+            records.length - 1
+        ];
+
+        const last =
+        records[0];
 
         html += `
 
         <div class="card">
 
-        <h3>
-        ${item.fullname}
+        <div style="
+        display:flex;
+        align-items:center;
+        gap:10px;
+        ">
+
+        ${
+            last.photo_url
+            ?
+
+            `
+            <img
+
+            src="${last.photo_url}"
+
+            onclick="
+            window.open(
+            this.src
+            )
+            "
+
+            style="
+            width:45px;
+            height:45px;
+            object-fit:cover;
+            border-radius:50%;
+            cursor:pointer;
+            margin-top:0;
+            "
+            >
+            `
+
+            :
+
+            ''
+        }
+
+        <div>
+
+        <h3 style="
+        margin:0;
+        ">
+        ${last.fullname}
         </h3>
 
-        <p>
+        <p style="
+        margin:5px 0;
+        ">
         کد پرسنلی:
-        ${item.personnel_code}
+        ${last.personnel_code}
+        </p>
+
+        </div>
+
+        </div>
+
+        <hr>
+
+        <p>
+        تاریخ:
+        ${last.entry_time.substring(0,10)}
         </p>
 
         <p>
-        زمان:
-        ${item.entry_time}
+        اولین تردد:
+        ${first.entry_time}
+        </p>
+
+        <p>
+        آخرین تردد:
+        ${last.entry_time}
         </p>
 
         <p>
         GPS:
-        ${item.latitude}
+        ${last.latitude}
         ,
-        ${item.longitude}
+        ${last.longitude}
         </p>
 
-        ${
-            item.photo_url
-            ?
-            `
-            <img src="${item.photo_url}">
-            `
-            :
-            ''
-        }
+        <br>
 
-        <br><br>
-
-        <button onclick="deleteRecord(${item.id})">
+        <button onclick="
+        deleteRecord(
+        ${last.id}
+        )
+        ">
         حذف
         </button>
 
         </div>
-
         `;
     });
 
@@ -190,6 +287,7 @@ async function loadRecords(){
         'records'
     ).innerHTML = html;
 }
+
 
 async function deleteRecord(id){
 
