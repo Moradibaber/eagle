@@ -245,21 +245,97 @@ Date.now() + '.jpg';
 
 
 
-            const { error: uploadError } =
-            await supabaseClient.storage
-            .from('photo')
-           
-.upload(
-    fileName,
-    -
-compressedFile,
+try{
 
+    const { error: uploadError } =
 
-    {
-        contentType: photoFile.type,
-        upsert: true
+    await supabaseClient.storage
+
+    .from('photo')
+
+    .upload(
+
+        fileName,
+
+        compressedFile,
+
+        {
+
+            contentType:
+            photoFile.type,
+
+            upsert:true
+        }
+    );
+
+    if(uploadError){
+
+        throw uploadError;
     }
-);
+
+}catch(err){
+
+    console.log(err);
+
+    const reader =
+    new FileReader();
+
+    reader.onload = function(){
+
+        let offlinePhotos =
+
+        JSON.parse(
+
+            localStorage.getItem(
+
+                'offline_photos'
+
+            ) || '[]'
+        );
+
+        offlinePhotos.push({
+
+            fullname:
+            fullname,
+
+            personnel_code:
+            personnel_code,
+
+            entry_time:
+            now,
+
+            latitude:
+            latitude.toString(),
+
+            longitude:
+            longitude.toString(),
+
+            photo:
+            reader.result
+        });
+
+        localStorage.setItem(
+
+            'offline_photos',
+
+            JSON.stringify(
+                offlinePhotos
+            )
+        );
+
+        document.getElementById(
+            'status'
+        ).innerHTML =
+        'بدون اینترنت ذخیره شد';
+    }
+
+    reader.readAsDataURL(
+        compressedFile
+    );
+
+    return;
+}
+
 
 
 
