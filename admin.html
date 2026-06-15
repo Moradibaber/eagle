@@ -226,7 +226,39 @@ item.entry_time
 
             const last =
             records[0];
-          
+           
+let firstPhoto = '';
+
+let lastPhoto = '';
+
+records.forEach(r => {
+
+    if(
+        r.photo_url &&
+        firstPhoto === ''
+    ){
+
+        firstPhoto =
+        r.photo_url;
+    }
+});
+
+for(
+    let i = records.length - 1;
+    i >= 0;
+    i--
+){
+
+    if(records[i].photo_url){
+
+        lastPhoto =
+        records[i].photo_url;
+
+        break;
+    }
+}
+
+
          
             html += `
 
