@@ -298,6 +298,15 @@ if(!navigator.onLine){
     return;
 }
 
+else{
+
+    document.getElementById(
+        'status'
+    ).innerHTML =
+    'در حال آپلود عکس...';
+}
+
+
            
 const fileName =
 Date.now() + '.jpg';
@@ -500,6 +509,12 @@ if(photoFile){
 
             photo_url = data.publicUrl;
         }
+
+if(!navigator.onLine){
+
+    return;
+}
+
 
         const { error } = await supabaseClient
         .from('eagle')
