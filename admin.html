@@ -233,13 +233,19 @@ async function loadRecords(){
             ">
 
             ${
-                last.photo_url
+                
+photoRecord?.photo_url
+
+
                 ?
 
                 `
                 <img
 
-                src="${last.photo_url}"
+                src="${
+photoRecord?.photo_url
+
+}"
 
                 onclick="
                 window.open(
