@@ -116,6 +116,7 @@ if(password !== '12345'){
     loadRecords();
 }
 
+
 async function loadRecords(){
 
     const { data, error } =
@@ -144,288 +145,209 @@ async function loadRecords(){
         return;
     }
 
-    const groupedByDate = {};
+    const grouped = {};
 
     data.forEach(item => {
 
-    
+        const date =
 
-const date =
+        item.entry_time
+        .replaceAll('۰','0')
+        .replaceAll('۱','1')
+        .replaceAll('۲','2')
+        .replaceAll('۳','3')
+        .replaceAll('۴','4')
+        .replaceAll('۵','5')
+        .replaceAll('۶','6')
+        .replaceAll('۷','7')
+        .replaceAll('۸','8')
+        .replaceAll('۹','9')
+        .substring(0,10);
 
-item.entry_time
-.replaceAll('۰','0')
-.replaceAll('۱','1')
-.replaceAll('۲','2')
-.replaceAll('۳','3')
-.replaceAll('۴','4')
-.replaceAll('۵','5')
-.replaceAll('۶','6')
-.replaceAll('۷','7')
-.replaceAll('۸','8')
-.replaceAll('۹','9')
-.substring(0,10);
+        const key =
 
+        item.personnel_code +
+        '_' +
+        date;
 
+        if(!grouped[key]){
 
-
-
-        if(!groupedByDate[date]){
-
-            groupedByDate[date] = {};
+            grouped[key] = [];
         }
 
-        const personKey =
-        item.personnel_code;
-
-        if(
-            !groupedByDate[date][personKey]
-        ){
-
-            groupedByDate[date][personKey] = [];
-        }
-
-        groupedByDate[date][personKey]
-        .push(item);
+        grouped[key].push(item);
     });
 
     let html = '';
 
-    Object.keys(groupedByDate)
+    Object.keys(grouped)
 
-    .slice(0,7)
+    .forEach(key => {
 
-    .forEach(date => {
+        const records =
+        grouped[key];
+
+        const first =
+        records[
+            records.length - 1
+        ];
+
+        const last =
+        records[0];
+
+        let firstPhoto = '';
+
+        let lastPhoto = '';
+
+        records.forEach(r => {
+
+            if(
+                r.photo_url &&
+                firstPhoto === ''
+            ){
+
+                firstPhoto =
+                r.photo_url;
+            }
+        });
+
+        for(
+            let i = records.length - 1;
+            i >= 0;
+            i--
+        ){
+
+            if(records[i].photo_url){
+
+                lastPhoto =
+                records[i].photo_url;
+
+                break;
+            }
+        }
 
         html += `
 
         <div class="card">
 
-        <h2 style="
-        color:#1a2a6c;
-        margin-bottom:20px;
+        <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
         ">
-        ${date}
-        </h2>
+
+        <div>
+
+        <h3>
+        ${last.fullname}
+        </h3>
+
+        <p>
+        کد پرسنلی:
+        ${last.personnel_code}
+        </p>
+
+        <p>
+        تاریخ:
+        ${last.entry_time.substring(0,10)}
+        </p>
+
+        <p>
+        اولین تردد:
+        ${first.entry_time}
+        </p>
+
+        <p>
+        آخرین تردد:
+        ${last.entry_time}
+        </p>
+
+        </div>
+
+        <div style="
+        display:flex;
+        gap:8px;
+        ">
+
+        ${
+            firstPhoto
+            ?
+
+            `
+            <img
+
+            src="${firstPhoto}"
+
+            onclick="
+            window.open(this.src)
+            "
+
+            style="
+            width:50px;
+            height:50px;
+            border-radius:50%;
+            object-fit:cover;
+            cursor:pointer;
+            border:2px solid #1a2a6c;
+            "
+            >
+            `
+            :
+
+            ''
+        }
+
+        ${
+            lastPhoto &&
+            lastPhoto !== firstPhoto
+            ?
+
+            `
+            <img
+
+            src="${lastPhoto}"
+
+            onclick="
+            window.open(this.src)
+            "
+
+            style="
+            width:50px;
+            height:50px;
+            border-radius:50%;
+            object-fit:cover;
+            cursor:pointer;
+            border:2px solid green;
+            "
+            >
+            `
+            :
+
+            ''
+        }
+
+        </div>
+
+        </div>
+
+        <br>
+
+        <button onclick="
+        deleteRecord(
+        ${last.id}
+        )
+        ">
+        حذف
+        </button>
+
+        </div>
         `;
-
-        const persons =
-
-        groupedByDate[date];
-
-        Object.keys(persons)
-
-        .forEach(personKey => {
-
-            const records =
-            persons[personKey];
-
-            const first =
-            records[
-                records.length - 1
-            ];
-
-            const last =
-            records[0];
-           
-let firstPhoto = '';
-
-let lastPhoto = '';
-
-records.forEach(r => {
-
-    if(
-        r.photo_url &&
-        firstPhoto === ''
-    ){
-
-        firstPhoto =
-        r.photo_url;
-    }
-});
-
-for(
-    let i = records.length - 1;
-    i >= 0;
-    i--
-){
-
-    if(records[i].photo_url){
-
-        lastPhoto =
-        records[i].photo_url;
-
-        break;
-    }
-}
-
-
-         
-            html += `
-
-            <div style="
-            border:1px solid #ddd;
-            border-radius:10px;
-            padding:10px;
-            margin-bottom:10px;
-            ">
-
-            <div style="
-            display:flex;
-            align-items:center;
-            gap:10px;
-            ">
-
-        
-<div style="
-display:flex;
-gap:8px;
-margin-bottom:10px;
-">
-
-${
-    firstPhoto
-    ?
-
-    `
-    <img
-
-    src="${firstPhoto}"
-
-    onclick="
-    window.open(this.src)
-    "
-
-    style="
-    width:40px;
-    height:40px;
-    object-fit:cover;
-    border-radius:50%;
-    cursor:pointer;
-    border:2px solid #1a2a6c;
-    "
-    >
-    `
-
-    :
-
-    ''
-}
-
-${
-    lastPhoto &&
-    lastPhoto !== firstPhoto
-    ?
-
-    `
-    <img
-
-    src="${lastPhoto}"
-
-    onclick="
-    window.open(this.src)
-    "
-
-    style="
-    width:40px;
-    height:40px;
-    object-fit:cover;
-    border-radius:50%;
-    cursor:pointer;
-    border:2px solid green;
-    "
-    >
-    `
-
-    :
-
-    ''
-}
-
-</div>
-
-
-
-                src="${
-
-photo_url
-
-
-
-}"
-
-                onclick="
-                window.open(
-                this.src
-                )
-                "
-
-                style="
-                width:45px;
-                height:45px;
-                border-radius:50%;
-                object-fit:cover;
-                cursor:pointer;
-                margin-top:0;
-                flex-shrink:0;
-                "
-                >
-                `
-
-                :
-
-                ''
-            }
-
-            <div>
-
-            <h3 style="
-            margin:0;
-            ">
-            ${last.fullname}
-            </h3>
-
-            <p style="
-            margin:5px 0;
-            ">
-            کد:
-            ${last.personnel_code}
-            </p>
-
-            </div>
-
-            </div>
-
-            <p>
-            اولین تردد:
-            ${first.entry_time}
-            </p>
-
-            <p>
-            آخرین تردد:
-            ${last.entry_time}
-            </p>
-
-            <button onclick="
-            deleteRecord(
-            ${last.id}
-            )
-            ">
-            حذف
-            </button>
-
-            </div>
-            `;
-        });
-
-        html += `</div>`;
     });
 
     document.getElementById(
         'records'
     ).innerHTML = html;
 }
-
-
 
 async function deleteRecord(id){
 
