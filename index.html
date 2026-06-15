@@ -171,6 +171,57 @@ localStorage.setItem(
     const personnel_code = document.getElementById('personnel_code').value;
 
     const photoFile = document.getElementById('photo').files[0];
+    
+let compressedFile = photoFile;
+
+if(photoFile){
+
+    const imageBitmap =
+    await createImageBitmap(photoFile);
+
+    const canvas =
+    document.createElement('canvas');
+
+    const maxWidth = 600;
+
+    const scale =
+    maxWidth / imageBitmap.width;
+
+    canvas.width = maxWidth;
+
+    canvas.height =
+    imageBitmap.height * scale;
+
+    const ctx =
+    canvas.getContext('2d');
+
+    ctx.drawImage(
+        imageBitmap,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    const blob =
+    await new Promise(resolve =>
+        canvas.toBlob(
+            resolve,
+            'image/jpeg',
+            0.5
+        )
+    );
+
+    compressedFile =
+    new File(
+        [blob],
+        'photo.jpg',
+        {
+            type:'image/jpeg'
+        }
+    );
+}
+
 
     if(fullname === '' || personnel_code === ''){
         alert('اطلاعات را کامل وارد کنید');
@@ -200,7 +251,10 @@ Date.now() + '.jpg';
            
 .upload(
     fileName,
-    photoFile,
+    -
+compressedFile,
+
+
     {
         contentType: photoFile.type,
         upsert: true
