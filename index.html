@@ -159,270 +159,256 @@ function openCamera(){
 
 async function saveAttendance(){
 
-    const fullname = document.getElementById('fullname').value;
-    
-localStorage.setItem(
-    'employee_fullname',
-    fullname
-);
+    const fullname =
+    document.getElementById(
+        'fullname'
+    ).value;
 
+    const personnel_code =
+    document.getElementById(
+        'personnel_code'
+    ).value;
 
+    const photoFile =
+    document.getElementById(
+        'photo'
+    ).files[0];
 
-    const personnel_code = document.getElementById('personnel_code').value;
+    if(
+        fullname === '' ||
+        personnel_code === ''
+    ){
 
-    const photoFile = document.getElementById('photo').files[0];
-    
-let compressedFile = photoFile;
+        alert(
+            'اطلاعات را کامل وارد کنید'
+        );
 
-if(photoFile){
-
-    const imageBitmap =
-    await createImageBitmap(photoFile);
-
-    const canvas =
-    document.createElement('canvas');
-
-    const maxWidth = 600;
-
-    const scale =
-    maxWidth / imageBitmap.width;
-
-    canvas.width = maxWidth;
-
-    canvas.height =
-    imageBitmap.height * scale;
-
-    const ctx =
-    canvas.getContext('2d');
-
-    ctx.drawImage(
-        imageBitmap,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-    const blob =
-    await new Promise(resolve =>
-        canvas.toBlob(
-            resolve,
-            'image/jpeg',
-            0.5
-        )
-    );
-
-    compressedFile =
-    new File(
-        [blob],
-        'photo.jpg',
-        {
-            type:'image/jpeg'
-        }
-    );
-}
-
-
-    if(fullname === '' || personnel_code === ''){
-        alert('اطلاعات را کامل وارد کنید');
         return;
     }
 
-    navigator.geolocation.getCurrentPosition(async position => {
+    navigator.geolocation.getCurrentPosition(
 
-        const latitude = position.coords.latitude;
-        const longitude = position.coords.longitude;
+    async position => {
 
-        const now = new Date().toLocaleString('fa-IR');
+        const latitude =
+        position.coords.latitude;
+
+        const longitude =
+        position.coords.longitude;
+
+        const now =
+        new Date().toLocaleString(
+            'fa-IR'
+        );
 
         let photo_url = '';
 
+        let compressedFile =
+        photoFile;
+
         if(photoFile){
 
-if(!navigator.onLine){
-
-    const reader =
-    new FileReader();
-
-    reader.onload = function(){
-
-        let offlinePhotos =
-
-        JSON.parse(
-
-            localStorage.getItem(
-                'offline_photos'
-            ) || '[]'
-        );
-
-        offlinePhotos.push({
-
-            fullname:
-            fullname,
-
-            personnel_code:
-            personnel_code,
-
-            entry_time:
-            now,
-
-            latitude:
-            latitude.toString(),
-
-            longitude:
-            longitude.toString(),
-
-            photo:
-            reader.result
-        });
-
-        localStorage.setItem(
-
-            'offline_photos',
-
-            JSON.stringify(
-                offlinePhotos
-            )
-        );
-
-        document.getElementById(
-            'status'
-        ).innerHTML =
-        'بدون اینترنت ذخیره شد';
-    }
-
-    reader.readAsDataURL(
-        compressedFile
-    );
-
-    return;
-}
-
-else{
-
-    document.getElementById(
-        'status'
-    ).innerHTML =
-    'در حال آپلود عکس...';
-}
-
-
-           
-const fileName =
-Date.now() + '.jpg';
-
-
-
-try{
-
-    const { error: uploadError } =
-
-    await supabaseClient.storage
-
-    .from('photo')
-
-    .upload(
-
-        fileName,
-
-        compressedFile,
-
-        {
-
-            contentType:
-            photoFile.type,
-
-            upsert:true
-        }
-    );
-
-    if(uploadError){
-
-        throw uploadError;
-    }
-
-}catch(err){
-
-    console.log(err);
-
-    const reader =
-    new FileReader();
-
-    reader.onload = function(){
-
-        let offlinePhotos =
-
-        JSON.parse(
-
-            localStorage.getItem(
-
-                'offline_photos'
-
-            ) || '[]'
-        );
-
-        offlinePhotos.push({
-
-            fullname:
-            fullname,
-
-            personnel_code:
-            personnel_code,
-
-            entry_time:
-            now,
-
-            latitude:
-            latitude.toString(),
-
-            longitude:
-            longitude.toString(),
-
-            photo:
-            reader.result
-        });
-
-        localStorage.setItem(
-
-            'offline_photos',
-
-            JSON.stringify(
-                offlinePhotos
-            )
-        );
-
-        document.getElementById(
-            'status'
-        ).innerHTML =
-        'بدون اینترنت ذخیره شد';
-    }
-
-    reader.readAsDataURL(
-        compressedFile
-    );
-
-    return;
-}
-
-if(photoFile){
-
-    if(!navigator.onLine){
-
-        const reader =
-        new FileReader();
-
-        reader.onload = function(){
-
-            let offlinePhotos =
-
-            JSON.parse(
-
-                localStorage.getItem(
-                    'offline_photos'
-                ) || '[]'
+            const imageBitmap =
+            await createImageBitmap(
+                photoFile
             );
 
-            offlinePhotos.push({
+            const canvas =
+            document.createElement(
+                'canvas'
+            );
+
+            const maxWidth = 600;
+
+            const scale =
+            maxWidth /
+            imageBitmap.width;
+
+            canvas.width =
+            maxWidth;
+
+            canvas.height =
+            imageBitmap.height *
+            scale;
+
+            const ctx =
+            canvas.getContext('2d');
+
+            ctx.drawImage(
+
+                imageBitmap,
+
+                0,
+
+                0,
+
+                canvas.width,
+
+                canvas.height
+            );
+
+            const blob =
+
+            await new Promise(
+                resolve =>
+
+                canvas.toBlob(
+
+                    resolve,
+
+                    'image/jpeg',
+
+                    0.5
+                )
+            );
+
+            compressedFile =
+            new File(
+
+                [blob],
+
+                'photo.jpg',
+
+                {
+                    type:'image/jpeg'
+                }
+            );
+        }
+
+        if(
+            !navigator.onLine
+        ){
+
+            const reader =
+            new FileReader();
+
+            reader.onload =
+            function(){
+
+                let offlinePhotos =
+
+                JSON.parse(
+
+                    localStorage.getItem(
+
+                        'offline_photos'
+
+                    ) || '[]'
+                );
+
+                offlinePhotos.push({
+
+                    fullname:
+                    fullname,
+
+                    personnel_code:
+                    personnel_code,
+
+                    entry_time:
+                    now,
+
+                    latitude:
+                    latitude.toString(),
+
+                    longitude:
+                    longitude.toString(),
+
+                    photo:
+                    reader.result
+                });
+
+                localStorage.setItem(
+
+                    'offline_photos',
+
+                    JSON.stringify(
+                        offlinePhotos
+                    )
+                );
+
+                document.getElementById(
+                    'status'
+                ).innerHTML =
+
+                'بدون اینترنت ذخیره شد';
+            }
+
+            if(compressedFile){
+
+                reader.readAsDataURL(
+                    compressedFile
+                );
+            }
+
+            return;
+        }
+
+        if(compressedFile){
+
+            const fileName =
+
+            Date.now() + '.jpg';
+
+            const { error:
+            uploadError } =
+
+            await supabaseClient.storage
+
+            .from('photo')
+
+            .upload(
+
+                fileName,
+
+                compressedFile,
+
+                {
+
+                    contentType:
+                    compressedFile.type,
+
+                    upsert:true
+                }
+            );
+
+            if(uploadError){
+
+                console.log(
+                    uploadError
+                );
+
+                document.getElementById(
+                    'status'
+                ).innerHTML =
+
+                'خطا در آپلود عکس';
+
+                return;
+            }
+
+            const { data } =
+
+            supabaseClient.storage
+
+            .from('photo')
+
+            .getPublicUrl(
+                fileName
+            );
+
+            photo_url =
+            data.publicUrl;
+        }
+
+        const { error } =
+
+        await supabaseClient
+
+        .from('eagle')
+
+        .insert([
+
+            {
 
                 fullname:
                 fullname,
@@ -439,155 +425,38 @@ if(photoFile){
                 longitude:
                 longitude.toString(),
 
-                photo:
-                reader.result
-            });
+                photo_url:
+                photo_url
+            }
+        ]);
 
-            localStorage.setItem(
+        if(error){
 
-                'offline_photos',
-
-                JSON.stringify(
-                    offlinePhotos
-                )
-            );
+            console.log(error);
 
             document.getElementById(
                 'status'
             ).innerHTML =
-            'بدون اینترنت ذخیره شد';
-        }
 
-        reader.readAsDataURL(
-            compressedFile
-        );
+            'خطا در ثبت اطلاعات';
 
-        return;
-    }
+        }else{
 
-    const fileName =
-    Date.now() + '.jpg';
+            document.getElementById(
+                'status'
+            ).innerHTML =
 
-    const { error: uploadError } =
-
-    await supabaseClient.storage
-
-    .from('photo')
-
-    .upload(
-
-        fileName,
-
-        compressedFile,
-
-        {
-
-            contentType:
-            photoFile.type,
-
-            upsert:true
-        }
-    );
-
-    if(uploadError){
-
-        document.getElementById(
-            'status'
-        ).innerHTML =
-        'خطا در آپلود عکس';
-
-        return;
-    }
-}
-
-      
-
-            const { data } =
-            supabaseClient.storage
-            .from('photo')
-            .getPublicUrl(fileName);
-
-            photo_url = data.publicUrl;
-        }
-
-if(!navigator.onLine){
-
-    return;
-}
-
-
-        const { error } = await supabaseClient
-        .from('eagle')
-        .insert([
-            {
-                fullname: fullname,
-                personnel_code: personnel_code,
-                entry_time: now,
-                latitude: latitude.toString(),
-                longitude: longitude.toString(),
-                photo_url: photo_url
-            }
-        ]);
-
-
-if(error){
-
-    console.log(error);
-
-    let offlineData =
-    JSON.parse(
-        localStorage.getItem(
-            'offline_attendance'
-        ) || '[]'
-    );
-
-    offlineData.push({
-
-        fullname:
-        fullname,
-
-        personnel_code:
-        personnel_code,
-
-        entry_time:
-        now,
-
-        latitude:
-        latitude.toString(),
-
-        longitude:
-        longitude.toString(),
-
-        photo_url:
-        photo_url
-    });
-
-    localStorage.setItem(
-        'offline_attendance',
-        JSON.stringify(
-            offlineData
-        )
-    );
-
-    document.getElementById('status').innerHTML =
-    'اینترنت ضعیف است - اطلاعات موقتاً ذخیره شد';
-
-}else{
-
-
-
-            document.getElementById('status').innerHTML =
             'اطلاعات با موفقیت ثبت شد';
 
-            document.getElementById('fullname').value = '';
-            document.getElementById('personnel_code').value = '';
-            document.getElementById('photo').value = '';
-
+            document.getElementById(
+                'photo'
+            ).value = '';
         }
 
     });
-
 }
+
+
 
 async function loadRecords(){
 
