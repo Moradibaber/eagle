@@ -425,6 +425,14 @@ async function loadRecords(){
     document.getElementById('records').innerHTML = html;
 }
 
+if('serviceWorker' in navigator){
+
+    navigator.serviceWorker.register(
+        './sw.js'
+    );
+}
+
+
 
 </script>
 
