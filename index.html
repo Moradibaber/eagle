@@ -395,70 +395,103 @@ try{
     return;
 }
 
+if(photoFile){
 
+    if(!navigator.onLine){
 
+        const reader =
+        new FileReader();
 
-          
+        reader.onload = function(){
 
-if(uploadError){
+            let offlinePhotos =
 
-    console.log(uploadError);
+            JSON.parse(
 
-    const reader =
-    new FileReader();
+                localStorage.getItem(
+                    'offline_photos'
+                ) || '[]'
+            );
 
-    reader.onload = function(){
+            offlinePhotos.push({
 
-        let offlinePhotos =
-        JSON.parse(
-            localStorage.getItem(
-                'offline_photos'
-            ) || '[]'
+                fullname:
+                fullname,
+
+                personnel_code:
+                personnel_code,
+
+                entry_time:
+                now,
+
+                latitude:
+                latitude.toString(),
+
+                longitude:
+                longitude.toString(),
+
+                photo:
+                reader.result
+            });
+
+            localStorage.setItem(
+
+                'offline_photos',
+
+                JSON.stringify(
+                    offlinePhotos
+                )
+            );
+
+            document.getElementById(
+                'status'
+            ).innerHTML =
+            'بدون اینترنت ذخیره شد';
+        }
+
+        reader.readAsDataURL(
+            compressedFile
         );
 
-        offlinePhotos.push({
+        return;
+    }
 
-            fullname:
-            fullname,
+    const fileName =
+    Date.now() + '.jpg';
 
-            personnel_code:
-            personnel_code,
+    const { error: uploadError } =
 
-            entry_time:
-            now,
+    await supabaseClient.storage
 
-            latitude:
-            latitude.toString(),
+    .from('photo')
 
-            longitude:
-            longitude.toString(),
+    .upload(
 
-            photo:
-            reader.result
-        });
+        fileName,
 
-        localStorage.setItem(
-            'offline_photos',
-            JSON.stringify(
-                offlinePhotos
-            )
-        );
+        compressedFile,
+
+        {
+
+            contentType:
+            photoFile.type,
+
+            upsert:true
+        }
+    );
+
+    if(uploadError){
 
         document.getElementById(
             'status'
         ).innerHTML =
-        'بدون اینترنت ذخیره شد';
+        'خطا در آپلود عکس';
+
+        return;
     }
-
-    reader.readAsDataURL(
-        compressedFile
-    );
-
-    return;
 }
 
-
-
+      
 
             const { data } =
             supabaseClient.storage
