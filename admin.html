@@ -275,18 +275,75 @@ for(
             gap:10px;
             ">
 
-            ${
-                
+        
+<div style="
+display:flex;
+gap:8px;
+margin-bottom:10px;
+">
 
-photo_url
+${
+    firstPhoto
+    ?
+
+    `
+    <img
+
+    src="${firstPhoto}"
+
+    onclick="
+    window.open(this.src)
+    "
+
+    style="
+    width:40px;
+    height:40px;
+    object-fit:cover;
+    border-radius:50%;
+    cursor:pointer;
+    border:2px solid #1a2a6c;
+    "
+    >
+    `
+
+    :
+
+    ''
+}
+
+${
+    lastPhoto &&
+    lastPhoto !== firstPhoto
+    ?
+
+    `
+    <img
+
+    src="${lastPhoto}"
+
+    onclick="
+    window.open(this.src)
+    "
+
+    style="
+    width:40px;
+    height:40px;
+    object-fit:cover;
+    border-radius:50%;
+    cursor:pointer;
+    border:2px solid green;
+    "
+    >
+    `
+
+    :
+
+    ''
+}
+
+</div>
 
 
-
-
-                ?
-
-                `
-                <img
 
                 src="${
 
