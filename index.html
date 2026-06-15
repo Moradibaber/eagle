@@ -204,6 +204,17 @@ async function saveAttendance(){
     document.getElementById(
         'photo'
     ).files[0];
+   
+localStorage.setItem(
+    'employee_fullname',
+    fullname
+);
+
+localStorage.setItem(
+    'employee_code',
+    personnel_code
+);
+
 
     if(
         fullname === '' ||
