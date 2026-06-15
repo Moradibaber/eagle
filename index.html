@@ -294,14 +294,52 @@ console.log(uploadError);
             }
         ]);
 
-        if(error){
 
-            console.log(error);
+if(error){
 
-            document.getElementById('status').innerHTML =
-            'خطا در ثبت اطلاعات';
+    console.log(error);
 
-        }else{
+    let offlineData =
+    JSON.parse(
+        localStorage.getItem(
+            'offline_attendance'
+        ) || '[]'
+    );
+
+    offlineData.push({
+
+        fullname:
+        fullname,
+
+        personnel_code:
+        personnel_code,
+
+        entry_time:
+        now,
+
+        latitude:
+        latitude.toString(),
+
+        longitude:
+        longitude.toString(),
+
+        photo_url:
+        photo_url
+    });
+
+    localStorage.setItem(
+        'offline_attendance',
+        JSON.stringify(
+            offlineData
+        )
+    );
+
+    document.getElementById('status').innerHTML =
+    'اینترنت ضعیف است - اطلاعات موقتاً ذخیره شد';
+
+}else{
+
+
 
             document.getElementById('status').innerHTML =
             'اطلاعات با موفقیت ثبت شد';
