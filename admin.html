@@ -148,9 +148,12 @@ async function loadRecords(){
 
     data.forEach(item => {
 
-        const date =
+    
+const date =
 
-        item.entry_time.substring(0,10);
+item.entry_time.split('،')[0];
+
+
 
         if(!groupedByDate[date]){
 
