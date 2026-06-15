@@ -1,10 +1,19 @@
-
+```html
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>سیستم ثبت تردد پرسنل</title>
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+سیستم ثبت تردد پرسنل
+</title>
 
 <style>
 
@@ -27,7 +36,6 @@ body{
 h2{
     text-align:center;
     color:#1a2a6c;
-    margin-bottom:25px;
 }
 
 input{
@@ -56,6 +64,14 @@ button:hover{
     background:#0f1c4f;
 }
 
+.record{
+    background:#fff;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:15px;
+    margin-top:15px;
+}
+
 #status{
     margin-top:20px;
     text-align:center;
@@ -63,22 +79,17 @@ button:hover{
     color:green;
 }
 
-.record{
-    background:white;
-    padding:15px;
-    margin-top:15px;
-    border-radius:10px;
-    border:1px solid #ddd;
-}
-
 </style>
 
 </head>
+
 <body>
 
 <div class="container">
 
-<h2>سیستم ثبت تردد پرسنل</h2>
+<h2>
+سیستم ثبت تردد پرسنل
+</h2>
 
 <input
 type="text"
@@ -133,7 +144,7 @@ const SUPABASE_URL =
 'https://kddhnohquohbnemmegdy.supabase.co';
 
 const SUPABASE_ANON_KEY =
-'YOUR_ANON_KEY';
+'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
 
 const supabaseClient =
 supabase.createClient(
@@ -141,7 +152,7 @@ supabase.createClient(
     SUPABASE_ANON_KEY
 );
 
-window.onload = function(){
+window.onload = async function(){
 
     const savedName =
     localStorage.getItem(
@@ -167,7 +178,7 @@ window.onload = function(){
         ).value = savedCode;
     }
 
-    sendOfflineData();
+    await sendOfflineData();
 }
 
 function openCamera(){
@@ -231,79 +242,18 @@ async function saveAttendance(){
             'fa-IR'
         );
 
-        let photo_url = '';
-
-        let compressedFile =
-        photoFile;
-
-        if(photoFile){
-
-            const imageBitmap =
-            await createImageBitmap(
-                photoFile
-            );
-
-            const canvas =
-            document.createElement(
-                'canvas'
-            );
-
-            const maxWidth = 600;
-
-            const scale =
-            maxWidth /
-            imageBitmap.width;
-
-            canvas.width =
-            maxWidth;
-
-            canvas.height =
-            imageBitmap.height *
-            scale;
-
-            const ctx =
-            canvas.getContext('2d');
-
-            ctx.drawImage(
-                imageBitmap,
-                0,
-                0,
-                canvas.width,
-                canvas.height
-            );
-
-            const blob =
-            await new Promise(
-                resolve =>
-                canvas.toBlob(
-                    resolve,
-                    'image/jpeg',
-                    0.5
-                )
-            );
-
-            compressedFile =
-            new File(
-                [blob],
-                'photo.jpg',
-                {
-                    type:'image/jpeg'
-                }
-            );
-        }
-
         if(!navigator.onLine){
 
-            let offlinePhotos =
+            let offlineData =
 
             JSON.parse(
 
                 localStorage.getItem(
-                    'offline_photos'
+                    'offline_attendance'
                 ) || '[]'
             );
 
-            offlinePhotos.push({
+            offlineData.push({
 
                 fullname:
                 fullname,
@@ -315,30 +265,33 @@ async function saveAttendance(){
                 now,
 
                 latitude:
-                latitude.toString(),
+                latitude,
 
                 longitude:
-                longitude.toString()
+                longitude
             });
 
             localStorage.setItem(
 
-                'offline_photos',
+                'offline_attendance',
 
                 JSON.stringify(
-                    offlinePhotos
+                    offlineData
                 )
             );
 
             document.getElementById(
                 'status'
             ).innerHTML =
+
             'بدون اینترنت ذخیره شد';
 
             return;
         }
 
-        if(compressedFile){
+        let photo_url = '';
+
+        if(photoFile){
 
             const fileName =
             Date.now() + '.jpg';
@@ -354,40 +307,28 @@ async function saveAttendance(){
 
                 fileName,
 
-                compressedFile,
+                photoFile,
 
                 {
-                    contentType:
-                    compressedFile.type,
-
                     upsert:true
                 }
             );
 
-            if(uploadError){
+            if(!uploadError){
 
-                console.log(uploadError);
+                const { data } =
 
-                document.getElementById(
-                    'status'
-                ).innerHTML =
-                'خطا در آپلود عکس';
+                supabaseClient.storage
 
-                return;
+                .from('photo')
+
+                .getPublicUrl(
+                    fileName
+                );
+
+                photo_url =
+                data.publicUrl;
             }
-
-            const { data } =
-
-            supabaseClient.storage
-
-            .from('photo')
-
-            .getPublicUrl(
-                fileName
-            );
-
-            photo_url =
-            data.publicUrl;
         }
 
         const { error } =
@@ -427,6 +368,7 @@ async function saveAttendance(){
             document.getElementById(
                 'status'
             ).innerHTML =
+
             'خطا در ثبت اطلاعات';
 
         }else{
@@ -434,6 +376,7 @@ async function saveAttendance(){
             document.getElementById(
                 'status'
             ).innerHTML =
+
             'اطلاعات با موفقیت ثبت شد';
 
             document.getElementById(
@@ -451,25 +394,27 @@ async function sendOfflineData(){
         return;
     }
 
-    let offlinePhotos =
+    let offlineData =
 
     JSON.parse(
 
         localStorage.getItem(
-            'offline_photos'
+            'offline_attendance'
         ) || '[]'
     );
 
     if(
-        offlinePhotos.length === 0
+        offlineData.length === 0
     ){
 
         return;
     }
 
     for(
-        let item of offlinePhotos
+        let item of offlineData
     ){
+
+        const { error } =
 
         await supabaseClient
 
@@ -489,41 +434,52 @@ async function sendOfflineData(){
                 item.entry_time,
 
                 latitude:
-                item.latitude,
+                item.latitude.toString(),
 
                 longitude:
-                item.longitude,
+                item.longitude.toString(),
 
                 photo_url:''
             }
         ]);
+
+        if(error){
+
+            console.log(error);
+
+            return;
+        }
     }
 
     localStorage.removeItem(
-        'offline_photos'
+        'offline_attendance'
     );
 
     document.getElementById(
         'status'
     ).innerHTML =
+
     'اطلاعات آفلاین ارسال شد';
 }
 
 async function loadRecords(){
 
     const { data, error } =
+
     await supabaseClient
+
     .from('eagle')
+
     .select('*')
-    .order('id', {
-        ascending:false
-    });
+
+    .order(
+        'id',
+        {
+            ascending:false
+        }
+    );
 
     if(error){
-
-        alert(
-            'خطا در دریافت اطلاعات'
-        );
 
         console.log(error);
 
@@ -595,6 +551,7 @@ if('serviceWorker' in navigator){
 </script>
 
 </body>
-</html>
 
+</html>
+```
 
