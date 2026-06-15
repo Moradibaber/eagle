@@ -63,6 +63,14 @@ button:hover{
     color:green;
 }
 
+.record{
+    background:white;
+    padding:15px;
+    margin-top:15px;
+    border-radius:10px;
+    border:1px solid #ddd;
+}
+
 </style>
 
 </head>
@@ -72,11 +80,17 @@ button:hover{
 
 <h2>سیستم ثبت تردد پرسنل</h2>
 
-<input type="text" id="fullname" placeholder="نام و نام خانوادگی">
+<input
+type="text"
+id="fullname"
+placeholder="نام و نام خانوادگی"
+>
 
-<input type="text" id="personnel_code" placeholder="کد پرسنلی">
-
-
+<input
+type="text"
+id="personnel_code"
+placeholder="کد پرسنلی"
+>
 
 <input
 type="file"
@@ -86,25 +100,26 @@ capture="user"
 style="display:none"
 >
 
-<button type="button" onclick="openCamera()">
+<button
+type="button"
+onclick="openCamera()"
+>
 📷 گرفتن عکس
 </button>
 
-
-
-
-
-<button onclick="saveAttendance()">
+<button
+onclick="saveAttendance()"
+>
 ثبت ورود
 </button>
 
-<button onclick="loadRecords()">
+<button
+onclick="loadRecords()"
+>
 مشاهده ترددها
 </button>
 
 <div id="records"></div>
-
-
 
 <div id="status"></div>
 
@@ -114,9 +129,17 @@ style="display:none"
 
 <script>
 
-const SUPABASE_URL = 'https://kddhnohquohbnemmegdy.supabase.co';
+const SUPABASE_URL =
+'https://kddhnohquohbnemmegdy.supabase.co';
 
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
+const SUPABASE_ANON_KEY =
+'YOUR_ANON_KEY';
+
+const supabaseClient =
+supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
 
 window.onload = function(){
 
@@ -143,23 +166,16 @@ window.onload = function(){
             'personnel_code'
         ).value = savedCode;
     }
- 
-sendOfflineData();
 
-
+    sendOfflineData();
 }
-
-
-const supabaseClient = supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-);
 
 function openCamera(){
-    document.getElementById('photo').click();
+
+    document.getElementById(
+        'photo'
+    ).click();
 }
-
-
 
 async function saveAttendance(){
 
@@ -189,6 +205,16 @@ async function saveAttendance(){
 
         return;
     }
+
+    localStorage.setItem(
+        'employee_fullname',
+        fullname
+    );
+
+    localStorage.setItem(
+        'employee_code',
+        personnel_code
+    );
 
     navigator.geolocation.getCurrentPosition(
 
@@ -239,130 +265,82 @@ async function saveAttendance(){
             canvas.getContext('2d');
 
             ctx.drawImage(
-
                 imageBitmap,
-
                 0,
-
                 0,
-
                 canvas.width,
-
                 canvas.height
             );
 
             const blob =
-
             await new Promise(
                 resolve =>
-
                 canvas.toBlob(
-
                     resolve,
-
                     'image/jpeg',
-
                     0.5
                 )
             );
 
             compressedFile =
             new File(
-
                 [blob],
-
                 'photo.jpg',
-
                 {
                     type:'image/jpeg'
                 }
             );
         }
 
-        if(
-            !navigator.onLine
-        ){
+        if(!navigator.onLine){
 
-            const reader =
-            new FileReader();
+            let offlinePhotos =
 
-            reader.onload =
-            function(){
+            JSON.parse(
 
-                let offlinePhotos =
+                localStorage.getItem(
+                    'offline_photos'
+                ) || '[]'
+            );
 
-                JSON.parse(
+            offlinePhotos.push({
 
-                    localStorage.getItem(
+                fullname:
+                fullname,
 
-                        'offline_photos'
+                personnel_code:
+                personnel_code,
 
-                    ) || '[]'
-                );
+                entry_time:
+                now,
 
-                offlinePhotos.push({
+                latitude:
+                latitude.toString(),
 
-                    fullname:
-                    fullname,
+                longitude:
+                longitude.toString()
+            });
 
-                    personnel_code:
-                    personnel_code,
+            localStorage.setItem(
 
-                    entry_time:
-                    now,
+                'offline_photos',
 
-                    latitude:
-                    latitude.toString(),
+                JSON.stringify(
+                    offlinePhotos
+                )
+            );
 
-                    longitude:
-                    longitude.toString(),
+            document.getElementById(
+                'status'
+            ).innerHTML =
+            'بدون اینترنت ذخیره شد';
 
-                    
-                  photo:''
-
-                });
-
-                localStorage.setItem(
-
-                    'offline_photos',
-
-                    JSON.stringify(
-                        offlinePhotos
-                    )
-                );
-
-                document.getElementById(
-                    'status'
-                ).innerHTML =
-
-                'بدون اینترنت ذخیره شد';
-            }
-
-         
-if(compressedFile){
-
-    reader.readAsDataURL(
-        compressedFile
-    );
-
-}else{
-
-    document.getElementById(
-        'status'
-    ).innerHTML =
-
-    'بدون اینترنت ذخیره شد';
-}
-
-return false;
-
-
+            return;
         }
 
         if(compressedFile){
 
             const fileName =
-
             Date.now() + '.jpg';
 
             const { error:
@@ -379,7 +357,6 @@ return false;
                 compressedFile,
 
                 {
-
                     contentType:
                     compressedFile.type,
 
@@ -389,14 +366,11 @@ return false;
 
             if(uploadError){
 
-                console.log(
-                    uploadError
-                );
+                console.log(uploadError);
 
                 document.getElementById(
                     'status'
                 ).innerHTML =
-
                 'خطا در آپلود عکس';
 
                 return;
@@ -453,7 +427,6 @@ return false;
             document.getElementById(
                 'status'
             ).innerHTML =
-
             'خطا در ثبت اطلاعات';
 
         }else{
@@ -461,7 +434,6 @@ return false;
             document.getElementById(
                 'status'
             ).innerHTML =
-
             'اطلاعات با موفقیت ثبت شد';
 
             document.getElementById(
@@ -472,7 +444,70 @@ return false;
     });
 }
 
+async function sendOfflineData(){
 
+    if(!navigator.onLine){
+
+        return;
+    }
+
+    let offlinePhotos =
+
+    JSON.parse(
+
+        localStorage.getItem(
+            'offline_photos'
+        ) || '[]'
+    );
+
+    if(
+        offlinePhotos.length === 0
+    ){
+
+        return;
+    }
+
+    for(
+        let item of offlinePhotos
+    ){
+
+        await supabaseClient
+
+        .from('eagle')
+
+        .insert([
+
+            {
+
+                fullname:
+                item.fullname,
+
+                personnel_code:
+                item.personnel_code,
+
+                entry_time:
+                item.entry_time,
+
+                latitude:
+                item.latitude,
+
+                longitude:
+                item.longitude,
+
+                photo_url:''
+            }
+        ]);
+    }
+
+    localStorage.removeItem(
+        'offline_photos'
+    );
+
+    document.getElementById(
+        'status'
+    ).innerHTML =
+    'اطلاعات آفلاین ارسال شد';
+}
 
 async function loadRecords(){
 
@@ -480,11 +515,15 @@ async function loadRecords(){
     await supabaseClient
     .from('eagle')
     .select('*')
-    .order('id', { ascending:false });
+    .order('id', {
+        ascending:false
+    });
 
     if(error){
 
-        alert('خطا در دریافت اطلاعات');
+        alert(
+            'خطا در دریافت اطلاعات'
+        );
 
         console.log(error);
 
@@ -496,15 +535,12 @@ async function loadRecords(){
     data.forEach(item => {
 
         html += `
-        <div style="
-        background:white;
-        padding:15px;
-        margin-top:15px;
-        border-radius:10px;
-        border:1px solid #ddd;
-        ">
 
-        <h3>${item.fullname}</h3>
+        <div class="record">
+
+        <h3>
+        ${item.fullname}
+        </h3>
 
         <p>
         کد پرسنلی:
@@ -526,14 +562,16 @@ async function loadRecords(){
         ${
             item.photo_url
             ?
-            `<img
+            `
+            <img
             src="${item.photo_url}"
             style="
             width:100%;
             border-radius:10px;
             margin-top:10px;
             "
-            >`
+            >
+            `
             :
             ''
         }
@@ -542,109 +580,10 @@ async function loadRecords(){
         `;
     });
 
-    document.getElementById('records').innerHTML = html;
+    document.getElementById(
+        'records'
+    ).innerHTML = html;
 }
-
-window.addEventListener(
-
-    'online',
-
-    async function(){
-
-        let offlinePhotos =
-
-        JSON.parse(
-
-            localStorage.getItem(
-                'offline_photos'
-            ) || '[]'
-        );
-     
-     console.log(offlinePhotos);
-
-
-        if(
-            offlinePhotos.length === 0
-        ){
-
-            return;
-        }
-
-   
-for(
-    let item of offlinePhotos
-){
-
-    await supabaseClient
-
-    .from('eagle')
-
-    .insert([
-
-        {
-
-            fullname:
-            item.fullname,
-
-            personnel_code:
-            item.personnel_code,
-
-            entry_time:
-            item.entry_time,
-
-            latitude:
-            item.latitude,
-
-            longitude:
-            item.longitude,
-
-            photo_url:''
-        }
-    ]);
-}
-
-
-            await supabaseClient
-
-            .from('eagle')
-
-            .insert([
-
-                {
-
-                    fullname:
-                    item.fullname,
-
-                    personnel_code:
-                    item.personnel_code,
-
-                    entry_time:
-                    item.entry_time,
-
-                    latitude:
-                    item.latitude,
-
-                    longitude:
-                    item.longitude,
-
-                    photo_url:
-                    data.publicUrl
-                }
-            ]);
-        }
-
-        localStorage.removeItem(
-            'offline_photos'
-        );
-
-        document.getElementById(
-            'status'
-        ).innerHTML =
-
-        'اطلاعات آفلاین ارسال شد';
-    }
-);
-
 
 if('serviceWorker' in navigator){
 
@@ -653,10 +592,9 @@ if('serviceWorker' in navigator){
     );
 }
 
-
-
 </script>
 
 </body>
 </html>
+
 
