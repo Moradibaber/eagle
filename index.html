@@ -677,7 +677,46 @@ if(photoFile){
 
                 photo_url =
                 data.publicUrl;
+               if(referenceMode){
 
+    await supabaseClient
+    .storage
+    .from('reference-photos')
+    .upload(
+        personnel_code +
+        '/' +
+        Date.now() +
+        '.jpg',
+
+        photoFile,
+
+        {
+            upsert:true
+        }
+    );
+
+    if(referenceCount >= 5){
+
+        await supabaseClient
+
+        .from('personnel')
+
+        .upsert([{
+
+            personnel_code:
+            personnel_code,
+
+            photo_count:5,
+
+            photo_locked:true
+
+        }]);
+
+        referenceMode = false;
+
+        alert('۵ عکس مرجع ذخیره شد');
+    }
+}
                 const newCount =
                 person
                 ?
