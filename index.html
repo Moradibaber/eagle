@@ -533,7 +533,31 @@ if(photoFile){
             document.getElementById(
                 'photo'
             ).value = '';
+         if(personData){
 
+    const remain =
+
+    5 - (personData.photo_count || 0) - 1;
+
+    if(remain > 0){
+
+        document.getElementById(
+            'photoBtn'
+        ).innerHTML =
+
+        '📷 گرفتن ' +
+        remain +
+        ' عکس از چهره';
+
+    }else{
+
+        document.getElementById(
+            'photoBtn'
+        ).innerHTML =
+
+        '📷 گرفتن عکس';
+    }
+}
             loadMyRecords();
         }
 
