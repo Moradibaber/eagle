@@ -203,12 +203,20 @@ window.onload = async function(){
         'employee_code'
     );
 
-    if(savedName){
+   if(savedName){
 
-        document.getElementById(
-            'fullname'
-        ).value = savedName;
-    }
+    document.getElementById(
+        'fullname'
+    ).value = savedName;
+
+    document.getElementById(
+        'fullname'
+    ).disabled = true;
+
+    document.getElementById(
+        'fullname'
+    ).style.background = '#eee';
+}
 
     if(savedCode){
 
