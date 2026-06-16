@@ -2,17 +2,10 @@
 <html lang="fa" dir="rtl">
 
 <head>
-
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta
-name="viewport"
-content="width=device-width, initial-scale=1.0"
->
-
-<title>
-سیستم ثبت تردد پرسنل
-</title>
+<title>سیستم ثبت تردد پرسنل</title>
 
 <style>
 
@@ -35,66 +28,62 @@ body{
 h2{
     text-align:center;
     color:#1a2a6c;
+    margin-bottom:30px;
 }
 
 input{
     width:100%;
-    padding:12px;
+    padding:14px;
     margin-bottom:15px;
     border:1px solid #ccc;
-    border-radius:8px;
-    font-size:16px;
+    border-radius:10px;
+    font-size:18px;
     box-sizing:border-box;
 }
 
 button{
     width:100%;
-    padding:14px;
+    padding:16px;
     border:none;
-    border-radius:8px;
-    background:#1a2a6c;
+    border-radius:10px;
+    font-size:18px;
     color:white;
-    font-size:16px;
     cursor:pointer;
     margin-top:10px;
 }
 
-button:hover{
-    background:green;
+#captureBtn{
+    background:#00897b;
+}
+
+#photoBtn{
+    background:#1a2a6c;
+}
+
+button:disabled{
+    background:#999 !important;
+    cursor:not-allowed;
+}
+
+#photoCounter{
+    text-align:center;
+    margin-top:15px;
+    margin-bottom:15px;
+    font-weight:bold;
+    color:#1a2a6c;
+    font-size:20px;
 }
 
 .record{
     background:#fff;
     border:1px solid #ddd;
     border-radius:10px;
-    padding:15px;
-    margin-top:15px;
-}
-
-#status{
+    padding:20px;
     margin-top:20px;
-    text-align:center;
-    font-weight:bold;
-    color:green;
-}
-
-#photoCounter{
-    text-align:center;
-    margin-top:10px;
-    font-size:14px;
-    color:#1a2a6c;
-    font-weight:bold;
-}
-
-.disabled{
-    background:#ccc !important;
-    cursor:not-allowed;
+    font-size:22px;
 }
 
 </style>
-
-<script defer src="./face-api/face-api.min.js"></script>
-
 </head>
 
 <body>
@@ -117,19 +106,12 @@ id="personnel_code"
 placeholder="کد پرسنلی"
 >
 
-<input
-type="file"
-id="photo"
-accept="image/*"
-capture="user"
-style="display:none"
->
+<div id="photoContainer"></div>
 
 <button
 id="captureBtn"
 type="button"
 onclick="captureReferencePhoto()"
-style="background:#00897b;"
 >
 📸 گرفتن 3 عکس مرجع
 </button>
@@ -139,13 +121,12 @@ style="background:#00897b;"
 </div>
 
 <button
+id="photoBtn"
 type="button"
 onclick="saveAttendance()"
 >
 📷 ثبت ورود
 </button>
-
-<div id="status"></div>
 
 <div id="myRecords"></div>
 
@@ -158,7 +139,7 @@ onclick="saveAttendance()"
 const SUPABASE_URL =
 'https://kddhnohquohbnemmegdy.supabase.co';
 
-/* کلید واقعی خودت را بگذار */
+/* کلید واقعی ANON را قرار بده */
 const SUPABASE_ANON_KEY =
 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
 
@@ -170,41 +151,65 @@ supabase.createClient(
 
 let remainingPhotos = 3;
 
+function createPhotoInput(){
+
+    const container =
+    document.getElementById(
+        'photoContainer'
+    );
+
+    container.innerHTML = `
+    <input
+    type="file"
+    id="photo"
+    accept="image/*"
+    capture="user"
+    style="display:none"
+    >
+    `;
+}
+
+createPhotoInput();
+
 function lockPersonnelFields(){
 
+    const fullname =
     document.getElementById(
         'fullname'
-    ).readOnly = true;
+    );
 
+    const code =
     document.getElementById(
         'personnel_code'
-    ).readOnly = true;
+    );
 
-    document.getElementById(
-        'fullname'
-    ).style.background = '#eee';
+    fullname.readOnly = true;
+    code.readOnly = true;
 
-    document.getElementById(
-        'personnel_code'
-    ).style.background = '#eee';
+    fullname.style.background =
+    '#eee';
+
+    code.style.background =
+    '#eee';
 }
 
 function updatePhotoCounter(){
 
+    const counter =
+    document.getElementById(
+        'photoCounter'
+    );
+
     if(remainingPhotos > 0){
 
-        document.getElementById(
-            'photoCounter'
-        ).innerHTML =
+        counter.innerHTML =
         remainingPhotos +
         ' عکس باقی مانده';
 
     }else{
 
-        document.getElementById(
-            'photoCounter'
-        ).innerHTML =
-        '✅ عکس‌های مرجع تکمیل شد';
+        counter.innerHTML =
+        '✅ عکس‌های مرجع کامل شد';
 
         document.getElementById(
             'captureBtn'
@@ -300,19 +305,13 @@ async function captureReferencePhoto(){
 
     if(savedName && savedName !== fullname){
 
-        alert(
-            'نام قابل تغییر نیست'
-        );
-
+        alert('نام قابل تغییر نیست');
         return;
     }
 
     if(savedCode && savedCode !== personnelCode){
 
-        alert(
-            'کد پرسنلی قابل تغییر نیست'
-        );
-
+        alert('کد پرسنلی قابل تغییر نیست');
         return;
     }
 
@@ -331,72 +330,87 @@ async function captureReferencePhoto(){
     if(remainingPhotos <= 0){
 
         alert(
-            'عکس‌ها کامل ثبت شده‌اند'
+            'عکس‌های مرجع کامل شده‌اند'
         );
 
         return;
     }
+
+    createPhotoInput();
 
     const photoInput =
     document.getElementById(
         'photo'
     );
 
-    photoInput.value = '';
+    photoInput.onchange =
+    async function(e){
 
-    photoInput.onchange = async function(e){
+        const file =
+        e.target.files[0];
+
+        if(!file){
+            return;
+        }
 
         try{
-
-            const file =
-            e.target.files[0];
-
-            if(!file){
-
-                return;
-            }
 
             document.getElementById(
                 'captureBtn'
             ).disabled = true;
 
+            const extension =
+            file.name.split('.').pop();
+
             const fileName =
-
             personnelCode +
-
             '_' +
-
             Date.now() +
+            '.' +
+            extension;
 
-            '.jpg';
-
-            const { data, error } =
-
-            await supabaseClient.storage
-
+            const uploadPromise =
+            supabaseClient.storage
             .from('reference-photos')
-
             .upload(
                 fileName,
                 file,
                 {
                     cacheControl:'3600',
-                    upsert:true
+                    upsert:false
                 }
             );
 
-            document.getElementById(
-                'captureBtn'
-            ).disabled = false;
+            const timeoutPromise =
+            new Promise((_, reject)=>
+                setTimeout(
+                    ()=>reject(
+                        new Error(
+                            'timeout'
+                        )
+                    ),
+                    30000
+                )
+            );
 
-            if(error){
+            const result =
+            await Promise.race([
+                uploadPromise,
+                timeoutPromise
+            ]);
 
-                console.log(error);
+            if(result.error){
+
+                console.log(result.error);
 
                 alert(
                     'خطا در آپلود:\n' +
-                    error.message
+                    result.error.message
                 );
+
+                document.getElementById(
+                    'captureBtn'
+                ).disabled = false;
 
                 return;
             }
@@ -404,36 +418,24 @@ async function captureReferencePhoto(){
             remainingPhotos--;
 
             const { data: existingPerson } =
-
             await supabaseClient
-
             .from('personnel')
-
             .select('*')
-
             .eq(
                 'personnel_code',
                 personnelCode
             )
-
             .maybeSingle();
 
             if(existingPerson){
 
                 await supabaseClient
-
                 .from('personnel')
-
                 .update({
-
-                    fullname:
-                    fullname,
-
+                    fullname:fullname,
                     photo_count:
                     3 - remainingPhotos
-
                 })
-
                 .eq(
                     'personnel_code',
                     personnelCode
@@ -442,11 +444,8 @@ async function captureReferencePhoto(){
             }else{
 
                 await supabaseClient
-
                 .from('personnel')
-
                 .insert([{
-
                     personnel_code:
                     personnelCode,
 
@@ -455,7 +454,6 @@ async function captureReferencePhoto(){
 
                     photo_count:
                     3 - remainingPhotos
-
                 }]);
             }
 
@@ -466,6 +464,10 @@ async function captureReferencePhoto(){
                 alert(
                     'عکس ذخیره شد'
                 );
+
+                document.getElementById(
+                    'captureBtn'
+                ).disabled = false;
 
             }else{
 
@@ -478,13 +480,13 @@ async function captureReferencePhoto(){
 
             console.log(err);
 
+            alert(
+                'خطا:\n' + err.message
+            );
+
             document.getElementById(
                 'captureBtn'
             ).disabled = false;
-
-            alert(
-                err.message
-            );
         }
     };
 
@@ -515,7 +517,6 @@ async function loadMyRecords(){
     );
 
     if(!personnel_code){
-
         return;
     }
 
@@ -535,22 +536,18 @@ async function loadMyRecords(){
     );
 
     if(!data){
-
         return;
     }
 
     let html = '';
 
-    data.slice(0,3).forEach(item => {
+    data.slice(0,3).forEach(item=>{
 
         html += `
-
         <div class="record">
-
         <p>
         ${item.entry_time}
         </p>
-
         </div>
         `;
     });
@@ -563,5 +560,4 @@ async function loadMyRecords(){
 </script>
 
 </body>
-</html>
 </html>
