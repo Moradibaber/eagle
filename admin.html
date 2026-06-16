@@ -201,17 +201,28 @@ async function loadRecords(){
 
         const fixedDate =
 
-        item.entry_time
-        .replaceAll('۰','0')
-        .replaceAll('۱','1')
-        .replaceAll('۲','2')
-        .replaceAll('۳','3')
-        .replaceAll('۴','4')
-        .replaceAll('۵','5')
-        .replaceAll('۶','6')
-        .replaceAll('۷','7')
-        .replaceAll('۸','8')
-        .replaceAll('۹','9');
+item.entry_time
+.replaceAll('۰','0')
+.replaceAll('۱','1')
+.replaceAll('۲','2')
+.replaceAll('۳','3')
+.replaceAll('۴','4')
+.replaceAll('۵','5')
+.replaceAll('۶','6')
+.replaceAll('۷','7')
+.replaceAll('۸','8')
+.replaceAll('۹','9');
+
+const parts =
+fixedDate.split(',');
+
+const date =
+
+parts[1]
+
+? parts[1].trim()
+
+: fixedDate;
 
         const date =
         fixedDate.substring(0,10);
