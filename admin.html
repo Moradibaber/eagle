@@ -202,31 +202,28 @@ async function loadRecords(){
     const { data, error } =
 
     await supabaseClient
-
     .from('eagle')
-
     .select('*')
-
     .order('id',{ascending:false});
 
     if(error){
 
-        document.getElementById(
-            'records'
-        ).innerHTML =
-        'خطا در دریافت اطلاعات';
+        document.getElementById('records')
+        .innerHTML = 'خطا در دریافت اطلاعات';
 
         console.log(error);
-
         return;
     }
+
+    const isMobile =
+    window.innerWidth < 700;
 
     const grouped = {};
 
     data.forEach(item => {
 
         let fixedDate =
-        item.entry_time;
+        String(item.entry_time);
 
         fixedDate = fixedDate
         .replaceAll('۰','0')
@@ -240,8 +237,8 @@ async function loadRecords(){
         .replaceAll('۸','8')
         .replaceAll('۹','9');
 
-       const onlyDate =
-fixedDate.split(' ')[0];
+        const onlyDate =
+        fixedDate.substring(0,10);
 
         const key =
         item.personnel_code +
@@ -256,8 +253,6 @@ fixedDate.split(' ')[0];
         grouped[key].push(item);
     });
 
-    let html = '';
-
     const groupedArray =
     Object.values(grouped)
     .sort((a,b)=>
@@ -266,83 +261,151 @@ fixedDate.split(' ')[0];
     )
     .slice(0,7);
 
-    groupedArray.forEach(records => {
+    let html = '';
 
-        records.sort(
-            (a,b)=> a.id - b.id
-        );
-
-        const first =
-        records[0];
-
-        const last =
-        records[
-            records.length - 1
-        ];
-
-        const date =
-String(last.entry_time)
-.replaceAll('۰','0')
-.replaceAll('۱','1')
-.replaceAll('۲','2')
-.replaceAll('۳','3')
-.replaceAll('۴','4')
-.replaceAll('۵','5')
-.replaceAll('۶','6')
-.replaceAll('۷','7')
-.replaceAll('۸','8')
-.replaceAll('۹','9')
-.split(' ')[0];
-
-        const isMobile =
-        window.innerWidth < 700;
+    if(isMobile){
 
         html += `
 
-        <div class="card">
+        <div style="
+        background:white;
+        border-radius:12px;
+        padding:10px;
+        overflow:auto;
+        box-shadow:0 0 10px rgba(0,0,0,0.08);
+        ">
 
-        <div class="card-top">
+        <table style="
+        width:100%;
+        border-collapse:collapse;
+        font-size:12px;
+        text-align:center;
+        ">
 
-        <div class="card-info">
+        <tr style="
+        background:#1a2a6c;
+        color:white;
+        ">
 
-        <h3>
-        ${last.fullname}
-        </h3>
+        <th style="padding:8px;">پرسنل</th>
+        <th>تاریخ</th>
+        <th>اولین</th>
+        <th>آخرین</th>
+        <th>GPS</th>
 
-        <p>
-        کد پرسنلی:
-        ${last.personnel_code}
-        </p>
+        </tr>
+        `;
 
-        <p>
-        تاریخ:
-        ${date}
-        </p>
+        groupedArray.forEach(records => {
 
-        <p>
-        اولین تردد:
-        ${first.entry_time}
-        </p>
+            records.sort(
+                (a,b)=> a.id - b.id
+            );
 
-        <p>
-        آخرین تردد:
-        ${last.entry_time}
-        </p>
+            const first =
+            records[0];
 
-        <p>
-        GPS:
-        ${String(last.latitude).substring(0,8)}
-        ,
-        ${String(last.longitude).substring(0,8)}
-        </p>
+            const last =
+            records[records.length-1];
 
+            const date =
+            String(last.entry_time)
+            .substring(0,10);
+
+            html += `
+
+            <tr style="
+            border-bottom:1px solid #ddd;
+            ">
+
+            <td style="padding:8px;">
+            ${last.personnel_code}
+            </td>
+
+            <td>
+            ${date}
+            </td>
+
+            <td>
+            ${String(first.entry_time).substring(11,16)}
+            </td>
+
+            <td>
+            ${String(last.entry_time).substring(11,16)}
+            </td>
+
+            <td>
+            ${String(last.latitude).substring(0,6)}
+            </td>
+
+            </tr>
+            `;
+        });
+
+        html += `
+        </table>
         </div>
+        `;
 
-        ${
-            !isMobile
-            ?
+    }else{
 
-            `
+        groupedArray.forEach(records => {
+
+            records.sort(
+                (a,b)=> a.id - b.id
+            );
+
+            const first =
+            records[0];
+
+            const last =
+            records[records.length-1];
+
+            const date =
+            String(last.entry_time)
+            .substring(0,10);
+
+            html += `
+
+            <div class="card">
+
+            <div class="card-top">
+
+            <div class="card-info">
+
+            <h3>
+            ${last.fullname}
+            </h3>
+
+            <p>
+            کد پرسنلی:
+            ${last.personnel_code}
+            </p>
+
+            <p>
+            تاریخ:
+            ${date}
+            </p>
+
+            <p>
+            اولین تردد:
+            ${first.entry_time}
+            </p>
+
+            <p>
+            آخرین تردد:
+            ${last.entry_time}
+            </p>
+
+            <p>
+            GPS:
+            ${String(last.latitude).substring(0,8)}
+            ,
+            ${String(last.longitude).substring(0,8)}
+            </p>
+
+            </div>
+
             <div class="card-images">
 
             ${
@@ -386,26 +449,21 @@ String(last.entry_time)
             }
 
             </div>
-            `
 
-            :
+            </div>
 
-            ''
-        }
+            <button onclick="
+            deleteRecord(
+            ${last.id}
+            )
+            ">
+            حذف
+            </button>
 
-        </div>
-
-        <button onclick="
-        deleteRecord(
-        ${last.id}
-        )
-        ">
-        حذف
-        </button>
-
-        </div>
-        `;
-    });
+            </div>
+            `;
+        });
+    }
 
     document.getElementById(
         'records'
