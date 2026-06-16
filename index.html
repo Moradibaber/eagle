@@ -593,12 +593,6 @@ async function saveAttendance(){
 
             '.jpg';
 
-            /* رفع مشکل اصلی:
-               استفاده از همان bucket مرجع
-               چون bucket attendance-photos
-               در سوپابیس ساخته نشده یا policy ندارد
-            */
-
             const uploadResult =
 
             await supabaseClient.storage
@@ -630,6 +624,11 @@ async function saveAttendance(){
                 return;
             }
 
+            /* مشکل اصلی اینجا بود:
+               ستون photo_name در جدول eagle وجود ندارد
+               پس حذف شد
+            */
+
             const insertResult =
 
             await supabaseClient
@@ -642,10 +641,7 @@ async function saveAttendance(){
                 personnelCode,
 
                 entry_time:
-                new Date().toLocaleString('fa-IR'),
-
-                photo_name:
-                fileName
+                new Date().toLocaleString('fa-IR')
 
             }]);
 
