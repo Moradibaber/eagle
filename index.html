@@ -1,4 +1,4 @@
-```html
+
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
@@ -156,6 +156,7 @@ onclick="saveAttendance()"
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
+
 <script>
 
 const SUPABASE_URL =
@@ -185,8 +186,6 @@ async function loadFaceModels(){
     await faceapi.nets.faceRecognitionNet.loadFromUri('./face-api/models');
 
     faceModelsLoaded = true;
-
-    console.log('Face Models Loaded');
 }
 
 window.onload = async function(){
@@ -215,7 +214,8 @@ window.onload = async function(){
 
         document.getElementById(
             'fullname'
-        ).style.background = '#eee';
+        ).style.background =
+        '#eee';
     }
 
     if(savedCode){
@@ -223,6 +223,15 @@ window.onload = async function(){
         document.getElementById(
             'personnel_code'
         ).value = savedCode;
+
+        document.getElementById(
+            'personnel_code'
+        ).readOnly = true;
+
+        document.getElementById(
+            'personnel_code'
+        ).style.background =
+        '#eee';
 
         const { data } =
 
@@ -247,18 +256,6 @@ window.onload = async function(){
                 5 - (data.photo_count || 0)
             );
 
-            if(remainingPhotos <= 0){
-
-                document.getElementById(
-                    'personnel_code'
-                ).readOnly = true;
-
-                document.getElementById(
-                    'personnel_code'
-                ).style.background =
-                '#eee';
-            }
-
             updatePhotoCounter();
         }
     }
@@ -266,7 +263,7 @@ window.onload = async function(){
     await sendOfflineData();
 
     loadMyRecords();
-}
+};
 
 function updatePhotoCounter(){
 
@@ -301,12 +298,12 @@ function updatePhotoCounter(){
 
         document.getElementById(
             'captureBtn'
-        ).style.background = 'gray';
+        ).style.background =
+        'gray';
 
         document.getElementById(
             'captureBtn'
         ).innerHTML =
-
         '✅ تکمیل شد';
     }
 }
@@ -325,56 +322,68 @@ async function captureReferencePhoto(){
         'personnel_code'
     ).value;
 
-    if(!personnelCode){
+    const fullname =
+    document.getElementById(
+        'fullname'
+    ).value;
 
-        alert('ابتدا کد پرسنلی را وارد کنید');
+    if(!fullname || !personnelCode){
+
+        alert(
+            'نام و کد پرسنلی را وارد کنید'
+        );
 
         return;
     }
 
+    localStorage.setItem(
+        'employee_fullname',
+        fullname
+    );
+
+    localStorage.setItem(
+        'employee_code',
+        personnelCode
+    );
+
     if(remainingPhotos <= 0){
 
-        alert('۵ عکس قبلا ثبت شده');
+        alert('۵ عکس ثبت شده');
 
         return;
     }
 
     const photoInput =
-    document.getElementById('photo');
+    document.getElementById(
+        'photo'
+    );
 
-    photoInput.onchange = async function(){
+    photoInput.click();
 
-        const file = this.files[0];
+    photoInput.onchange =
+    async function(){
+
+        const file =
+        this.files[0];
 
         if(!file) return;
 
         const fileName =
 
         personnelCode +
-
         '_' +
-
         Date.now() +
-
-        '_' +
-
-        Math.floor(
-            Math.random() * 999999
-        ) +
-
         '.jpg';
 
         const { error } =
 
-        await supabaseClient.storage
-
+        await supabaseClient
+        .storage
         .from('reference-photos')
-
         .upload(
             fileName,
             file,
             {
-                cacheControl:'3600',
                 upsert:false
             }
         );
@@ -383,36 +392,35 @@ async function captureReferencePhoto(){
 
             console.log(error);
 
-            alert('خطا در آپلود عکس');
+            alert(
+                'خطا در آپلود عکس'
+            );
 
             return;
         }
 
-        remainingPhotos = Math.max(
-            0,
-            remainingPhotos - 1
-        );
+        remainingPhotos--;
 
         await supabaseClient
+
         .from('personnel')
+
         .upsert({
 
             personnel_code:
             personnelCode,
 
-            photo_count:
-            5 - remainingPhotos,
+            fullname:
+            fullname,
 
-            photo_locked:
-            (5 - remainingPhotos) >= 5
+            photo_count:
+            5 - remainingPhotos
         });
 
         updatePhotoCounter();
 
         photoInput.value = '';
     };
-
-    photoInput.click();
 }
 
 async function saveAttendance(){
@@ -433,8 +441,8 @@ async function saveAttendance(){
     ).files[0];
 
     if(
-        fullname === '' ||
-        personnel_code === ''
+        !fullname ||
+        !personnel_code
     ){
 
         alert(
@@ -450,6 +458,16 @@ async function saveAttendance(){
 
         return;
     }
+
+    localStorage.setItem(
+        'employee_fullname',
+        fullname
+    );
+
+    localStorage.setItem(
+        'employee_code',
+        personnel_code
+    );
 
     const img =
     await faceapi.bufferToImage(
@@ -471,7 +489,9 @@ async function saveAttendance(){
 
     if(!detection){
 
-        alert('چهره تشخیص داده نشد');
+        alert(
+            'چهره تشخیص داده نشد'
+        );
 
         return;
     }
@@ -481,10 +501,9 @@ async function saveAttendance(){
 
     const { data: allPhotos } =
 
-    await supabaseClient.storage
-
+    await supabaseClient
+    .storage
     .from('reference-photos')
-
     .list();
 
     const referencePhotos =
@@ -496,10 +515,7 @@ async function saveAttendance(){
         )
     );
 
-    if(
-        !referencePhotos ||
-        referencePhotos.length === 0
-    ){
+    if(referencePhotos.length < 5){
 
         alert(
             'ابتدا ۵ عکس مرجع ثبت کنید'
@@ -599,16 +615,12 @@ async function saveAttendance(){
 
         const { error: uploadError } =
 
-        await supabaseClient.storage
-
+        await supabaseClient
+        .storage
         .from('photo')
-
         .upload(
-
             fileName,
-
             photoFile,
-
             {
                 upsert:true
             }
@@ -618,10 +630,9 @@ async function saveAttendance(){
 
             const { data } =
 
-            supabaseClient.storage
-
+            supabaseClient
+            .storage
             .from('photo')
-
             .getPublicUrl(
                 fileName
             );
@@ -636,29 +647,26 @@ async function saveAttendance(){
 
         .from('eagle')
 
-        .insert([
+        .insert([{
 
-            {
+            fullname:
+            fullname,
 
-                fullname:
-                fullname,
+            personnel_code:
+            personnel_code,
 
-                personnel_code:
-                personnel_code,
+            entry_time:
+            now,
 
-                entry_time:
-                now,
+            latitude:
+            latitude.toString(),
 
-                latitude:
-                latitude.toString(),
+            longitude:
+            longitude.toString(),
 
-                longitude:
-                longitude.toString(),
-
-                photo_url:
-                photo_url
-            }
-        ]);
+            photo_url:
+            photo_url
+        }]);
 
         if(error){
 
@@ -704,43 +712,18 @@ async function sendOfflineData(){
         ) || '[]'
     );
 
-    if(
-        offlineData.length === 0
-    ){
+    if(offlineData.length === 0){
 
         return;
     }
 
-    for(
-        let item of offlineData
-    ){
+    for(let item of offlineData){
 
         await supabaseClient
 
         .from('eagle')
 
-        .insert([
-
-            {
-
-                fullname:
-                item.fullname,
-
-                personnel_code:
-                item.personnel_code,
-
-                entry_time:
-                item.entry_time,
-
-                latitude:
-                item.latitude.toString(),
-
-                longitude:
-                item.longitude.toString(),
-
-                photo_url:''
-            }
-        ]);
+        .insert([item]);
     }
 
     localStorage.removeItem(
@@ -858,6 +841,8 @@ if('serviceWorker' in navigator){
 }
 
 </script>
+
+
 
 </body>
 
