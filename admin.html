@@ -192,7 +192,7 @@ async function loadRecords(){
 
     data.forEach(item => {
 
-        const fixedDate =
+        const fixed =
 
         item.entry_time
         .replaceAll('۰','0')
@@ -206,18 +206,21 @@ async function loadRecords(){
         .replaceAll('۸','8')
         .replaceAll('۹','9');
 
-        const parts =
-        fixedDate.split(',');
+        let date = '';
 
-        const date =
+        if(fixed.includes(',')){
 
-        parts[1]
-        ?
-        parts[1].trim()
-        :
-        fixedDate;
+            date =
+            fixed.split(',')[1].trim();
+
+        }else{
+
+            date =
+            fixed.substring(0,10);
+        }
 
         const key =
+
         item.personnel_code +
         '_' +
         date;
@@ -232,12 +235,9 @@ async function loadRecords(){
 
     let html = '';
 
-    Object.keys(grouped)
+    Object.values(grouped)
 
-    .forEach(key => {
-
-        const records =
-        grouped[key];
+    .forEach(records => {
 
         records.sort(
             (a,b)=> a.id - b.id
@@ -251,7 +251,9 @@ async function loadRecords(){
             records.length - 1
         ];
 
-        const fixedDate =
+        let date = '';
+
+        const fixed =
 
         last.entry_time
         .replaceAll('۰','0')
@@ -265,16 +267,16 @@ async function loadRecords(){
         .replaceAll('۸','8')
         .replaceAll('۹','9');
 
-        const parts =
-        fixedDate.split(',');
+        if(fixed.includes(',')){
 
-        const date =
+            date =
+            fixed.split(',')[1].trim();
 
-        parts[1]
-        ?
-        parts[1].trim()
-        :
-        fixedDate;
+        }else{
+
+            date =
+            fixed.substring(0,10);
+        }
 
         html += `
 
