@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
@@ -19,6 +18,7 @@ body{
     font-family:tahoma;
     background:#f4f7fa;
     padding:20px;
+    margin:0;
 }
 
 .container{
@@ -29,20 +29,19 @@ body{
 .card{
 
     background:white;
-    border-radius:12px;
+    border-radius:15px;
     padding:15px;
     margin-bottom:15px;
 
     box-shadow:0 0 10px rgba(0,0,0,0.1);
 }
+
 .card-top{
 
     display:flex;
     justify-content:space-between;
     align-items:flex-start;
     gap:15px;
-
-    flex-wrap:nowrap;
 }
 
 .card-info{
@@ -53,6 +52,7 @@ body{
 
     display:flex;
     gap:8px;
+    flex-wrap:wrap;
 }
 
 .card-images img{
@@ -65,44 +65,19 @@ body{
     border-radius:10px;
 
     cursor:pointer;
+
+    border:2px solid #1a2a6c;
 }
-
-@media(max-width:700px){
-
-    .card-top{
-
-        flex-direction:column;
-        align-items:flex-start;
-    }
-
-    .card-images{
-
-        margin-top:10px;
-    }
-
-    .card-images img{
-
-        width:55px;
-        height:55px;
-    }
-}
-
-img{
-
-    border-radius:10px;
-    margin-top:10px;
-}
-
-
 
 button{
 
     background:#c62828;
     color:white;
     border:none;
-    padding:10px;
+    padding:10px 15px;
     border-radius:8px;
     cursor:pointer;
+    font-size:14px;
 }
 
 h2{
@@ -110,10 +85,56 @@ h2{
     color:#1a2a6c;
 }
 
+.export-btn{
+
+    margin-bottom:20px;
+    background:#1a2a6c;
+}
+
+@media(max-width:700px){
+
+    body{
+        padding:10px;
+    }
+
+    .card-top{
+
+        flex-direction:row;
+        align-items:flex-start;
+    }
+
+    .card-info{
+
+        font-size:14px;
+    }
+
+    .card-info h3{
+
+        font-size:20px;
+        margin-top:0;
+    }
+
+    .card-images{
+
+        flex-direction:column;
+    }
+
+    .card-images img{
+
+        width:50px;
+        height:50px;
+    }
+
+    button{
+
+        padding:8px 12px;
+        font-size:13px;
+    }
+}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
 
 </head>
 
@@ -125,10 +146,11 @@ h2{
 پنل مدیریت ترددها
 </h2>
 
-<button onclick="exportExcel()">
+<button
+class="export-btn"
+onclick="exportExcel()">
 دانلود اکسل
 </button>
-
 
 <div id="records">
 در حال دریافت اطلاعات...
@@ -144,14 +166,13 @@ const SUPABASE_URL =
 'https://kddhnohquohbnemmegdy.supabase.co';
 
 const SUPABASE_ANON_KEY =
-'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
+'YOUR_KEY';
 
 const supabaseClient =
 supabase.createClient(
     SUPABASE_URL,
     SUPABASE_ANON_KEY
 );
-
 
 const password =
 prompt('رمز مدیریت را وارد کنید');
@@ -166,6 +187,32 @@ if(password !== '12345'){
     loadRecords();
 }
 
+function normalizeDate(str){
+
+    let fixed = str;
+
+    fixed = fixed
+    .replaceAll('۰','0')
+    .replaceAll('۱','1')
+    .replaceAll('۲','2')
+    .replaceAll('۳','3')
+    .replaceAll('۴','4')
+    .replaceAll('۵','5')
+    .replaceAll('۶','6')
+    .replaceAll('۷','7')
+    .replaceAll('۸','8')
+    .replaceAll('۹','9');
+
+    if(fixed.includes(',')){
+
+        return fixed
+        .split(',')[1]
+        .trim()
+        .substring(0,10);
+    }
+
+    return fixed.substring(0,10);
+}
 
 async function loadRecords(){
 
@@ -183,7 +230,10 @@ async function loadRecords(){
 
         document.getElementById(
             'records'
-        ).innerHTML = 'خطا';
+        ).innerHTML =
+        'خطا در دریافت اطلاعات';
+
+        console.log(error);
 
         return;
     }
@@ -192,34 +242,10 @@ async function loadRecords(){
 
     data.forEach(item => {
 
-        let fixed = item.entry_time;
-
-        fixed = fixed
-        .replaceAll('۰','0')
-        .replaceAll('۱','1')
-        .replaceAll('۲','2')
-        .replaceAll('۳','3')
-        .replaceAll('۴','4')
-        .replaceAll('۵','5')
-        .replaceAll('۶','6')
-        .replaceAll('۷','7')
-        .replaceAll('۸','8')
-        .replaceAll('۹','9');
-
-        let date = '';
-
-        if(fixed.includes(',')){
-
-            date =
-            fixed.split(',')[1]
-            .trim()
-            .substring(0,10);
-
-        }else{
-
-            date =
-            fixed.substring(0,10);
-        }
+        const date =
+        normalizeDate(
+            item.entry_time
+        );
 
         const key =
         item.personnel_code +
@@ -252,35 +278,10 @@ async function loadRecords(){
             records.length - 1
         ];
 
-        let date = '';
-
-        let fixed =
-        last.entry_time;
-
-        fixed = fixed
-        .replaceAll('۰','0')
-        .replaceAll('۱','1')
-        .replaceAll('۲','2')
-        .replaceAll('۳','3')
-        .replaceAll('۴','4')
-        .replaceAll('۵','5')
-        .replaceAll('۶','6')
-        .replaceAll('۷','7')
-        .replaceAll('۸','8')
-        .replaceAll('۹','9');
-
-        if(fixed.includes(',')){
-
-            date =
-            fixed.split(',')[1]
-            .trim()
-            .substring(0,10);
-
-        }else{
-
-            date =
-            fixed.substring(0,10);
-        }
+        const date =
+        normalizeDate(
+            last.entry_time
+        );
 
         html += `
 
@@ -354,6 +355,9 @@ async function loadRecords(){
             src="${last.photo_url}"
             onclick="
             window.open(this.src)
+            "
+            style="
+            border:2px solid green;
             ">
             `
 
@@ -384,6 +388,7 @@ async function loadRecords(){
         'records'
     ).innerHTML = html;
 }
+
 async function deleteRecord(id){
 
     if(!confirm('حذف شود؟')) return;
@@ -402,7 +407,7 @@ async function exportExcel(){
     await supabaseClient
     .from('eagle')
     .select('*')
-    .order('id', { ascending:false });
+    .order('id',{ascending:false});
 
     if(error){
 
@@ -452,10 +457,7 @@ async function exportExcel(){
     );
 }
 
-
 </script>
 
 </body>
 </html>
-
-
