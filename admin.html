@@ -353,11 +353,15 @@ ${last.personnel_code}
             ${String(last.entry_time).substring(11,16)}
             </td>
 
-            <td style="
-font-size:10px;
+          <td style="
+font-size:8px;
+line-height:11px;
 white-space:nowrap;
+padding:2px;
 ">
-${String(last.latitude).substring(0,8)}
+${String(last.latitude).substring(0,7)}
+<br>
+${String(last.longitude).substring(0,7)}
 </td>
 
             </tr>
