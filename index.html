@@ -336,6 +336,71 @@ if(!detection){
 
 const currentDescriptor =
 detection.descriptor;
+    let matched = false;
+
+for(const person of personPhotos){
+
+    if(!person.photo_url){
+
+        continue;
+    }
+
+    try{
+
+        const refImg =
+
+        await faceapi.fetchImage(
+            person.photo_url
+        );
+
+        const refDetection =
+
+        await faceapi
+
+        .detectSingleFace(
+            refImg,
+            new faceapi.TinyFaceDetectorOptions()
+        )
+
+        .withFaceLandmarks()
+
+        .withFaceDescriptor();
+
+        if(!refDetection){
+
+            continue;
+        }
+
+        const distance =
+
+        faceapi.euclideanDistance(
+
+            currentDescriptor,
+
+            refDetection.descriptor
+        );
+
+        if(distance < 0.45){
+
+            matched = true;
+
+            break;
+        }
+
+    }catch(err){
+
+        console.log(err);
+    }
+}
+
+if(!matched){
+
+    alert(
+        'چهره با تصاویر ثبت شده مطابقت ندارد'
+    );
+
+    return;
+}
     navigator.geolocation.getCurrentPosition(
     
 if(photoFile){
