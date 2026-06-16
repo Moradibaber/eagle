@@ -225,15 +225,16 @@ async function saveAttendance(){
     );
 
     const { data: person } =
+await supabaseClient
+.from('personnel')
+.select('*')
+.eq(
+    'personnel_code',
+    personnel_code
+)
+.single();
 
-    await supabaseClient
-    .from('personnel')
-    .select('*')
-    .eq(
-        'personnel_code',
-        personnel_code
-    )
-    .single();
+personData = person;
 
     if(person && person.photo_locked){
 
