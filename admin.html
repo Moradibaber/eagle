@@ -130,7 +130,7 @@ async function loadRecords(){
     .order(
         'id',
         {
-            ascending:true
+            ascending:false
         }
     );
 
@@ -149,7 +149,7 @@ async function loadRecords(){
 
     data.forEach(item => {
 
-        const date =
+        const fixedDate =
 
         item.entry_time
         .replaceAll('۰','0')
@@ -161,11 +161,12 @@ async function loadRecords(){
         .replaceAll('۶','6')
         .replaceAll('۷','7')
         .replaceAll('۸','8')
-        .replaceAll('۹','9')
-        .substring(0,10);
+        .replaceAll('۹','9');
+
+        const date =
+        fixedDate.substring(0,10);
 
         const key =
-
         item.personnel_code +
         '_' +
         date;
@@ -181,11 +182,15 @@ async function loadRecords(){
     let html = '';
 
     Object.keys(grouped)
-    .reverse()
+
     .forEach(key => {
 
         const records =
         grouped[key];
+
+        records.sort((a,b)=>
+            a.id - b.id
+        );
 
         const first =
         records[0];
@@ -196,34 +201,18 @@ async function loadRecords(){
         ];
 
         let firstPhoto = '';
-
         let lastPhoto = '';
 
-        records.forEach(r => {
+        if(first.photo_url){
 
-            if(
-                r.photo_url &&
-                firstPhoto === ''
-            ){
+            firstPhoto =
+            first.photo_url;
+        }
 
-                firstPhoto =
-                r.photo_url;
-            }
-        });
+        if(last.photo_url){
 
-        for(
-            let i = records.length - 1;
-            i >= 0;
-            i--
-        ){
-
-            if(records[i].photo_url){
-
-                lastPhoto =
-                records[i].photo_url;
-
-                break;
-            }
+            lastPhoto =
+            last.photo_url;
         }
 
         html += `
@@ -234,11 +223,14 @@ async function loadRecords(){
         display:flex;
         justify-content:space-between;
         align-items:flex-start;
-        gap:10px;
+        gap:15px;
         flex-wrap:wrap;
         ">
 
-        <div>
+        <div style="
+        flex:1;
+        min-width:220px;
+        ">
 
         <h3>
         ${last.fullname}
@@ -264,11 +256,18 @@ async function loadRecords(){
         ${last.entry_time}
         </p>
 
+        <p>
+        GPS:
+        ${last.latitude}
+        ,
+        ${last.longitude}
+        </p>
+
         </div>
 
         <div style="
         display:flex;
-        gap:8px;
+        gap:10px;
         align-items:center;
         ">
 
@@ -286,16 +285,15 @@ async function loadRecords(){
             "
 
             style="
-            width:55px;
-            height:55px;
-            border-radius:50%;
+            width:60px;
+            height:60px;
             object-fit:cover;
+            border-radius:10px;
             cursor:pointer;
             border:2px solid #1a2a6c;
             "
             >
             `
-
             :
 
             ''
@@ -316,16 +314,15 @@ async function loadRecords(){
             "
 
             style="
-            width:55px;
-            height:55px;
-            border-radius:50%;
+            width:60px;
+            height:60px;
             object-fit:cover;
+            border-radius:10px;
             cursor:pointer;
             border:2px solid green;
             "
             >
             `
-
             :
 
             ''
@@ -353,7 +350,6 @@ async function loadRecords(){
         'records'
     ).innerHTML = html;
 }
-
 async function deleteRecord(id){
 
     if(!confirm('حذف شود؟')) return;
