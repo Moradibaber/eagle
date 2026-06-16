@@ -1,7 +1,8 @@
-  <!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
 <head>
+
 <meta charset="UTF-8">
 
 <meta
@@ -146,7 +147,7 @@ onclick="saveAttendance()"
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
 <script>
 
@@ -166,28 +167,79 @@ let remainingPhotos = 3;
 
 let faceMatcher = null;
 
+async function waitForFaceApi(){
+
+    return new Promise((resolve)=>{
+
+        let counter = 0;
+
+        const interval =
+        setInterval(()=>{
+
+            counter++;
+
+            if(typeof faceapi !== 'undefined'){
+
+                clearInterval(interval);
+
+                resolve(true);
+            }
+
+            if(counter > 30){
+
+                clearInterval(interval);
+
+                resolve(false);
+            }
+
+        },500);
+
+    });
+}
+
 async function loadFaceAPI(){
 
+    const ready =
+    await waitForFaceApi();
+
+    if(!ready){
+
+        alert(
+            'کتابخانه تشخیص چهره لود نشد'
+        );
+
+        return false;
+    }
+
+    const MODEL_URL =
+    'https://justadudewhohacks.github.io/face-api.js/models';
+
     await faceapi.nets.ssdMobilenetv1.loadFromUri(
-        'https://cdn.jsdelivr.net/npm/face-api.js/models'
+        MODEL_URL
     );
 
     await faceapi.nets.faceRecognitionNet.loadFromUri(
-        'https://cdn.jsdelivr.net/npm/face-api.js/models'
+        MODEL_URL
     );
 
     await faceapi.nets.faceLandmark68Net.loadFromUri(
-        'https://cdn.jsdelivr.net/npm/face-api.js/models'
+        MODEL_URL
     );
+
+    return true;
 }
 
 function lockPersonnelFields(){
 
     const fullname =
-    document.getElementById('fullname');
+    document.getElementById(
+        'fullname'
+    );
 
     const code =
-    document.getElementById('personnel_code');
+    document.getElementById(
+        'personnel_code'
+    );
 
     fullname.readOnly = true;
     code.readOnly = true;
@@ -199,10 +251,14 @@ function lockPersonnelFields(){
 function updatePhotoCounter(){
 
     const counter =
-    document.getElementById('photoCounter');
+    document.getElementById(
+        'photoCounter'
+    );
 
     const btn =
-    document.getElementById('captureBtn');
+    document.getElementById(
+        'captureBtn'
+    );
 
     if(remainingPhotos > 0){
 
@@ -211,7 +267,10 @@ function updatePhotoCounter(){
         ' عکس باقی مانده';
 
         btn.disabled = false;
-        btn.classList.remove('disabled');
+
+        btn.classList.remove(
+            'disabled'
+        );
 
     }else{
 
@@ -219,13 +278,21 @@ function updatePhotoCounter(){
         '✅ عکس‌های مرجع کامل شد';
 
         btn.disabled = true;
-        btn.classList.add('disabled');
+
+        btn.classList.add(
+            'disabled'
+        );
     }
 }
 
 window.onload = async function(){
 
+    const apiLoaded =
     await loadFaceAPI();
+
+    if(!apiLoaded){
+        return;
+    }
 
     let savedName =
     localStorage.getItem(
@@ -237,31 +304,47 @@ window.onload = async function(){
         'employee_code'
     );
 
+    /*
+    اگر کش پاک شده باشد
+    */
+
     if(!savedName || !savedCode){
 
-        const { data } =
-        await supabaseClient
-        .from('personnel')
-        .select('*')
-        .limit(1);
+        const latestCode =
+        prompt(
+            'کد پرسنلی را وارد کنید'
+        );
 
-        if(data && data.length > 0){
+        if(latestCode){
 
-            savedName =
-            data[0].fullname;
+            const { data } =
+            await supabaseClient
+            .from('personnel')
+            .select('*')
+            .eq(
+                'personnel_code',
+                latestCode
+            )
+            .maybeSingle();
 
-            savedCode =
-            data[0].personnel_code;
+            if(data){
 
-            localStorage.setItem(
-                'employee_fullname',
-                savedName
-            );
+                savedName =
+                data.fullname;
 
-            localStorage.setItem(
-                'employee_code',
-                savedCode
-            );
+                savedCode =
+                data.personnel_code;
+
+                localStorage.setItem(
+                    'employee_fullname',
+                    savedName
+                );
+
+                localStorage.setItem(
+                    'employee_code',
+                    savedCode
+                );
+            }
         }
     }
 
@@ -298,7 +381,9 @@ window.onload = async function(){
             remainingPhotos =
             Math.max(
                 0,
-                3 - (data.photo_count || 0)
+                3 - (
+                    data.photo_count || 0
+                )
             );
 
             updatePhotoCounter();
@@ -319,19 +404,26 @@ async function compressImage(file){
 
         reader.onload = function(event){
 
-            const img = new Image();
+            const img =
+            new Image();
 
-            img.src = event.target.result;
+            img.src =
+            event.target.result;
 
             img.onload = function(){
 
                 const canvas =
-                document.createElement('canvas');
+                document.createElement(
+                    'canvas'
+                );
 
                 const maxWidth = 320;
 
-                let width = img.width;
-                let height = img.height;
+                let width =
+                img.width;
+
+                let height =
+                img.height;
 
                 if(width > maxWidth){
 
@@ -339,14 +431,20 @@ async function compressImage(file){
                     height *
                     (maxWidth / width);
 
-                    width = maxWidth;
+                    width =
+                    maxWidth;
                 }
 
-                canvas.width = width;
-                canvas.height = height;
+                canvas.width =
+                width;
+
+                canvas.height =
+                height;
 
                 const ctx =
-                canvas.getContext('2d');
+                canvas.getContext(
+                    '2d'
+                );
 
                 ctx.drawImage(
                     img,
@@ -491,11 +589,13 @@ async function captureReferencePhoto(){
                 await supabaseClient
                 .from('personnel')
                 .update({
+
                     fullname:
                     fullname,
 
                     photo_count:
                     uploadedCount
+
                 })
                 .eq(
                     'personnel_code',
@@ -507,6 +607,7 @@ async function captureReferencePhoto(){
                 await supabaseClient
                 .from('personnel')
                 .insert([{
+
                     personnel_code:
                     personnelCode,
 
@@ -515,6 +616,7 @@ async function captureReferencePhoto(){
 
                     photo_count:
                     uploadedCount
+
                 }]);
             }
 
@@ -545,6 +647,7 @@ async function captureReferencePhoto(){
         }finally{
 
             btn.disabled = false;
+
             photoInput.value = '';
         }
     };
@@ -566,6 +669,15 @@ async function verifyFace(attendanceFile){
         limit:100
     });
 
+    if(!files){
+
+        alert(
+            'عکس مرجع پیدا نشد'
+        );
+
+        return false;
+    }
+
     const referenceFiles =
     files.filter(f =>
         f.name.startsWith(
@@ -575,7 +687,9 @@ async function verifyFace(attendanceFile){
 
     if(referenceFiles.length === 0){
 
-        alert('عکس مرجع پیدا نشد');
+        alert(
+            'عکس مرجع وجود ندارد'
+        );
 
         return false;
     }
@@ -587,7 +701,9 @@ async function verifyFace(attendanceFile){
         const { data } =
         supabaseClient.storage
         .from('reference-photos')
-        .getPublicUrl(file.name);
+        .getPublicUrl(
+            file.name
+        );
 
         const img =
         await faceapi.fetchImage(
@@ -636,7 +752,9 @@ async function verifyFace(attendanceFile){
 
     const attendanceDetection =
     await faceapi
-    .detectSingleFace(attendanceImg)
+    .detectSingleFace(
+        attendanceImg
+    )
     .withFaceLandmarks()
     .withFaceDescriptor();
 
@@ -708,6 +826,7 @@ async function saveAttendance(){
                 );
 
                 btn.disabled = false;
+
                 return;
             }
 
@@ -719,6 +838,10 @@ async function saveAttendance(){
                 'employee_code'
             );
 
+            /*
+            حالت آفلاین
+            */
+
             if(!navigator.onLine){
 
                 let offlineRecords =
@@ -729,11 +852,16 @@ async function saveAttendance(){
                 );
 
                 offlineRecords.push({
+
                     personnel_code:
                     personnelCode,
 
                     entry_time:
-                    new Date().toLocaleString('fa-IR')
+                    new Date()
+                    .toLocaleString(
+                        'fa-IR'
+                    )
+
                 });
 
                 localStorage.setItem(
@@ -761,7 +889,8 @@ async function saveAttendance(){
             await supabaseClient.storage
             .from('reference-photos')
             .upload(
-                'attendance/' + fileName,
+                'attendance/' +
+                fileName,
                 compressedFile,
                 {
                     cacheControl:'3600',
@@ -788,10 +917,14 @@ async function saveAttendance(){
                 personnelCode,
 
                 entry_time:
-                new Date().toLocaleString('fa-IR'),
+                new Date()
+                .toLocaleString(
+                    'fa-IR'
+                ),
 
                 photo_name:
                 fileName
+
             }]);
 
             if(insertResult.error){
@@ -835,7 +968,6 @@ async function loadMyRecords(){
     );
 
     if(!personnel_code){
-
         return;
     }
 
@@ -855,7 +987,6 @@ async function loadMyRecords(){
     );
 
     if(!data){
-
         return;
     }
 
@@ -865,9 +996,9 @@ async function loadMyRecords(){
 
         html += `
         <div class="record">
-        <p>
-        ${item.entry_time}
-        </p>
+            <p>
+            ${item.entry_time}
+            </p>
         </div>
         `;
     });
