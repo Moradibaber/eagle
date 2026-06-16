@@ -312,7 +312,30 @@ personData = person;
 
         return;
     }
+   const img = await faceapi.bufferToImage(photoFile);
 
+const detection =
+
+await faceapi
+
+.detectSingleFace(
+    img,
+    new faceapi.TinyFaceDetectorOptions()
+)
+
+.withFaceLandmarks()
+
+.withFaceDescriptor();
+
+if(!detection){
+
+    alert('چهره شناسایی نشد');
+
+    return;
+}
+
+const currentDescriptor =
+detection.descriptor;
     navigator.geolocation.getCurrentPosition(
     
 if(photoFile){
