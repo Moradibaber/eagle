@@ -244,6 +244,76 @@ async function saveAttendance(){
     }
 
     navigator.geolocation.getCurrentPosition(
+    
+if(photoFile){
+
+    const image = await faceapi.bufferToImage(photoFile);
+
+    const detection = await faceapi
+    .detectSingleFace(
+        image,
+        new faceapi.TinyFaceDetectorOptions()
+    )
+    .withFaceLandmarks()
+    .withFaceDescriptor();
+
+    if(!detection){
+
+        alert('چهره تشخیص داده نشد');
+
+        return;
+    }
+
+    const { data: personData } =
+
+    await supabaseClient
+    .from('personnel')
+    .select('*')
+    .eq(
+        'personnel_code',
+        personnel_code
+    )
+    .single();
+
+    if(
+        personData &&
+        personData.photo_url
+    ){
+
+        const savedImage =
+        await faceapi.fetchImage(
+            personData.photo_url
+        );
+
+        const savedDetection =
+        await faceapi
+        .detectSingleFace(
+            savedImage,
+            new faceapi.TinyFaceDetectorOptions()
+        )
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+        if(savedDetection){
+
+            const distance =
+            faceapi.euclideanDistance(
+                detection.descriptor,
+                savedDetection.descriptor
+            );
+
+            if(distance > 0.5){
+
+                alert(
+                    'چهره مطابقت ندارد'
+                );
+
+                return;
+            }
+        }
+    }
+}
+
 
     async position => {
 
