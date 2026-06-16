@@ -1,8 +1,7 @@
-   <!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
 <head>
-
 <meta charset="UTF-8">
 
 <meta
@@ -104,7 +103,6 @@ id="personnel_code"
 placeholder="کد پرسنلی"
 >
 
-<!-- عکس مرجع -->
 <input
 type="file"
 id="photo"
@@ -113,7 +111,6 @@ capture="user"
 style="display:none"
 >
 
-<!-- عکس تردد -->
 <input
 type="file"
 id="attendancePhoto"
@@ -149,6 +146,8 @@ onclick="saveAttendance()"
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+
 <script>
 
 const SUPABASE_URL =
@@ -164,6 +163,23 @@ supabase.createClient(
 );
 
 let remainingPhotos = 3;
+
+let faceMatcher = null;
+
+async function loadFaceAPI(){
+
+    await faceapi.nets.ssdMobilenetv1.loadFromUri(
+        'https://cdn.jsdelivr.net/npm/face-api.js/models'
+    );
+
+    await faceapi.nets.faceRecognitionNet.loadFromUri(
+        'https://cdn.jsdelivr.net/npm/face-api.js/models'
+    );
+
+    await faceapi.nets.faceLandmark68Net.loadFromUri(
+        'https://cdn.jsdelivr.net/npm/face-api.js/models'
+    );
+}
 
 function lockPersonnelFields(){
 
@@ -209,11 +225,45 @@ function updatePhotoCounter(){
 
 window.onload = async function(){
 
-    const savedName =
-    localStorage.getItem('employee_fullname');
+    await loadFaceAPI();
 
-    const savedCode =
-    localStorage.getItem('employee_code');
+    let savedName =
+    localStorage.getItem(
+        'employee_fullname'
+    );
+
+    let savedCode =
+    localStorage.getItem(
+        'employee_code'
+    );
+
+    if(!savedName || !savedCode){
+
+        const { data } =
+        await supabaseClient
+        .from('personnel')
+        .select('*')
+        .limit(1);
+
+        if(data && data.length > 0){
+
+            savedName =
+            data[0].fullname;
+
+            savedCode =
+            data[0].personnel_code;
+
+            localStorage.setItem(
+                'employee_fullname',
+                savedName
+            );
+
+            localStorage.setItem(
+                'employee_code',
+                savedCode
+            );
+        }
+    }
 
     if(savedName){
 
@@ -307,17 +357,13 @@ async function compressImage(file){
                 );
 
                 canvas.toBlob(
-
                     function(blob){
 
                         resolve(blob);
 
                     },
-
                     'image/jpeg',
-
                     0.45
-
                 );
             };
         };
@@ -400,27 +446,17 @@ async function captureReferencePhoto(){
             await compressImage(file);
 
             const fileName =
-
             personnelCode +
-
             '_' +
-
             Date.now() +
-
             '.jpg';
 
             const uploadResult =
-
             await supabaseClient.storage
-
             .from('reference-photos')
-
             .upload(
-
                 fileName,
-
                 compressedFile,
-
                 {
                     cacheControl:'3600',
                     upsert:true,
@@ -436,42 +472,31 @@ async function captureReferencePhoto(){
             remainingPhotos--;
 
             const uploadedCount =
-
             3 - remainingPhotos;
 
             const {
                 data: existingPerson
             } =
-
             await supabaseClient
-
             .from('personnel')
-
             .select('*')
-
             .eq(
                 'personnel_code',
                 personnelCode
             )
-
             .maybeSingle();
 
             if(existingPerson){
 
                 await supabaseClient
-
                 .from('personnel')
-
                 .update({
-
                     fullname:
                     fullname,
 
                     photo_count:
                     uploadedCount
-
                 })
-
                 .eq(
                     'personnel_code',
                     personnelCode
@@ -480,11 +505,8 @@ async function captureReferencePhoto(){
             }else{
 
                 await supabaseClient
-
                 .from('personnel')
-
                 .insert([{
-
                     personnel_code:
                     personnelCode,
 
@@ -493,7 +515,6 @@ async function captureReferencePhoto(){
 
                     photo_count:
                     uploadedCount
-
                 }]);
             }
 
@@ -524,12 +545,116 @@ async function captureReferencePhoto(){
         }finally{
 
             btn.disabled = false;
-
             photoInput.value = '';
         }
     };
 
     photoInput.click();
+}
+
+async function verifyFace(attendanceFile){
+
+    const personnelCode =
+    localStorage.getItem(
+        'employee_code'
+    );
+
+    const { data: files } =
+    await supabaseClient.storage
+    .from('reference-photos')
+    .list('',{
+        limit:100
+    });
+
+    const referenceFiles =
+    files.filter(f =>
+        f.name.startsWith(
+            personnelCode + '_'
+        )
+    );
+
+    if(referenceFiles.length === 0){
+
+        alert('عکس مرجع پیدا نشد');
+
+        return false;
+    }
+
+    const descriptors = [];
+
+    for(const file of referenceFiles){
+
+        const { data } =
+        supabaseClient.storage
+        .from('reference-photos')
+        .getPublicUrl(file.name);
+
+        const img =
+        await faceapi.fetchImage(
+            data.publicUrl
+        );
+
+        const detection =
+        await faceapi
+        .detectSingleFace(img)
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+        if(detection){
+
+            descriptors.push(
+                detection.descriptor
+            );
+        }
+    }
+
+    if(descriptors.length === 0){
+
+        alert(
+            'چهره در عکس مرجع تشخیص داده نشد'
+        );
+
+        return false;
+    }
+
+    const labeledDescriptor =
+    new faceapi.LabeledFaceDescriptors(
+        personnelCode,
+        descriptors
+    );
+
+    faceMatcher =
+    new faceapi.FaceMatcher(
+        [labeledDescriptor],
+        0.5
+    );
+
+    const attendanceImg =
+    await faceapi.bufferToImage(
+        attendanceFile
+    );
+
+    const attendanceDetection =
+    await faceapi
+    .detectSingleFace(attendanceImg)
+    .withFaceLandmarks()
+    .withFaceDescriptor();
+
+    if(!attendanceDetection){
+
+        alert(
+            'چهره در عکس تردد پیدا نشد'
+        );
+
+        return false;
+    }
+
+    const result =
+    faceMatcher.findBestMatch(
+        attendanceDetection.descriptor
+    );
+
+    return result.label !== 'unknown';
 }
 
 async function saveAttendance(){
@@ -573,6 +698,19 @@ async function saveAttendance(){
                 return;
             }
 
+            const verified =
+            await verifyFace(file);
+
+            if(!verified){
+
+                alert(
+                    'چهره تطبیق ندارد'
+                );
+
+                btn.disabled = false;
+                return;
+            }
+
             const compressedFile =
             await compressImage(file);
 
@@ -581,30 +719,50 @@ async function saveAttendance(){
                 'employee_code'
             );
 
+            if(!navigator.onLine){
+
+                let offlineRecords =
+                JSON.parse(
+                    localStorage.getItem(
+                        'offline_attendance'
+                    ) || '[]'
+                );
+
+                offlineRecords.push({
+                    personnel_code:
+                    personnelCode,
+
+                    entry_time:
+                    new Date().toLocaleString('fa-IR')
+                });
+
+                localStorage.setItem(
+                    'offline_attendance',
+                    JSON.stringify(
+                        offlineRecords
+                    )
+                );
+
+                alert(
+                    'آفلاین ذخیره شد'
+                );
+
+                return;
+            }
+
             const fileName =
-
             'attendance_' +
-
             personnelCode +
-
             '_' +
-
             Date.now() +
-
             '.jpg';
 
             const uploadResult =
-
             await supabaseClient.storage
-
             .from('reference-photos')
-
             .upload(
-
                 'attendance/' + fileName,
-
                 compressedFile,
-
                 {
                     cacheControl:'3600',
                     upsert:true,
@@ -614,43 +772,31 @@ async function saveAttendance(){
 
             if(uploadResult.error){
 
-                console.log(uploadResult.error);
-
                 alert(
-                    'خطا در آپلود عکس تردد:\n' +
                     uploadResult.error.message
                 );
 
                 return;
             }
 
-            /* مشکل اصلی اینجا بود:
-               ستون photo_name در جدول eagle وجود ندارد
-               پس حذف شد
-            */
-
             const insertResult =
-
             await supabaseClient
-
             .from('eagle')
-
             .insert([{
 
                 personnel_code:
                 personnelCode,
 
                 entry_time:
-                new Date().toLocaleString('fa-IR')
+                new Date().toLocaleString('fa-IR'),
 
+                photo_name:
+                fileName
             }]);
 
             if(insertResult.error){
 
-                console.log(insertResult.error);
-
                 alert(
-                    'خطا در ذخیره اطلاعات تردد:\n' +
                     insertResult.error.message
                 );
 
@@ -684,7 +830,6 @@ async function saveAttendance(){
 async function loadMyRecords(){
 
     const personnel_code =
-
     localStorage.getItem(
         'employee_code'
     );
@@ -695,18 +840,13 @@ async function loadMyRecords(){
     }
 
     const { data } =
-
     await supabaseClient
-
     .from('eagle')
-
     .select('*')
-
     .eq(
         'personnel_code',
         personnel_code
     )
-
     .order(
         'id',
         {
@@ -724,15 +864,11 @@ async function loadMyRecords(){
     data.slice(0,3).forEach(item => {
 
         html += `
-
         <div class="record">
-
         <p>
         ${item.entry_time}
         </p>
-
         </div>
-
         `;
     });
 
