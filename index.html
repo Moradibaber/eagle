@@ -135,7 +135,6 @@ style="background:#00897b;"
 3 عکس باقی مانده
 </div>
 
-<!-- دکمه جدید ثبت تردد روزانه -->
 <button
 id="attendanceBtn"
 type="button"
@@ -577,17 +576,19 @@ async function saveAttendance(){
 
     attendanceInput.value = '';
 
+    attendanceInput.onchange = null;
+
     attendanceInput.onchange =
     async function(e){
 
-        const file =
-        e.target.files[0];
-
-        if(!file){
-            return;
-        }
-
         try{
+
+            const file =
+            e.target.files[0];
+
+            if(!file){
+                return;
+            }
 
             const compressedFile =
             await compressImage(file);
@@ -609,7 +610,7 @@ async function saveAttendance(){
 
             '.jpg';
 
-            const { error } =
+            const uploadResult =
 
             await supabaseClient.storage
 
@@ -628,26 +629,46 @@ async function saveAttendance(){
                 }
             );
 
-            if(error){
+            if(uploadResult.error){
+
+                console.log(uploadResult.error);
 
                 alert(
-                    'خطا در ثبت تردد'
+                    'خطا در آپلود عکس تردد'
                 );
 
                 return;
             }
 
+            const insertResult =
+
             await supabaseClient
+
             .from('eagle')
+
             .insert([{
 
                 personnel_code:
                 personnelCode,
 
                 entry_time:
-                new Date().toLocaleString('fa-IR')
+                new Date().toLocaleString('fa-IR'),
+
+                photo_name:
+                fileName
 
             }]);
+
+            if(insertResult.error){
+
+                console.log(insertResult.error);
+
+                alert(
+                    'خطا در ذخیره اطلاعات تردد'
+                );
+
+                return;
+            }
 
             alert(
                 'تردد با موفقیت ثبت شد'
@@ -660,6 +681,7 @@ async function saveAttendance(){
             console.log(err);
 
             alert(
+                'خطا:\n' +
                 err.message
             );
         }
