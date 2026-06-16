@@ -336,6 +336,19 @@ async function saveAttendance(){
     document.getElementById(
         'photo'
     ).files[0];
+    if(referenceMode){
+
+    if(!photoFile){
+
+        alert('عکس بگیرید');
+
+        return;
+    }
+
+    referenceCount++;
+
+    updateReferenceButton();
+}
      const personnelCode =
 personnel_code;
 
