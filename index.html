@@ -156,7 +156,6 @@ onclick="saveAttendance()"
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
-
 <script>
 
 const SUPABASE_URL =
@@ -214,8 +213,7 @@ window.onload = async function(){
 
         document.getElementById(
             'fullname'
-        ).style.background =
-        '#eee';
+        ).style.background = '#eee';
     }
 
     if(savedCode){
@@ -230,8 +228,7 @@ window.onload = async function(){
 
         document.getElementById(
             'personnel_code'
-        ).style.background =
-        '#eee';
+        ).style.background = '#eee';
 
         const { data } =
 
@@ -259,8 +256,6 @@ window.onload = async function(){
             updatePhotoCounter();
         }
     }
-
-    await sendOfflineData();
 
     loadMyRecords();
 };
@@ -290,7 +285,7 @@ function updatePhotoCounter(){
             'photoCounter'
         ).innerHTML =
 
-        'عکس‌های مرجع تکمیل شد';
+        '✅ عکس‌های مرجع تکمیل شد';
 
         document.getElementById(
             'captureBtn'
@@ -298,13 +293,7 @@ function updatePhotoCounter(){
 
         document.getElementById(
             'captureBtn'
-        ).style.background =
-        'gray';
-
-        document.getElementById(
-            'captureBtn'
-        ).innerHTML =
-        '✅ تکمیل شد';
+        ).style.background = 'gray';
     }
 }
 
@@ -317,20 +306,20 @@ function openCamera(){
 
 async function captureReferencePhoto(){
 
-    const personnelCode =
-    document.getElementById(
-        'personnel_code'
-    ).value;
-
     const fullname =
     document.getElementById(
         'fullname'
-    ).value;
+    ).value.trim();
+
+    const personnelCode =
+    document.getElementById(
+        'personnel_code'
+    ).value.trim();
 
     if(!fullname || !personnelCode){
 
         alert(
-            'نام و کد پرسنلی را وارد کنید'
+            'ابتدا نام و کد پرسنلی را وارد کنید'
         );
 
         return;
@@ -358,10 +347,7 @@ async function captureReferencePhoto(){
         'photo'
     );
 
-    photoInput.click();
-
-    photoInput.onchange =
-    async function(){
+    photoInput.onchange = async function(){
 
         const file =
         this.files[0];
@@ -371,15 +357,25 @@ async function captureReferencePhoto(){
         const fileName =
 
         personnelCode +
+
         '_' +
+
         Date.now() +
+
+        '_' +
+
+        Math.floor(
+            Math.random() * 999999
+        ) +
+
         '.jpg';
 
         const { error } =
 
-        await supabaseClient
-        .storage
+        await supabaseClient.storage
+
         .from('reference-photos')
+
         .upload(
             fileName,
             file,
@@ -402,9 +398,7 @@ async function captureReferencePhoto(){
         remainingPhotos--;
 
         await supabaseClient
-
         .from('personnel')
-
         .upsert({
 
             personnel_code:
@@ -420,315 +414,291 @@ async function captureReferencePhoto(){
         updatePhotoCounter();
 
         photoInput.value = '';
+
+        document.getElementById(
+            'fullname'
+        ).readOnly = true;
+
+        document.getElementById(
+            'personnel_code'
+        ).readOnly = true;
+
+        document.getElementById(
+            'fullname'
+        ).style.background = '#eee';
+
+        document.getElementById(
+            'personnel_code'
+        ).style.background = '#eee';
     };
+
+    photoInput.click();
 }
 
 async function saveAttendance(){
 
     const fullname =
-    document.getElementById(
-        'fullname'
-    ).value;
+    localStorage.getItem(
+        'employee_fullname'
+    );
 
     const personnel_code =
-    document.getElementById(
-        'personnel_code'
-    ).value;
+    localStorage.getItem(
+        'employee_code'
+    );
 
-    const photoFile =
+    if(!fullname || !personnel_code){
+
+        alert(
+            'ابتدا اطلاعات پرسنلی را ثبت کنید'
+        );
+
+        return;
+    }
+
+    const photoInput =
     document.getElementById(
         'photo'
-    ).files[0];
+    );
 
-    if(
-        !fullname ||
-        !personnel_code
-    ){
+    photoInput.onchange = async function(){
 
-        alert(
-            'اطلاعات را کامل وارد کنید'
+        const photoFile =
+        this.files[0];
+
+        if(!photoFile) return;
+
+        const img =
+        await faceapi.bufferToImage(
+            photoFile
         );
 
-        return;
-    }
+        const detection =
 
-    if(!photoFile){
+        await faceapi
 
-        alert('عکس بگیرید');
-
-        return;
-    }
-
-    localStorage.setItem(
-        'employee_fullname',
-        fullname
-    );
-
-    localStorage.setItem(
-        'employee_code',
-        personnel_code
-    );
-
-    const img =
-    await faceapi.bufferToImage(
-        photoFile
-    );
-
-    const detection =
-
-    await faceapi
-
-    .detectSingleFace(
-        img,
-        new faceapi.TinyFaceDetectorOptions()
-    )
-
-    .withFaceLandmarks()
-
-    .withFaceDescriptor();
-
-    if(!detection){
-
-        alert(
-            'چهره تشخیص داده نشد'
-        );
-
-        return;
-    }
-
-    const currentDescriptor =
-    detection.descriptor;
-
-    const { data: allPhotos } =
-
-    await supabaseClient
-    .storage
-    .from('reference-photos')
-    .list();
-
-    const referencePhotos =
-
-    allPhotos.filter(photo =>
-
-        photo.name.startsWith(
-            personnel_code + '_'
+        .detectSingleFace(
+            img,
+            new faceapi.TinyFaceDetectorOptions()
         )
-    );
 
-    if(referencePhotos.length < 5){
+        .withFaceLandmarks()
 
-        alert(
-            'ابتدا ۵ عکس مرجع ثبت کنید'
-        );
+        .withFaceDescriptor();
 
-        return;
-    }
+        if(!detection){
 
-    let matched = false;
-
-    for(const photo of referencePhotos){
-
-        try{
-
-            const photoUrl =
-
-            SUPABASE_URL +
-
-            '/storage/v1/object/public/reference-photos/' +
-
-            photo.name;
-
-            const refImg =
-
-            await faceapi.fetchImage(
-                photoUrl
+            alert(
+                'چهره تشخیص داده نشد'
             );
 
-            const refDetection =
+            return;
+        }
 
-            await faceapi
+        const currentDescriptor =
+        detection.descriptor;
 
-            .detectSingleFace(
-                refImg,
-                new faceapi.TinyFaceDetectorOptions()
+        const { data: allPhotos } =
+
+        await supabaseClient.storage
+
+        .from('reference-photos')
+
+        .list();
+
+        const referencePhotos =
+
+        allPhotos.filter(photo =>
+
+            photo.name.startsWith(
+                personnel_code + '_'
             )
+        );
 
-            .withFaceLandmarks()
+        if(referencePhotos.length === 0){
 
-            .withFaceDescriptor();
-
-            if(!refDetection){
-
-                continue;
-            }
-
-            const distance =
-
-            faceapi.euclideanDistance(
-
-                currentDescriptor,
-
-                refDetection.descriptor
+            alert(
+                'ابتدا ۵ عکس مرجع ثبت کنید'
             );
 
-            if(distance < 0.45){
-
-                matched = true;
-
-                break;
-            }
-
-        }catch(err){
-
-            console.log(err);
+            return;
         }
-    }
 
-    if(!matched){
+        let matched = false;
 
-        alert(
-            'چهره مطابقت ندارد'
-        );
+        for(const photo of referencePhotos){
 
-        return;
-    }
+            try{
 
-    navigator.geolocation.getCurrentPosition(
+                const photoUrl =
 
-    async position => {
+                SUPABASE_URL +
 
-        const latitude =
-        position.coords.latitude;
+                '/storage/v1/object/public/reference-photos/' +
 
-        const longitude =
-        position.coords.longitude;
+                photo.name;
 
-        const now =
-        new Date().toLocaleString(
-            'fa-IR'
-        );
+                const refImg =
 
-        let photo_url = '';
+                await faceapi.fetchImage(
+                    photoUrl
+                );
 
-        const fileName =
-        Date.now() + '.jpg';
+                const refDetection =
 
-        const { error: uploadError } =
+                await faceapi
 
-        await supabaseClient
-        .storage
-        .from('photo')
-        .upload(
-            fileName,
-            photoFile,
-            {
-                upsert:true
+                .detectSingleFace(
+                    refImg,
+                    new faceapi.TinyFaceDetectorOptions()
+                )
+
+                .withFaceLandmarks()
+
+                .withFaceDescriptor();
+
+                if(!refDetection){
+
+                    continue;
+                }
+
+                const distance =
+
+                faceapi.euclideanDistance(
+
+                    currentDescriptor,
+
+                    refDetection.descriptor
+                );
+
+                if(distance < 0.45){
+
+                    matched = true;
+
+                    break;
+                }
+
+            }catch(err){
+
+                console.log(err);
             }
-        );
+        }
 
-        if(!uploadError){
+        if(!matched){
 
-            const { data } =
+            alert(
+                'چهره مطابقت ندارد'
+            );
 
-            supabaseClient
-            .storage
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+
+        async position => {
+
+            const latitude =
+            position.coords.latitude;
+
+            const longitude =
+            position.coords.longitude;
+
+            const now =
+            new Date().toLocaleString(
+                'fa-IR'
+            );
+
+            let photo_url = '';
+
+            const fileName =
+            Date.now() + '.jpg';
+
+            const { error: uploadError } =
+
+            await supabaseClient.storage
+
             .from('photo')
-            .getPublicUrl(
-                fileName
+
+            .upload(
+                fileName,
+                photoFile,
+                {
+                    upsert:true
+                }
             );
 
-            photo_url =
-            data.publicUrl;
-        }
+            if(!uploadError){
 
-        const { error } =
+                const { data } =
 
-        await supabaseClient
+                supabaseClient.storage
 
-        .from('eagle')
+                .from('photo')
 
-        .insert([{
+                .getPublicUrl(
+                    fileName
+                );
 
-            fullname:
-            fullname,
+                photo_url =
+                data.publicUrl;
+            }
 
-            personnel_code:
-            personnel_code,
+            const { error } =
 
-            entry_time:
-            now,
+            await supabaseClient
 
-            latitude:
-            latitude.toString(),
+            .from('eagle')
 
-            longitude:
-            longitude.toString(),
+            .insert([
 
-            photo_url:
-            photo_url
-        }]);
+                {
 
-        if(error){
+                    fullname:
+                    fullname,
 
-            console.log(error);
+                    personnel_code:
+                    personnel_code,
 
-            document.getElementById(
-                'status'
-            ).innerHTML =
+                    entry_time:
+                    now,
 
-            'خطا در ثبت اطلاعات';
+                    latitude:
+                    latitude.toString(),
 
-        }else{
+                    longitude:
+                    longitude.toString(),
 
-            document.getElementById(
-                'status'
-            ).innerHTML =
+                    photo_url:
+                    photo_url
+                }
+            ]);
 
-            'اطلاعات با موفقیت ثبت شد';
+            if(error){
 
-            document.getElementById(
-                'photo'
-            ).value = '';
+                console.log(error);
 
-            loadMyRecords();
-        }
+                document.getElementById(
+                    'status'
+                ).innerHTML =
 
-    });
-}
+                'خطا در ثبت اطلاعات';
 
-async function sendOfflineData(){
+            }else{
 
-    if(!navigator.onLine){
+                document.getElementById(
+                    'status'
+                ).innerHTML =
 
-        return;
-    }
+                'اطلاعات با موفقیت ثبت شد';
 
-    let offlineData =
+                loadMyRecords();
+            }
 
-    JSON.parse(
+            photoInput.value = '';
+        });
+    };
 
-        localStorage.getItem(
-            'offline_attendance'
-        ) || '[]'
-    );
-
-    if(offlineData.length === 0){
-
-        return;
-    }
-
-    for(let item of offlineData){
-
-        await supabaseClient
-
-        .from('eagle')
-
-        .insert([item]);
-    }
-
-    localStorage.removeItem(
-        'offline_attendance'
-    );
+    photoInput.click();
 }
 
 async function loadMyRecords(){
@@ -763,6 +733,8 @@ async function loadMyRecords(){
             ascending:false
         }
     );
+
+    if(!data) return;
 
     let html = `
 
@@ -842,9 +814,7 @@ if('serviceWorker' in navigator){
 
 </script>
 
-
-
 </body>
 
 </html>
-```
+
