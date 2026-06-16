@@ -1,4 +1,4 @@
-
+```html
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
@@ -162,7 +162,7 @@ const SUPABASE_URL =
 'https://kddhnohquohbnemmegdy.supabase.co';
 
 const SUPABASE_ANON_KEY =
-'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
+'YOUR_SUPABASE_KEY';
 
 const supabaseClient =
 supabase.createClient(
@@ -203,37 +203,27 @@ window.onload = async function(){
         'employee_code'
     );
 
-   if(savedName){
-
-    document.getElementById(
-        'fullname'
-    ).value = savedName;
-
-    document.getElementById(
-    'fullname'
-).readOnly = true;
-
-    document.getElementById(
-        'fullname'
-    ).style.background = '#eee';
-}
-
-    if(savedCode){
-
-    document.getElementById(
-        'personnel_code'
-    ).value = savedCode;
-
-    if(remainingPhotos <= 0){
+    if(savedName){
 
         document.getElementById(
-            'personnel_code'
+            'fullname'
+        ).value = savedName;
+
+        document.getElementById(
+            'fullname'
         ).readOnly = true;
 
         document.getElementById(
-            'personnel_code'
+            'fullname'
         ).style.background = '#eee';
     }
+
+    if(savedCode){
+
+        document.getElementById(
+            'personnel_code'
+        ).value = savedCode;
+
         const { data } =
 
         await supabaseClient
@@ -256,6 +246,18 @@ window.onload = async function(){
                 0,
                 5 - (data.photo_count || 0)
             );
+
+            if(remainingPhotos <= 0){
+
+                document.getElementById(
+                    'personnel_code'
+                ).readOnly = true;
+
+                document.getElementById(
+                    'personnel_code'
+                ).style.background =
+                '#eee';
+            }
 
             updatePhotoCounter();
         }
@@ -340,29 +342,27 @@ async function captureReferencePhoto(){
     const photoInput =
     document.getElementById('photo');
 
-    photoInput.click();
-
     photoInput.onchange = async function(){
 
         const file = this.files[0];
 
         if(!file) return;
 
-       const fileName =
+        const fileName =
 
-personnelCode +
+        personnelCode +
 
-'_' +
+        '_' +
 
-Date.now() +
+        Date.now() +
 
-'_' +
+        '_' +
 
-Math.floor(
-    Math.random() * 999999
-) +
+        Math.floor(
+            Math.random() * 999999
+        ) +
 
-'.jpg';
+        '.jpg';
 
         const { error } =
 
@@ -371,13 +371,13 @@ Math.floor(
         .from('reference-photos')
 
         .upload(
-    fileName,
-    file,
-    {
-        cacheControl:'3600',
-        upsert:false
-    }
-);
+            fileName,
+            file,
+            {
+                cacheControl:'3600',
+                upsert:false
+            }
+        );
 
         if(error){
 
@@ -411,6 +411,8 @@ Math.floor(
 
         photoInput.value = '';
     };
+
+    photoInput.click();
 }
 
 async function saveAttendance(){
@@ -574,10 +576,10 @@ async function saveAttendance(){
 
         return;
     }
-   console.log('Face Matched');
-   navigator.geolocation.getCurrentPosition(
 
-async position => {
+    navigator.geolocation.getCurrentPosition(
+
+    async position => {
 
         const latitude =
         position.coords.latitude;
@@ -860,4 +862,4 @@ if('serviceWorker' in navigator){
 </body>
 
 </html>
-
+```
