@@ -251,7 +251,75 @@ function openCamera(){
         'photo'
     ).click();
 }
+async function startReferencePhotos(){
 
+    const personnelCode =
+    document.getElementById(
+        'personnel_code'
+    ).value;
+
+    if(!personnelCode){
+
+        alert('کد پرسنلی را وارد کنید');
+
+        return;
+    }
+
+    const { data: person } =
+
+    await supabaseClient
+
+    .from('personnel')
+
+    .select('*')
+
+    .eq(
+        'personnel_code',
+        personnelCode
+    )
+
+    .single();
+
+    if(person && person.photo_locked){
+
+        alert('۵ عکس قبلا ثبت شده');
+
+        return;
+    }
+
+    referenceMode = true;
+
+    referenceCount = 0;
+
+    updateReferenceButton();
+}
+
+function updateReferenceButton(){
+
+    const btn =
+    document.getElementById(
+        'referenceBtn'
+    );
+
+    const remain =
+    5 - referenceCount;
+
+    if(remain > 0){
+
+        btn.innerHTML =
+        `📸 گرفتن ${remain} عکس مرجع`;
+
+    }else{
+
+        btn.innerHTML =
+        '📷 گرفتن عکس';
+
+        btn.disabled = true;
+
+        btn.style.background =
+        'gray';
+    }
+}
 async function saveAttendance(){
 
     const fullname =
