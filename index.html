@@ -147,6 +147,8 @@ supabase.createClient(
     SUPABASE_URL,
     SUPABASE_ANON_KEY
 );
+    let referenceMode = false;
+let referenceCount = 0;
     let faceModelsLoaded = false;
 
 async function loadFaceModels(){
