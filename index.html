@@ -172,7 +172,49 @@ window.onload = async function(){
             'personnel_code'
         ).value = savedCode;
     }
+if(savedCode){
 
+    const { data } =
+
+    await supabaseClient
+
+    .from('personnel')
+
+    .select('*')
+
+    .eq(
+        'personnel_code',
+        savedCode
+    )
+
+    .single();
+
+    if(data){
+
+        const remain =
+
+        5 - (data.photo_count || 0);
+
+        if(remain > 0){
+
+            document.getElementById(
+                'photoBtn'
+            ).innerHTML =
+
+            '📷 گرفتن ' +
+            remain +
+            ' عکس از چهره';
+
+        }else{
+
+            document.getElementById(
+                'photoBtn'
+            ).innerHTML =
+
+            '📷 گرفتن عکس';
+        }
+    }
+}
     await sendOfflineData();
 
     loadMyRecords();
