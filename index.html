@@ -1,4 +1,4 @@
-
+```html id="w8m4za"
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
@@ -128,7 +128,6 @@ onclick="saveAttendance()"
 
 <div id="myRecords"></div>
 
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
@@ -139,23 +138,14 @@ const SUPABASE_URL =
 'https://kddhnohquohbnemmegdy.supabase.co';
 
 const SUPABASE_ANON_KEY =
-'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
+'YOUR_SUPABASE_KEY';
 
 const supabaseClient =
 supabase.createClient(
     SUPABASE_URL,
     SUPABASE_ANON_KEY
 );
-async function loadFaceModels(){
 
-    await faceapi.nets.tinyFaceDetector.loadFromUri('./models');
-
-    await faceapi.nets.faceLandmark68Net.loadFromUri('./models');
-
-    await faceapi.nets.faceRecognitionNet.loadFromUri('./models');
-
-    console.log('Face Models Loaded');
-}
 window.onload = async function(){
 
     const savedName =
@@ -183,10 +173,8 @@ window.onload = async function(){
     }
 
     await sendOfflineData();
-    
-   loadMyRecords();
 
-
+    loadMyRecords();
 }
 
 function openCamera(){
@@ -212,29 +200,6 @@ async function saveAttendance(){
     document.getElementById(
         'photo'
     ).files[0];
-   const { data: person } =
-await supabaseClient
-.from('personnel')
-.select('*')
-.eq('personnel_code', personnelCode)
-.single();
-
-if(person && person.photo_locked){
-
-    alert('ثبت عکس برای این پرسنل غیرفعال شده');
-
-    return;
-}
-localStorage.setItem(
-    'employee_fullname',
-    fullname
-);
-
-localStorage.setItem(
-    'employee_code',
-    personnel_code
-);
-
 
     if(
         fullname === '' ||
@@ -257,6 +222,26 @@ localStorage.setItem(
         'employee_code',
         personnel_code
     );
+
+    const { data: person } =
+
+    await supabaseClient
+    .from('personnel')
+    .select('*')
+    .eq(
+        'personnel_code',
+        personnel_code
+    )
+    .single();
+
+    if(person && person.photo_locked){
+
+        alert(
+            'ثبت عکس برای این پرسنل غیرفعال شده'
+        );
+
+        return;
+    }
 
     navigator.geolocation.getCurrentPosition(
 
@@ -327,68 +312,8 @@ localStorage.setItem(
             const fileName =
             Date.now() + '.jpg';
 
-let photo_url = '';
+            const { error: uploadError } =
 
-if(photoFile){
-
-    const fileName =
-    Date.now() + '.jpg';
-
-    const { error: uploadError } =
-
-    await supabaseClient.storage
-
-    .from('photo')
-
-    .upload(
-
-        fileName,
-
-        photoFile,
-
-        {
-            upsert:true
-        }
-    );
-
-    if(!uploadError){
-
-        const { data } =
-
-        supabaseClient.storage
-
-        .from('photo')
-
-        .getPublicUrl(
-            fileName
-        );
-
-        photo_url =
-        data.publicUrl;
-
-        const newCount =
-        (person.photo_count || 0) + 1;
-
-       
-    }
-}
-
-
-
-await supabaseClient
-.from('personnel')
-.update({
-
-    photo_count:newCount,
-
-    photo_locked:
-    newCount >= 5
-
-})
-.eq(
-    'personnel_code',
-    personnelCode
-);
             await supabaseClient.storage
 
             .from('photo')
@@ -418,6 +343,28 @@ await supabaseClient
 
                 photo_url =
                 data.publicUrl;
+
+                const newCount =
+                person
+                ?
+                (person.photo_count || 0) + 1
+                :
+                1;
+
+                await supabaseClient
+                .from('personnel')
+                .upsert({
+
+                    personnel_code,
+
+                    photo_count:newCount,
+
+                    photo_locked:
+                    newCount >= 5,
+
+                    photo_url
+
+                });
             }
         }
 
@@ -472,6 +419,8 @@ await supabaseClient
             document.getElementById(
                 'photo'
             ).value = '';
+
+            loadMyRecords();
         }
 
     });
@@ -551,8 +500,6 @@ async function sendOfflineData(){
 
     'اطلاعات آفلاین ارسال شد';
 }
-
-
 
 async function loadMyRecords(){
 
@@ -678,5 +625,4 @@ if('serviceWorker' in navigator){
 </body>
 
 </html>
-
-
+```
