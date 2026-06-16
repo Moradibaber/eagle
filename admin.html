@@ -297,50 +297,7 @@ data.forEach(item => {
 
         </div>
 
-        <div class="card-images">
-
-        ${
-            first.photo_url
-            ?
-
-            `
-            <img
-            src="${first.photo_url}"
-            onclick="
-            window.open(this.src)
-            ">
-            `
-
-            :
-
-            ''
-        }
-
-        ${
-            last.photo_url &&
-            last.photo_url !==
-            first.photo_url
-
-            ?
-
-            `
-            <img
-            src="${last.photo_url}"
-            onclick="
-            window.open(this.src)
-            "
-            style="
-            border:2px solid green;
-            ">
-            `
-
-            :
-
-            ''
-        }
-
-        </div>
-
+       
         </div>
 
         <br>
