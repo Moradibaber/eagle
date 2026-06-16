@@ -186,7 +186,20 @@ async function loadFaceModels(){
 
     faceModelsLoaded = true;
 }
+function lockPersonnelFields(){
 
+    const fullnameInput =
+    document.getElementById('fullname');
+
+    const codeInput =
+    document.getElementById('personnel_code');
+
+    fullnameInput.readOnly = true;
+    codeInput.readOnly = true;
+
+    fullnameInput.style.background = '#eee';
+    codeInput.style.background = '#eee';
+}
 window.onload = async function(){
 
     await loadFaceModels();
