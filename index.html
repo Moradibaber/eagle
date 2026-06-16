@@ -104,9 +104,19 @@ id="personnel_code"
 placeholder="کد پرسنلی"
 >
 
+<!-- عکس مرجع -->
 <input
 type="file"
 id="photo"
+accept="image/*"
+capture="user"
+style="display:none"
+>
+
+<!-- عکس تردد -->
+<input
+type="file"
+id="attendancePhoto"
 accept="image/*"
 capture="user"
 style="display:none"
@@ -125,11 +135,13 @@ style="background:#00897b;"
 3 عکس باقی مانده
 </div>
 
+<!-- دکمه جدید ثبت تردد روزانه -->
 <button
+id="attendanceBtn"
 type="button"
 onclick="saveAttendance()"
 >
-📷 ثبت ورود
+📷 گرفتن عکس تردد روزانه
 </button>
 
 <div id="myRecords"></div>
@@ -558,9 +570,102 @@ async function saveAttendance(){
         return;
     }
 
-    alert(
-        'سیستم آماده ثبت ورود است'
+    const attendanceInput =
+    document.getElementById(
+        'attendancePhoto'
     );
+
+    attendanceInput.value = '';
+
+    attendanceInput.onchange =
+    async function(e){
+
+        const file =
+        e.target.files[0];
+
+        if(!file){
+            return;
+        }
+
+        try{
+
+            const compressedFile =
+            await compressImage(file);
+
+            const personnelCode =
+            localStorage.getItem(
+                'employee_code'
+            );
+
+            const fileName =
+
+            'attendance_' +
+
+            personnelCode +
+
+            '_' +
+
+            Date.now() +
+
+            '.jpg';
+
+            const { error } =
+
+            await supabaseClient.storage
+
+            .from('attendance-photos')
+
+            .upload(
+
+                fileName,
+
+                compressedFile,
+
+                {
+                    cacheControl:'3600',
+                    upsert:true,
+                    contentType:'image/jpeg'
+                }
+            );
+
+            if(error){
+
+                alert(
+                    'خطا در ثبت تردد'
+                );
+
+                return;
+            }
+
+            await supabaseClient
+            .from('eagle')
+            .insert([{
+
+                personnel_code:
+                personnelCode,
+
+                entry_time:
+                new Date().toLocaleString('fa-IR')
+
+            }]);
+
+            alert(
+                'تردد با موفقیت ثبت شد'
+            );
+
+            loadMyRecords();
+
+        }catch(err){
+
+            console.log(err);
+
+            alert(
+                err.message
+            );
+        }
+    };
+
+    attendanceInput.click();
 }
 
 async function loadMyRecords(){
