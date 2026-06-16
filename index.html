@@ -205,28 +205,16 @@ window.onload = async function(){
     await loadFaceModels();
 
     const savedName =
-    localStorage.getItem(
-        'employee_fullname'
-    );
+    localStorage.getItem('employee_fullname');
 
     const savedCode =
-    localStorage.getItem(
-        'employee_code'
-    );
+    localStorage.getItem('employee_code');
 
     if(savedName){
 
         document.getElementById(
             'fullname'
         ).value = savedName;
-
-        document.getElementById(
-            'fullname'
-        ).readOnly = true;
-
-        document.getElementById(
-            'fullname'
-        ).style.background = '#eee';
     }
 
     if(savedCode){
@@ -234,14 +222,11 @@ window.onload = async function(){
         document.getElementById(
             'personnel_code'
         ).value = savedCode;
+    }
 
-        document.getElementById(
-            'personnel_code'
-        ).readOnly = true;
+    if(savedName && savedCode){
 
-        document.getElementById(
-            'personnel_code'
-        ).style.background = '#eee';
+        lockPersonnelFields();
 
         const { data } =
 
