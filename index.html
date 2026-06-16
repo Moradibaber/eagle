@@ -301,13 +301,52 @@ window.onload = async function(){
         'employee_code'
     );
 
-    if(!personnelCode){
+    let personnelCode =
+localStorage.getItem(
+    'employee_code'
+);
 
-        personnelCode =
-        prompt(
-            'کد پرسنلی خود را وارد کنید'
+let fullname =
+localStorage.getItem(
+    'employee_fullname'
+);
+
+if(personnelCode && fullname){
+
+    document.getElementById(
+        'fullname'
+    ).value = fullname;
+
+    document.getElementById(
+        'personnel_code'
+    ).value = personnelCode;
+
+    lockPersonnelFields();
+
+    const { data } =
+    await supabaseClient
+    .from('personnel')
+    .select('*')
+    .eq(
+        'personnel_code',
+        personnelCode
+    )
+    .maybeSingle();
+
+    if(data){
+
+        remainingPhotos =
+        Math.max(
+            0,
+            3 - (
+                data.photo_count || 0
+            )
         );
+
+        updatePhotoCounter();
     }
+}
+
 
     if(personnelCode){
 
