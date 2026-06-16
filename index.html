@@ -11,7 +11,7 @@ content="width=device-width, initial-scale=1.0"
 >
 
 <title>
-سیستم ثبت تردد پرسنل
+سیستم ثبت تردد
 </title>
 
 <style>
@@ -59,10 +59,6 @@ button{
     margin-top:10px;
 }
 
-button:disabled{
-    opacity:0.7;
-}
-
 .status{
     text-align:center;
     color:white;
@@ -88,11 +84,6 @@ button:disabled{
     margin-top:10px;
 }
 
-.small{
-    font-size:13px;
-    color:#666;
-}
-
 </style>
 
 </head>
@@ -116,14 +107,12 @@ class="status online"
 type="text"
 id="fullname"
 placeholder="نام و نام خانوادگی"
-autocomplete="off"
 >
 
 <input
 type="text"
 id="personnel_code"
 placeholder="کد پرسنلی"
-autocomplete="off"
 >
 
 <input
@@ -140,10 +129,6 @@ type="button"
 >
 📷 ثبت تردد
 </button>
-
-<div class="small">
-در حالت آفلاین اطلاعات ذخیره و بعداً ارسال می‌شود
-</div>
 
 <div id="myRecords"></div>
 
@@ -165,7 +150,7 @@ supabase.createClient(
     SUPABASE_ANON_KEY
 );
 
-/* وضعیت اینترنت */
+/* وضعیت شبکه */
 
 function updateNetworkStatus(){
 
@@ -181,8 +166,6 @@ function updateNetworkStatus(){
 
         status.className =
         'status online';
-
-        syncOfflineAttendance();
 
     }else{
 
@@ -208,160 +191,18 @@ window.addEventListener(
 
 function lockFields(){
 
-    const fullname =
     document.getElementById(
         'fullname'
-    );
+    ).readOnly = true;
 
-    const code =
     document.getElementById(
         'personnel_code'
-    );
-
-    fullname.readOnly = true;
-    code.readOnly = true;
-
-    fullname.style.background =
-    '#eee';
-
-    code.style.background =
-    '#eee';
-}
-
-/* IndexedDB */
-
-let db;
-
-function initDB(){
-
-    return new Promise((resolve,reject)=>{
-
-        const request =
-        indexedDB.open(
-            'AttendanceDB',
-            1
-        );
-
-        request.onupgradeneeded =
-        function(e){
-
-            db =
-            e.target.result;
-
-            if(
-                !db.objectStoreNames.contains(
-                    'offlineAttendance'
-                )
-            ){
-
-                db.createObjectStore(
-                    'offlineAttendance',
-                    {
-                        keyPath:'id',
-                        autoIncrement:true
-                    }
-                );
-            }
-        };
-
-        request.onsuccess =
-        function(e){
-
-            db = e.target.result;
-            resolve();
-        };
-
-        request.onerror =
-        function(){
-
-            reject();
-        };
-    });
-}
-
-async function saveOffline(data){
-
-    return new Promise((resolve)=>{
-
-        const tx =
-        db.transaction(
-            ['offlineAttendance'],
-            'readwrite'
-        );
-
-        const store =
-        tx.objectStore(
-            'offlineAttendance'
-        );
-
-        store.add(data);
-
-        tx.oncomplete =
-        function(){
-
-            resolve();
-        };
-    });
-}
-
-async function getOfflineData(){
-
-    return new Promise((resolve)=>{
-
-        const tx =
-        db.transaction(
-            ['offlineAttendance'],
-            'readonly'
-        );
-
-        const store =
-        tx.objectStore(
-            'offlineAttendance'
-        );
-
-        const request =
-        store.getAll();
-
-        request.onsuccess =
-        function(){
-
-            resolve(
-                request.result
-            );
-        };
-    });
-}
-
-async function clearOffline(id){
-
-    return new Promise((resolve)=>{
-
-        const tx =
-        db.transaction(
-            ['offlineAttendance'],
-            'readwrite'
-        );
-
-        const store =
-        tx.objectStore(
-            'offlineAttendance'
-        );
-
-        store.delete(id);
-
-        tx.oncomplete =
-        function(){
-
-            resolve();
-        };
-    });
+    ).readOnly = true;
 }
 
 /* شروع */
 
-window.onload = async function(){
-
-    await initDB();
+window.onload = function(){
 
     updateNetworkStatus();
 
@@ -397,6 +238,55 @@ window.onload = async function(){
     loadRecords();
 };
 
+/* GPS */
+
+function getLocation(){
+
+    return new Promise((resolve)=>{
+
+        if(!navigator.geolocation){
+
+            resolve({
+                lat:null,
+                lng:null
+            });
+
+            return;
+        }
+
+        navigator.geolocation
+        .getCurrentPosition(
+
+            position => {
+
+                resolve({
+
+                    lat:
+                    position.coords.latitude,
+
+                    lng:
+                    position.coords.longitude
+                });
+
+            },
+
+            () => {
+
+                resolve({
+                    lat:null,
+                    lng:null
+                });
+
+            },
+
+            {
+                enableHighAccuracy:true,
+                timeout:7000
+            }
+        );
+    });
+}
+
 /* فشرده سازی */
 
 async function compressImage(file){
@@ -408,24 +298,22 @@ async function compressImage(file){
 
         reader.readAsDataURL(file);
 
-        reader.onload =
-        function(event){
+        reader.onload = function(e){
 
             const img =
             new Image();
 
             img.src =
-            event.target.result;
+            e.target.result;
 
-            img.onload =
-            function(){
+            img.onload = function(){
 
                 const canvas =
                 document.createElement(
                     'canvas'
                 );
 
-                const maxWidth = 450;
+                const maxWidth = 500;
 
                 let width =
                 img.width;
@@ -461,13 +349,11 @@ async function compressImage(file){
                 );
 
                 canvas.toBlob(
-
-                    function(blob){
+                    blob => {
 
                         resolve(blob);
 
                     },
-
                     'image/jpeg',
                     0.6
                 );
@@ -476,98 +362,11 @@ async function compressImage(file){
     });
 }
 
-/* GPS */
-
-function getLocation(){
-
-    return new Promise((resolve)=>{
-
-        if(!navigator.geolocation){
-
-            resolve({
-                lat:null,
-                lng:null
-            });
-
-            return;
-        }
-
-        let finished = false;
-
-        const timeout =
-        setTimeout(function(){
-
-            if(!finished){
-
-                finished = true;
-
-                resolve({
-                    lat:null,
-                    lng:null
-                });
-            }
-
-        },7000);
-
-        navigator.geolocation
-        .getCurrentPosition(
-
-            position => {
-
-                if(finished){
-                    return;
-                }
-
-                finished = true;
-
-                clearTimeout(timeout);
-
-                resolve({
-
-                    lat:
-                    position.coords.latitude,
-
-                    lng:
-                    position.coords.longitude
-                });
-
-            },
-
-            () => {
-
-                if(finished){
-                    return;
-                }
-
-                finished = true;
-
-                clearTimeout(timeout);
-
-                resolve({
-                    lat:null,
-                    lng:null
-                });
-
-            },
-
-            {
-                enableHighAccuracy:true,
-                maximumAge:0
-            }
-        );
-    });
-}
-
 /* ثبت تردد */
 
 document.getElementById(
     'attendanceBtn'
-).onclick = async function(){
-
-    const btn =
-    document.getElementById(
-        'attendanceBtn'
-    );
+).onclick = function(){
 
     const fullname =
     document.getElementById(
@@ -582,7 +381,7 @@ document.getElementById(
     if(!fullname || !personnelCode){
 
         alert(
-            'نام و کد پرسنلی را وارد کنید'
+            'اطلاعات را وارد کنید'
         );
 
         return;
@@ -600,45 +399,17 @@ document.getElementById(
 
     lockFields();
 
-    btn.disabled = true;
+    const input =
+    document.getElementById(
+        'attendancePhoto'
+    );
 
-    try{
+    input.value = '';
 
-        /* ذخیره پرسنل */
+    input.onchange =
+    async function(e){
 
-        if(navigator.onLine){
-
-            await supabaseClient
-            .from('personnel')
-            .upsert([{
-
-                personnel_code:
-                personnelCode,
-
-                fullname:
-                fullname
-
-            }]);
-        }
-
-        /* سریع باز شدن دوربین */
-
-        const input =
-        document.getElementById(
-            'attendancePhoto'
-        );
-
-        input.value = '';
-
-        input.setAttribute(
-            'capture',
-            'user'
-        );
-
-        input.onchange =
-        async function(e){
-
-            btn.disabled = false;
+        try{
 
             const file =
             e.target.files[0];
@@ -647,212 +418,94 @@ document.getElementById(
                 return;
             }
 
-            try{
+            const location =
+            await getLocation();
 
-                const location =
-                await getLocation();
+            const compressed =
+            await compressImage(file);
 
-                const compressed =
-                await compressImage(
-                    file
-                );
+            const fileName =
+            'attendance_' +
+            personnelCode +
+            '_' +
+            Date.now() +
+            '.jpg';
 
-                const reader =
-                new FileReader();
+            const upload =
+            await supabaseClient.storage
+            .from('reference-photos')
+            .upload(
+                'attendance/' +
+                fileName,
+                compressed,
+                {
+                    upsert:true,
+                    contentType:'image/jpeg'
+                }
+            );
 
-                reader.readAsDataURL(
-                    compressed
-                );
-
-                reader.onloadend =
-                async function(){
-
-                    const base64 =
-                    reader.result;
-
-                    const fileName =
-                    'attendance_' +
-                    personnelCode +
-                    '_' +
-                    Date.now() +
-                    '.jpg';
-
-                    const attendanceData = {
-
-                        personnel_code:
-                        personnelCode,
-
-                        fullname:
-                        fullname,
-
-                        entry_time:
-                        new Date()
-                        .toLocaleString(
-                            'fa-IR'
-                        ),
-
-                        latitude:
-                        location.lat,
-
-                        longitude:
-                        location.lng,
-
-                        photo_name:
-                        fileName,
-
-                        photo_base64:
-                        base64
-                    };
-
-                    /* آفلاین */
-
-                    if(!navigator.onLine){
-
-                        await saveOffline(
-                            attendanceData
-                        );
-
-                        alert(
-                            'تردد آفلاین ذخیره شد'
-                        );
-
-                        return;
-                    }
-
-                    await uploadAttendance(
-                        attendanceData
-                    );
-                };
-
-            }catch(err){
+            if(upload.error){
 
                 alert(
-                    err.message
+                    upload.error.message
                 );
+
+                return;
             }
-        };
 
-        input.click();
+            const insert =
+            await supabaseClient
+            .from('eagle')
+            .insert([{
 
-    }catch(err){
+                personnel_code:
+                personnelCode,
 
-        btn.disabled = false;
+                fullname:
+                fullname,
 
-        alert(
-            err.message
-        );
-    }
-};
+                entry_time:
+                new Date()
+                .toLocaleString(
+                    'fa-IR'
+                ),
 
-/* آپلود */
+                latitude:
+                location.lat,
 
-async function uploadAttendance(data){
+                longitude:
+                location.lng,
 
-    try{
+                photo_name:
+                fileName
 
-        const response =
-        await fetch(
-            data.photo_base64
-        );
+            }]);
 
-        const blob =
-        await response.blob();
+            if(insert.error){
 
-        const uploadResult =
-        await supabaseClient.storage
-        .from('reference-photos')
-        .upload(
+                alert(
+                    insert.error.message
+                );
 
-            'attendance/' +
-            data.photo_name,
-
-            blob,
-
-            {
-                upsert:true,
-                contentType:'image/jpeg'
+                return;
             }
-        );
 
-        if(uploadResult.error){
-
-            throw uploadResult.error;
-        }
-
-        const insertResult =
-        await supabaseClient
-        .from('eagle')
-        .insert([{
-
-            personnel_code:
-            data.personnel_code,
-
-            fullname:
-            data.fullname,
-
-            entry_time:
-            data.entry_time,
-
-            latitude:
-            data.latitude,
-
-            longitude:
-            data.longitude,
-
-            photo_name:
-            data.photo_name
-
-        }]);
-
-        if(insertResult.error){
-
-            throw insertResult.error;
-        }
-
-        alert(
-            'تردد ثبت شد'
-        );
-
-        loadRecords();
-
-    }catch(err){
-
-        alert(
-            'خطا:\n' +
-            err.message
-        );
-    }
-}
-
-/* سینک آفلاین */
-
-async function syncOfflineAttendance(){
-
-    if(!navigator.onLine){
-        return;
-    }
-
-    const offlineData =
-    await getOfflineData();
-
-    for(const item of offlineData){
-
-        try{
-
-            await uploadAttendance(
-                item
+            alert(
+                'تردد ثبت شد'
             );
 
-            await clearOffline(
-                item.id
-            );
+            loadRecords();
 
         }catch(err){
 
-            console.log(err);
+            alert(
+                err.message
+            );
         }
-    }
-}
+    };
+
+    input.click();
+};
 
 /* سوابق */
 
@@ -899,17 +552,17 @@ async function loadRecords(){
             html += `
             <div class="record">
 
-                <p>
-                زمان:
-                ${item.entry_time}
-                </p>
+            <p>
+            زمان:
+            ${item.entry_time}
+            </p>
 
-                <p>
-                GPS:
-                ${item.latitude || '-'}
-                ,
-                ${item.longitude || '-'}
-                </p>
+            <p>
+            GPS:
+            ${item.latitude || '-'}
+            ,
+            ${item.longitude || '-'}
+            </p>
 
             </div>
             `;
