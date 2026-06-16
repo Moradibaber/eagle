@@ -164,7 +164,7 @@ async function loadFaceModels(){
 }
 let personData = null;
 window.onload = async function(){
-
+await loadFaceModels();
     const savedName =
     localStorage.getItem(
         'employee_fullname'
