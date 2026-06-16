@@ -344,6 +344,95 @@ function updateReferenceButton(){
         'gray';
     }
 }
+ let remainingPhotos = 5;
+
+async function captureReferencePhoto(){
+
+    const personnelCode =
+    document.getElementById(
+        'personnel_code'
+    ).value;
+
+    if(!personnelCode){
+
+        alert('ابتدا کد پرسنلی را وارد کنید');
+
+        return;
+    }
+
+    if(remainingPhotos <= 0){
+
+        alert('۵ عکس ثبت شده');
+
+        return;
+    }
+
+    document.getElementById(
+        'photo'
+    ).click();
+
+    document.getElementById(
+        'photo'
+    ).onchange = async function(){
+
+        const file =
+        this.files[0];
+
+        if(!file) return;
+
+        const fileName =
+        personnelCode +
+        '_' +
+        Date.now() +
+        '.jpg';
+
+        const { error } =
+
+        await supabaseClient.storage
+
+        .from('reference-photos')
+
+        .upload(
+            fileName,
+            file,
+            { upsert:true }
+        );
+
+        if(error){
+
+            alert('خطا در آپلود عکس');
+
+            return;
+        }
+
+        remainingPhotos--;
+
+        document.getElementById(
+            'photoCounter'
+        ).innerHTML =
+
+        remainingPhotos +
+        ' عکس باقی مانده';
+
+        if(remainingPhotos <= 0){
+
+            document.getElementById(
+                'captureBtn'
+            ).disabled = true;
+
+            document.getElementById(
+                'captureBtn'
+            ).innerHTML =
+
+            '✅ عکس‌های مرجع تکمیل شد';
+
+            document.getElementById(
+                'captureBtn'
+            ).style.background =
+            'gray';
+        }
+    };
+}   
 async function saveAttendance(){
 
     const fullname =
