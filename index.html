@@ -224,13 +224,16 @@ window.onload = async function(){
         'personnel_code'
     ).value = savedCode;
 
-    document.getElementById(
-        'personnel_code'
-    ).disabled = true;
+    if(remainingPhotos <= 0){
 
-    document.getElementById(
-        'personnel_code'
-    ).style.background = '#eee';
+        document.getElementById(
+            'personnel_code'
+        ).readOnly = true;
+
+        document.getElementById(
+            'personnel_code'
+        ).style.background = '#eee';
+    }
         const { data } =
 
         await supabaseClient
