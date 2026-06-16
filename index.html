@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
 <head>
@@ -409,9 +409,9 @@ async function captureReferencePhoto(){
 
             '.jpg';
 
-            const uploadPromise =
+            const uploadResult =
 
-            supabaseClient.storage
+            await supabaseClient.storage
 
             .from('reference-photos')
 
@@ -428,35 +428,9 @@ async function captureReferencePhoto(){
                 }
             );
 
-            const timeoutPromise =
+            if(uploadResult.error){
 
-            new Promise((_, reject)=>
-
-                setTimeout(
-
-                    ()=> reject(
-                        new Error(
-                            'timeout'
-                        )
-                    ),
-
-                    30000
-                )
-            );
-
-            const result =
-
-            await Promise.race([
-
-                uploadPromise,
-
-                timeoutPromise
-
-            ]);
-
-            if(result.error){
-
-                throw result.error;
+                throw uploadResult.error;
             }
 
             remainingPhotos--;
@@ -581,12 +555,21 @@ async function saveAttendance(){
     attendanceInput.onchange =
     async function(e){
 
+        const btn =
+        document.getElementById(
+            'attendanceBtn'
+        );
+
         try{
+
+            btn.disabled = true;
 
             const file =
             e.target.files[0];
 
             if(!file){
+
+                btn.disabled = false;
                 return;
             }
 
@@ -610,15 +593,21 @@ async function saveAttendance(){
 
             '.jpg';
 
+            /* رفع مشکل اصلی:
+               استفاده از همان bucket مرجع
+               چون bucket attendance-photos
+               در سوپابیس ساخته نشده یا policy ندارد
+            */
+
             const uploadResult =
 
             await supabaseClient.storage
 
-            .from('attendance-photos')
+            .from('reference-photos')
 
             .upload(
 
-                fileName,
+                'attendance/' + fileName,
 
                 compressedFile,
 
@@ -634,7 +623,8 @@ async function saveAttendance(){
                 console.log(uploadResult.error);
 
                 alert(
-                    'خطا در آپلود عکس تردد'
+                    'خطا در آپلود عکس تردد:\n' +
+                    uploadResult.error.message
                 );
 
                 return;
@@ -664,7 +654,8 @@ async function saveAttendance(){
                 console.log(insertResult.error);
 
                 alert(
-                    'خطا در ذخیره اطلاعات تردد'
+                    'خطا در ذخیره اطلاعات تردد:\n' +
+                    insertResult.error.message
                 );
 
                 return;
@@ -684,6 +675,10 @@ async function saveAttendance(){
                 'خطا:\n' +
                 err.message
             );
+
+        }finally{
+
+            btn.disabled = false;
         }
     };
 
