@@ -435,11 +435,12 @@ async function captureReferencePhoto(){
             ).disabled = false;
 
             if(error){
-
+               alert(
+                   'حطا در آپلود'+
+                   error.message
+               );
                 console.log(error);
-
-                alert(
-                    'خطا در آپلود عکس'
+                            
                 );
 
                 return;
