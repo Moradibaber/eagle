@@ -192,9 +192,9 @@ async function loadRecords(){
 
     data.forEach(item => {
 
-        const fixed =
+        let fixed = item.entry_time;
 
-        item.entry_time
+        fixed = fixed
         .replaceAll('۰','0')
         .replaceAll('۱','1')
         .replaceAll('۲','2')
@@ -211,7 +211,9 @@ async function loadRecords(){
         if(fixed.includes(',')){
 
             date =
-            fixed.split(',')[1].trim();
+            fixed.split(',')[1]
+            .trim()
+            .substring(0,10);
 
         }else{
 
@@ -220,7 +222,6 @@ async function loadRecords(){
         }
 
         const key =
-
         item.personnel_code +
         '_' +
         date;
@@ -253,9 +254,10 @@ async function loadRecords(){
 
         let date = '';
 
-        const fixed =
+        let fixed =
+        last.entry_time;
 
-        last.entry_time
+        fixed = fixed
         .replaceAll('۰','0')
         .replaceAll('۱','1')
         .replaceAll('۲','2')
@@ -270,7 +272,9 @@ async function loadRecords(){
         if(fixed.includes(',')){
 
             date =
-            fixed.split(',')[1].trim();
+            fixed.split(',')[1]
+            .trim()
+            .substring(0,10);
 
         }else{
 
