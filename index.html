@@ -11,7 +11,7 @@ content="width=device-width, initial-scale=1.0"
 >
 
 <title>
-سیستم ثبت تردد پرسنل
+سیستم ثبت تردد
 </title>
 
 <style>
@@ -59,26 +59,29 @@ button{
     margin-top:10px;
 }
 
-.record{
-    background:#fff;
-    border:1px solid #ddd;
-    border-radius:10px;
-    padding:15px;
-    margin-top:15px;
-}
-
 .status{
     text-align:center;
+    color:white;
+    padding:10px;
+    border-radius:8px;
     margin-bottom:15px;
     font-weight:bold;
 }
 
 .online{
-    color:green;
+    background:green;
 }
 
 .offline{
-    color:red;
+    background:red;
+}
+
+.record{
+    background:#fff;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:10px;
+    margin-top:10px;
 }
 
 </style>
@@ -90,12 +93,12 @@ button{
 <div class="container">
 
 <h2>
-سیستم ثبت تردد پرسنل
+سیستم ثبت تردد
 </h2>
 
 <div
 id="networkStatus"
-class="status"
+class="status online"
 >
 🟢 آنلاین
 </div>
@@ -139,7 +142,7 @@ const SUPABASE_URL =
 'https://kddhnohquohbnemmegdy.supabase.co';
 
 const SUPABASE_ANON_KEY =
-'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc'';
 
 const supabaseClient =
 supabase.createClient(
@@ -147,7 +150,7 @@ supabase.createClient(
     SUPABASE_ANON_KEY
 );
 
-/* وضعیت اینترنت */
+/* وضعیت شبکه */
 
 function updateNetworkStatus(){
 
@@ -186,58 +189,47 @@ window.addEventListener(
     updateNetworkStatus
 );
 
-/* قفل اطلاعات */
+/* قفل */
 
-function lockPersonnelFields(){
+function lockFields(){
 
-    const fullname =
     document.getElementById(
         'fullname'
-    );
+    ).readOnly = true;
 
-    const code =
     document.getElementById(
         'personnel_code'
-    );
-
-    fullname.readOnly = true;
-    code.readOnly = true;
-
-    fullname.style.background =
-    '#eee';
-
-    code.style.background =
-    '#eee';
+    ).readOnly = true;
 }
 
-/* لود اولیه */
+/* لود */
 
 window.onload = async function(){
 
     updateNetworkStatus();
 
-    let savedName =
+    let fullname =
     localStorage.getItem(
         'employee_fullname'
     );
 
-    let savedCode =
+    let personnelCode =
     localStorage.getItem(
         'employee_code'
     );
 
     /*
-    اگر localStorage پاک شده بود
+    بازیابی بعد پاک شدن کش
     */
 
-    if(!savedCode){
+    if(!personnelCode){
 
-        const lastCode =
+        const enteredCode =
         prompt(
             'کد پرسنلی را وارد کنید'
         );
 
-        if(lastCode){
+        if(enteredCode){
 
             try{
 
@@ -247,26 +239,26 @@ window.onload = async function(){
                 .select('*')
                 .eq(
                     'personnel_code',
-                    lastCode
+                    enteredCode
                 )
                 .maybeSingle();
 
                 if(data){
 
-                    savedName =
+                    fullname =
                     data.fullname;
 
-                    savedCode =
+                    personnelCode =
                     data.personnel_code;
 
                     localStorage.setItem(
                         'employee_fullname',
-                        savedName
+                        fullname
                     );
 
                     localStorage.setItem(
                         'employee_code',
-                        savedCode
+                        personnelCode
                     );
                 }
 
@@ -277,27 +269,24 @@ window.onload = async function(){
         }
     }
 
-    if(savedName){
+    if(fullname){
 
         document.getElementById(
             'fullname'
-        ).value = savedName;
+        ).value = fullname;
     }
 
-    if(savedCode){
+    if(personnelCode){
 
         document.getElementById(
             'personnel_code'
-        ).value = savedCode;
+        ).value =
+        personnelCode;
     }
 
-    /*
-    قفل
-    */
+    if(fullname && personnelCode){
 
-    if(savedName && savedCode){
-
-        lockPersonnelFields();
+        lockFields();
     }
 
     loadMyRecords();
@@ -329,7 +318,7 @@ async function compressImage(file){
                     'canvas'
                 );
 
-                const maxWidth = 500;
+                const maxWidth = 600;
 
                 let width =
                 img.width;
@@ -371,7 +360,7 @@ async function compressImage(file){
 
                     },
                     'image/jpeg',
-                    0.60
+                    0.7
                 );
             };
         };
@@ -407,9 +396,10 @@ function getLocation(){
                     lng:
                     position.coords.longitude
                 });
+
             },
 
-            () => {
+            error => {
 
                 resolve({
                     lat:null,
@@ -419,7 +409,8 @@ function getLocation(){
 
             {
                 enableHighAccuracy:true,
-                timeout:7000
+                timeout:10000,
+                maximumAge:0
             }
         );
     });
@@ -449,7 +440,7 @@ async function saveAttendance(){
     }
 
     /*
-    ذخیره در دیتابیس
+    ذخیره پرسنل
     */
 
     await supabaseClient
@@ -474,20 +465,27 @@ async function saveAttendance(){
         personnelCode
     );
 
-    lockPersonnelFields();
+    lockFields();
 
     /*
-    دوربین
+    باز کردن سریع دوربین سلفی
     */
 
-    const attendanceInput =
+    const input =
     document.getElementById(
         'attendancePhoto'
     );
 
-    attendanceInput.value = '';
+    input.value = '';
 
-    attendanceInput.onchange =
+    input.setAttribute(
+        'capture',
+        'user'
+    );
+
+    input.click();
+
+    input.onchange =
     async function(e){
 
         try{
@@ -500,26 +498,26 @@ async function saveAttendance(){
             }
 
             /*
-            بعد عکس GPS
+            GPS بعد عکس
             */
 
             const location =
             await getLocation();
 
-            const compressedFile =
+            const compressed =
             await compressImage(file);
 
             const reader =
             new FileReader();
 
             reader.readAsDataURL(
-                compressedFile
+                compressed
             );
 
             reader.onloadend =
             async function(){
 
-                const base64data =
+                const base64 =
                 reader.result;
 
                 const fileName =
@@ -529,7 +527,7 @@ async function saveAttendance(){
                 Date.now() +
                 '.jpg';
 
-                const attendanceData = {
+                const data = {
 
                     personnel_code:
                     personnelCode,
@@ -553,7 +551,7 @@ async function saveAttendance(){
                     fileName,
 
                     photo_base64:
-                    base64data
+                    base64
                 };
 
                 /*
@@ -569,9 +567,7 @@ async function saveAttendance(){
                         ) || '[]'
                     );
 
-                    offline.push(
-                        attendanceData
-                    );
+                    offline.push(data);
 
                     localStorage.setItem(
                         'offline_attendance',
@@ -588,7 +584,7 @@ async function saveAttendance(){
                 }
 
                 await uploadAttendance(
-                    attendanceData
+                    data
                 );
             };
 
@@ -599,13 +595,6 @@ async function saveAttendance(){
             );
         }
     };
-
-    attendanceInput.setAttribute(
-        'capture',
-        'user'
-    );
-
-    attendanceInput.click();
 }
 
 /* آپلود */
@@ -622,7 +611,7 @@ async function uploadAttendance(data){
         const blob =
         await response.blob();
 
-        const uploadResult =
+        const upload =
         await supabaseClient.storage
         .from('reference-photos')
         .upload(
@@ -635,16 +624,16 @@ async function uploadAttendance(data){
             }
         );
 
-        if(uploadResult.error){
+        if(upload.error){
 
             alert(
-                uploadResult.error.message
+                upload.error.message
             );
 
             return;
         }
 
-        const insertResult =
+        const insert =
         await supabaseClient
         .from('eagle')
         .insert([{
@@ -669,10 +658,10 @@ async function uploadAttendance(data){
 
         }]);
 
-        if(insertResult.error){
+        if(insert.error){
 
             alert(
-                insertResult.error.message
+                insert.error.message
             );
 
             return;
@@ -793,4 +782,5 @@ async function loadMyRecords(){
 </script>
 
 </body>
+
 </html>
