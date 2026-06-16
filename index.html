@@ -305,7 +305,7 @@ window.onload = async function(){
     );
 
     /*
-    اگر کش پاک شده باشد
+    اگر کش پاک شود
     */
 
     if(!savedName || !savedCode){
@@ -698,29 +698,36 @@ async function verifyFace(attendanceFile){
 
     for(const file of referenceFiles){
 
-        const { data } =
-        supabaseClient.storage
-        .from('reference-photos')
-        .getPublicUrl(
-            file.name
-        );
+        const publicUrl =
+        SUPABASE_URL +
+        '/storage/v1/object/public/reference-photos/' +
+        file.name;
 
-        const img =
-        await faceapi.fetchImage(
-            data.publicUrl
-        );
+        console.log(publicUrl);
 
-        const detection =
-        await faceapi
-        .detectSingleFace(img)
-        .withFaceLandmarks()
-        .withFaceDescriptor();
+        try{
 
-        if(detection){
-
-            descriptors.push(
-                detection.descriptor
+            const img =
+            await faceapi.fetchImage(
+                publicUrl
             );
+
+            const detection =
+            await faceapi
+            .detectSingleFace(img)
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+
+            if(detection){
+
+                descriptors.push(
+                    detection.descriptor
+                );
+            }
+
+        }catch(error){
+
+            console.log(error);
         }
     }
 
