@@ -323,6 +323,34 @@ async function captureReferencePhoto(){
         return;
     }
 
+    const savedName =
+    localStorage.getItem(
+        'employee_fullname'
+    );
+
+    const savedCode =
+    localStorage.getItem(
+        'employee_code'
+    );
+
+    if(savedName && savedName !== fullname){
+
+        alert(
+            'نام قابل تغییر نیست'
+        );
+
+        return;
+    }
+
+    if(savedCode && savedCode !== personnelCode){
+
+        alert(
+            'کد پرسنلی قابل تغییر نیست'
+        );
+
+        return;
+    }
+
     localStorage.setItem(
         'employee_fullname',
         fullname
@@ -333,9 +361,11 @@ async function captureReferencePhoto(){
         personnelCode
     );
 
+    lockPersonnelFields();
+
     if(remainingPhotos <= 0){
 
-        alert('۵ عکس ثبت شده');
+        alert('۵ عکس مرجع ثبت شده');
 
         return;
     }
@@ -345,89 +375,107 @@ async function captureReferencePhoto(){
         'photo'
     );
 
-    photoInput.onchange = async function(){
+    photoInput.value = '';
 
-        const file =
-        this.files[0];
+    photoInput.onchange = async function(e){
 
-        if(!file) return;
+        try{
 
-        const fileName =
+            const file =
+            e.target.files[0];
 
-        personnelCode +
+            if(!file) return;
 
-        '_' +
+            const fileName =
 
-        Date.now() +
+            personnelCode +
 
-        '_' +
+            '_' +
 
-        Math.floor(
-            Math.random() * 999999
-        ) +
+            Date.now() +
 
-        '.jpg';
+            '_' +
 
-        const { error } =
+            Math.floor(
+                Math.random() * 999999
+            ) +
 
-        await supabaseClient.storage
+            '.jpg';
 
-        .from('reference-photos')
+            const { error } =
 
-        .upload(
-            fileName,
-            file,
-            {
-                upsert:false
-            }
-        );
+            await supabaseClient.storage
 
-        if(error){
+            .from('reference-photos')
 
-            console.log(error);
-
-            alert(
-                'خطا در آپلود عکس'
+            .upload(
+                fileName,
+                file,
+                {
+                    cacheControl:'3600',
+                    upsert:false
+                }
             );
 
-            return;
+            if(error){
+
+                console.log(error);
+
+                alert(
+                    'خطا در آپلود عکس'
+                );
+
+                photoInput.value = '';
+
+                return;
+            }
+
+            remainingPhotos--;
+
+            await supabaseClient
+            .from('personnel')
+            .upsert({
+
+                personnel_code:
+                personnelCode,
+
+                fullname:
+                fullname,
+
+                photo_count:
+                5 - remainingPhotos
+
+            });
+
+            updatePhotoCounter();
+
+            photoInput.value = '';
+
+            if(remainingPhotos > 0){
+
+                setTimeout(() => {
+
+                    captureReferencePhoto();
+
+                }, 500);
+
+            }else{
+
+                alert(
+                    'ثبت ۵ عکس کامل شد'
+                );
+            }
+
+        }catch(err){
+
+            console.log(err);
+
+            alert(
+                'خطا در ثبت عکس'
+            );
+
+            photoInput.value = '';
         }
-
-        remainingPhotos--;
-
-        await supabaseClient
-        .from('personnel')
-        .upsert({
-
-            personnel_code:
-            personnelCode,
-
-            fullname:
-            fullname,
-
-            photo_count:
-            5 - remainingPhotos
-        });
-
-        updatePhotoCounter();
-
-        photoInput.value = '';
-
-        document.getElementById(
-            'fullname'
-        ).readOnly = true;
-
-        document.getElementById(
-            'personnel_code'
-        ).readOnly = true;
-
-        document.getElementById(
-            'fullname'
-        ).style.background = '#eee';
-
-        document.getElementById(
-            'personnel_code'
-        ).style.background = '#eee';
     };
 
     photoInput.click();
