@@ -243,7 +243,33 @@ async function saveAttendance(){
     document.getElementById(
         'photo'
     ).files[0];
+     const personnelCode =
+personnel_code;
 
+const { data: personPhotos } =
+
+await supabaseClient
+
+.from('personnel')
+
+.select('*')
+
+.eq(
+    'personnel_code',
+    personnelCode
+);
+
+if(
+    !personPhotos ||
+    personPhotos.length === 0
+){
+
+    alert(
+        'ابتدا باید ۵ عکس اولیه ثبت شود'
+    );
+
+    return;
+}
     if(
         fullname === '' ||
         personnel_code === ''
