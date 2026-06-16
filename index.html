@@ -327,10 +327,66 @@ localStorage.setItem(
             const fileName =
             Date.now() + '.jpg';
 
-            const { error:
-            uploadError } =
-const newCount =
-(person.photo_count || 0) + 1;
+let photo_url = '';
+
+if(photoFile){
+
+    const fileName =
+    Date.now() + '.jpg';
+
+    const { error: uploadError } =
+
+    await supabaseClient.storage
+
+    .from('photo')
+
+    .upload(
+
+        fileName,
+
+        photoFile,
+
+        {
+            upsert:true
+        }
+    );
+
+    if(!uploadError){
+
+        const { data } =
+
+        supabaseClient.storage
+
+        .from('photo')
+
+        .getPublicUrl(
+            fileName
+        );
+
+        photo_url =
+        data.publicUrl;
+
+        const newCount =
+        (person.photo_count || 0) + 1;
+
+        await supabaseClient
+        .from('personnel')
+        .update({
+
+            photo_count:newCount,
+
+            photo_locked:
+            newCount >= 5
+
+        })
+        .eq(
+            'personnel_code',
+            personnel_code
+        );
+    }
+}
+
+
 
 await supabaseClient
 .from('personnel')
