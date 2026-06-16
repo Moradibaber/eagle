@@ -238,8 +238,8 @@ data.forEach(item => {
     let html = '';
 
     Object.values(grouped)
-
-    .forEach(records => {
+.slice(0,7)
+.forEach(records => {
 
         records.sort(
             (a,b)=> a.id - b.id
