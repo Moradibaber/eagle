@@ -240,8 +240,8 @@ async function loadRecords(){
         .replaceAll('۸','8')
         .replaceAll('۹','9');
 
-        const onlyDate =
-        fixedDate.substring(0,10);
+       const onlyDate =
+fixedDate.split(' ')[0];
 
         const key =
         item.personnel_code +
