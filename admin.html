@@ -243,13 +243,25 @@ async function loadRecords(){
 
     data.forEach(item => {
 
+        let fixedDate =
+        item.entry_time;
+
+        fixedDate = fixedDate
+        .replaceAll('۰','0')
+        .replaceAll('۱','1')
+        .replaceAll('۲','2')
+        .replaceAll('۳','3')
+        .replaceAll('۴','4')
+        .replaceAll('۵','5')
+        .replaceAll('۶','6')
+        .replaceAll('۷','7')
+        .replaceAll('۸','8')
+        .replaceAll('۹','9');
+
         const onlyDate =
-        normalizeDate(
-            item.entry_time
-        );
+        fixedDate.substring(0,10);
 
         const key =
-
         item.personnel_code +
         '_' +
         onlyDate;
@@ -264,9 +276,15 @@ async function loadRecords(){
 
     let html = '';
 
+    const groupedArray =
     Object.values(grouped)
+    .sort((a,b)=>
+        b[b.length-1].id -
+        a[a.length-1].id
+    )
+    .slice(0,7);
 
-    .forEach(records => {
+    groupedArray.forEach(records => {
 
         records.sort(
             (a,b)=> a.id - b.id
@@ -284,6 +302,9 @@ async function loadRecords(){
         normalizeDate(
             last.entry_time
         );
+
+        const isMobile =
+        window.innerWidth < 700;
 
         html += `
 
@@ -326,49 +347,60 @@ async function loadRecords(){
 
         </div>
 
-        <div class="card-images">
-
         ${
-            first.photo_url
+            !isMobile
             ?
 
             `
-            <img
-            src="${first.photo_url}"
-            onclick="
-            window.open(this.src)
-            ">
+            <div class="card-images">
+
+            ${
+                first.photo_url
+                ?
+
+                `
+                <img
+                src="${first.photo_url}"
+                onclick="
+                window.open(this.src)
+                ">
+                `
+
+                :
+
+                ''
+            }
+
+            ${
+                last.photo_url &&
+                last.photo_url !==
+                first.photo_url
+
+                ?
+
+                `
+                <img
+                src="${last.photo_url}"
+                onclick="
+                window.open(this.src)
+                "
+                style="
+                border:2px solid green;
+                ">
+                `
+
+                :
+
+                ''
+            }
+
+            </div>
             `
 
             :
 
             ''
         }
-
-        ${
-            last.photo_url &&
-            last.photo_url !==
-            first.photo_url
-
-            ?
-
-            `
-            <img
-            src="${last.photo_url}"
-            onclick="
-            window.open(this.src)
-            "
-            style="
-            border:2px solid green;
-            ">
-            `
-
-            :
-
-            ''
-        }
-
-        </div>
 
         </div>
 
