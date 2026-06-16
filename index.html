@@ -1,4 +1,4 @@
-
+```html
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
@@ -79,9 +79,18 @@ button:hover{
     color:green;
 }
 
+#photoCounter{
+    text-align:center;
+    margin-top:10px;
+    font-size:14px;
+    color:#1a2a6c;
+    font-weight:bold;
+}
+
 </style>
-<script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
-    <script defer src="./face-api/face-api.min.js"></script>
+
+<script defer src="./face-api/face-api.min.js"></script>
+
 </head>
 
 <body>
@@ -113,43 +122,26 @@ style="display:none"
 >
 
 <button
+id="captureBtn"
+type="button"
+onclick="captureReferencePhoto()"
+style="background:#00897b;"
+>
+📸 گرفتن 5 عکس مرجع
+</button>
+
+<div id="photoCounter">
+5 عکس باقی مانده
+</div>
+
+<button
 type="button"
 id="photoBtn"
 onclick="openCamera()"
 >
 📷 گرفتن عکس
 </button>
-    <button
-id="captureBtn"
-type="button"
-onclick="captureReferencePhoto()"
-style="
-background:#00897b;
-font-size:14px;
-"
->
-📸 گرفتن 5 عکس مرجع
-</button>
 
-<div
-id="photoCounter"
-style="
-text-align:center;
-margin-top:10px;
-font-size:14px;
-color:#1a2a6c;
-font-weight:bold;
-"
->
-5 عکس باقی مانده
-</div>
-<button
-id="referenceBtn"
-onclick="startReferencePhotos()"
-style="background:#00897b"
->
-📸 گرفتن 5 عکس مرجع
-</button>
 <button
 onclick="saveAttendance()"
 >
@@ -163,7 +155,7 @@ onclick="saveAttendance()"
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-<script src="./face-api/face-api.min.js"></script>
+
 <script>
 
 const SUPABASE_URL =
@@ -177,9 +169,10 @@ supabase.createClient(
     SUPABASE_URL,
     SUPABASE_ANON_KEY
 );
-    let referenceMode = false;
-let referenceCount = 0;
-    let faceModelsLoaded = false;
+
+let remainingPhotos = 5;
+
+let faceModelsLoaded = false;
 
 async function loadFaceModels(){
 
@@ -195,9 +188,11 @@ async function loadFaceModels(){
 
     console.log('Face Models Loaded');
 }
-let personData = null;
+
 window.onload = async function(){
-await loadFaceModels();
+
+    await loadFaceModels();
+
     const savedName =
     localStorage.getItem(
         'employee_fullname'
@@ -220,53 +215,77 @@ await loadFaceModels();
         document.getElementById(
             'personnel_code'
         ).value = savedCode;
-    }
-if(savedCode){
 
-    const { data } =
+        const { data } =
 
-    await supabaseClient
+        await supabaseClient
 
-    .from('personnel')
+        .from('personnel')
 
-    .select('*')
+        .select('*')
 
-    .eq(
-        'personnel_code',
-        savedCode
-    )
+        .eq(
+            'personnel_code',
+            savedCode
+        )
 
-    .single();
+        .single();
 
-    if(data){
+        if(data){
 
-        const remain =
+            remainingPhotos =
+            5 - (data.photo_count || 0);
 
-        5 - (data.photo_count || 0);
-
-        if(remain > 0){
-
-            document.getElementById(
-                'photoBtn'
-            ).innerHTML =
-
-            '📷 گرفتن ' +
-            remain +
-            ' عکس از چهره';
-
-        }else{
-
-            document.getElementById(
-                'photoBtn'
-            ).innerHTML =
-
-            '📷 گرفتن عکس';
+            updatePhotoCounter();
         }
     }
-}
+
     await sendOfflineData();
 
     loadMyRecords();
+}
+
+function updatePhotoCounter(){
+
+    if(remainingPhotos > 0){
+
+        document.getElementById(
+            'photoCounter'
+        ).innerHTML =
+
+        remainingPhotos +
+        ' عکس باقی مانده';
+
+        document.getElementById(
+            'captureBtn'
+        ).innerHTML =
+
+        '📸 گرفتن ' +
+        remainingPhotos +
+        ' عکس مرجع';
+
+    }else{
+
+        document.getElementById(
+            'photoCounter'
+        ).innerHTML =
+
+        'عکس‌های مرجع تکمیل شد';
+
+        document.getElementById(
+            'captureBtn'
+        ).disabled = true;
+
+        document.getElementById(
+            'captureBtn'
+        ).style.background = 'gray';
+
+        document.getElementById(
+            'captureBtn'
+        ).innerHTML =
+
+        '✅ تکمیل شد';
+    }
 }
 
 function openCamera(){
@@ -275,76 +294,6 @@ function openCamera(){
         'photo'
     ).click();
 }
-async function startReferencePhotos(){
-
-    const personnelCode =
-    document.getElementById(
-        'personnel_code'
-    ).value;
-
-    if(!personnelCode){
-
-        alert('کد پرسنلی را وارد کنید');
-
-        return;
-    }
-
-    const { data: person } =
-
-    await supabaseClient
-
-    .from('personnel')
-
-    .select('*')
-
-    .eq(
-        'personnel_code',
-        personnelCode
-    )
-
-    .single();
-
-    if(person && person.photo_locked){
-
-        alert('۵ عکس قبلا ثبت شده');
-
-        return;
-    }
-
-    referenceMode = true;
-
-    referenceCount = 0;
-
-    updateReferenceButton();
-}
-
-function updateReferenceButton(){
-
-    const btn =
-    document.getElementById(
-        'referenceBtn'
-    );
-
-    const remain =
-    5 - referenceCount;
-
-    if(remain > 0){
-
-        btn.innerHTML =
-        `📸 گرفتن ${remain} عکس مرجع`;
-
-    }else{
-
-        btn.innerHTML =
-        '📷 گرفتن عکس';
-
-        btn.disabled = true;
-
-        btn.style.background =
-        'gray';
-    }
-}
- let remainingPhotos = 5;
 
 async function captureReferencePhoto(){
 
@@ -362,7 +311,7 @@ async function captureReferencePhoto(){
 
     if(remainingPhotos <= 0){
 
-        alert('۵ عکس ثبت شده');
+        alert('۵ عکس قبلا ثبت شده');
 
         return;
     }
@@ -407,32 +356,28 @@ async function captureReferencePhoto(){
 
         remainingPhotos--;
 
+        await supabaseClient
+        .from('personnel')
+        .upsert({
+
+            personnel_code:
+            personnelCode,
+
+            photo_count:
+            5 - remainingPhotos,
+
+            photo_locked:
+            remainingPhotos <= 0
+        });
+
+        updatePhotoCounter();
+
         document.getElementById(
-            'photoCounter'
-        ).innerHTML =
-
-        remainingPhotos +
-        ' عکس باقی مانده';
-
-        if(remainingPhotos <= 0){
-
-            document.getElementById(
-                'captureBtn'
-            ).disabled = true;
-
-            document.getElementById(
-                'captureBtn'
-            ).innerHTML =
-
-            '✅ عکس‌های مرجع تکمیل شد';
-
-            document.getElementById(
-                'captureBtn'
-            ).style.background =
-            'gray';
-        }
+            'photo'
+        ).value = '';
     };
-}   
+}
+
 async function saveAttendance(){
 
     const fullname =
@@ -449,46 +394,7 @@ async function saveAttendance(){
     document.getElementById(
         'photo'
     ).files[0];
-    if(referenceMode){
 
-    if(!photoFile){
-
-        alert('عکس بگیرید');
-
-        return;
-    }
-
-    referenceCount++;
-
-    updateReferenceButton();
-}
-     const personnelCode =
-personnel_code;
-
-const { data: personPhotos } =
-
-await supabaseClient
-
-.from('personnel')
-
-.select('*')
-
-.eq(
-    'personnel_code',
-    personnelCode
-);
-
-if(
-    !personPhotos ||
-    personPhotos.length === 0
-){
-
-    alert(
-        'ابتدا باید ۵ عکس اولیه ثبت شود'
-    );
-
-    return;
-}
     if(
         fullname === '' ||
         personnel_code === ''
@@ -497,6 +403,13 @@ if(
         alert(
             'اطلاعات را کامل وارد کنید'
         );
+
+        return;
+    }
+
+    if(!photoFile){
+
+        alert('عکس بگیرید');
 
         return;
     }
@@ -511,127 +424,22 @@ if(
         personnel_code
     );
 
-    const { data: person } =
-await supabaseClient
-.from('personnel')
-.select('*')
-.eq(
-    'personnel_code',
-    personnel_code
-)
-.single();
-
-personData = person;
-
-    if(person && person.photo_locked){
-
-        alert(
-            'ثبت عکس برای این پرسنل غیرفعال شده'
-        );
-
-        return;
-    }
-   const img = await faceapi.bufferToImage(photoFile);
-
-const detection =
-
-await faceapi
-
-.detectSingleFace(
-    img,
-    new faceapi.TinyFaceDetectorOptions()
-)
-
-.withFaceLandmarks()
-
-.withFaceDescriptor();
-
-if(!detection){
-
-    alert('چهره شناسایی نشد');
-
-    return;
-}
-
-const currentDescriptor =
-detection.descriptor;
-    let matched = false;
-
-for(const person of personPhotos){
-
-    if(!person.photo_url){
-
-        continue;
-    }
-
-    try{
-
-        const refImg =
-
-        await faceapi.fetchImage(
-            person.photo_url
-        );
-
-        const refDetection =
-
-        await faceapi
-
-        .detectSingleFace(
-            refImg,
-            new faceapi.TinyFaceDetectorOptions()
-        )
-
-        .withFaceLandmarks()
-
-        .withFaceDescriptor();
-
-        if(!refDetection){
-
-            continue;
-        }
-
-        const distance =
-
-        faceapi.euclideanDistance(
-
-            currentDescriptor,
-
-            refDetection.descriptor
-        );
-
-        if(distance < 0.45){
-
-            matched = true;
-
-            break;
-        }
-
-    }catch(err){
-
-        console.log(err);
-    }
-}
-
-if(!matched){
-
-    alert(
-        'چهره با تصاویر ثبت شده مطابقت ندارد'
+    const img =
+    await faceapi.bufferToImage(
+        photoFile
     );
 
-    return;
-}
-    navigator.geolocation.getCurrentPosition(
-    
-if(photoFile){
+    const detection =
 
-    const image = await faceapi.bufferToImage(photoFile);
+    await faceapi
 
-    const detection = await faceapi
     .detectSingleFace(
-        image,
+        img,
         new faceapi.TinyFaceDetectorOptions()
     )
+
     .withFaceLandmarks()
+
     .withFaceDescriptor();
 
     if(!detection){
@@ -641,56 +449,103 @@ if(photoFile){
         return;
     }
 
-    const { data: personData } =
+    const currentDescriptor =
+    detection.descriptor;
 
-    await supabaseClient
-    .from('personnel')
-    .select('*')
-    .eq(
-        'personnel_code',
+    const { data: referencePhotos } =
+
+    await supabaseClient.storage
+
+    .from('reference-photos')
+
+    .list('',{
+
+        search:
         personnel_code
-    )
-    .single();
+    });
 
     if(
-        personData &&
-        personData.photo_url
+        !referencePhotos ||
+        referencePhotos.length === 0
     ){
 
-        const savedImage =
-        await faceapi.fetchImage(
-            personData.photo_url
+        alert(
+            'ابتدا ۵ عکس مرجع ثبت کنید'
         );
 
-        const savedDetection =
-        await faceapi
-        .detectSingleFace(
-            savedImage,
-            new faceapi.TinyFaceDetectorOptions()
-        )
-        .withFaceLandmarks()
-        .withFaceDescriptor();
+        return;
+    }
 
-        if(savedDetection){
+    let matched = false;
 
-            const distance =
-            faceapi.euclideanDistance(
-                detection.descriptor,
-                savedDetection.descriptor
+    for(const photo of referencePhotos){
+
+        try{
+
+            const photoUrl =
+
+            SUPABASE_URL +
+
+            '/storage/v1/object/public/reference-photos/' +
+
+            photo.name;
+
+            const refImg =
+
+            await faceapi.fetchImage(
+                photoUrl
             );
 
-            if(distance > 0.5){
+            const refDetection =
 
-                alert(
-                    'چهره مطابقت ندارد'
-                );
+            await faceapi
 
-                return;
+            .detectSingleFace(
+                refImg,
+                new faceapi.TinyFaceDetectorOptions()
+            )
+
+            .withFaceLandmarks()
+
+            .withFaceDescriptor();
+
+            if(!refDetection){
+
+                continue;
             }
+
+            const distance =
+
+            faceapi.euclideanDistance(
+
+                currentDescriptor,
+
+                refDetection.descriptor
+            );
+
+            if(distance < 0.45){
+
+                matched = true;
+
+                break;
+            }
+
+        }catch(err){
+
+            console.log(err);
         }
     }
-}
 
+    if(!matched){
+
+        alert(
+            'چهره مطابقت ندارد'
+        );
+
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
 
     async position => {
 
@@ -705,153 +560,42 @@ if(photoFile){
             'fa-IR'
         );
 
-        if(!navigator.onLine){
-
-            let offlineData =
-
-            JSON.parse(
-
-                localStorage.getItem(
-                    'offline_attendance'
-                ) || '[]'
-            );
-
-            offlineData.push({
-
-                fullname:
-                fullname,
-
-                personnel_code:
-                personnel_code,
-
-                entry_time:
-                now,
-
-                latitude:
-                latitude,
-
-                longitude:
-                longitude
-            });
-
-            localStorage.setItem(
-
-                'offline_attendance',
-
-                JSON.stringify(
-                    offlineData
-                )
-            );
-
-            document.getElementById(
-                'status'
-            ).innerHTML =
-
-            'بدون اینترنت ذخیره شد';
-
-            return;
-        }
-
         let photo_url = '';
 
-        if(photoFile){
+        const fileName =
+        Date.now() + '.jpg';
 
-            const fileName =
-            Date.now() + '.jpg';
+        const { error: uploadError } =
 
-            const { error: uploadError } =
+        await supabaseClient.storage
 
-            await supabaseClient.storage
+        .from('photo')
+
+        .upload(
+
+            fileName,
+
+            photoFile,
+
+            {
+                upsert:true
+            }
+        );
+
+        if(!uploadError){
+
+            const { data } =
+
+            supabaseClient.storage
 
             .from('photo')
 
-            .upload(
-
-                fileName,
-
-                photoFile,
-
-                {
-                    upsert:true
-                }
+            .getPublicUrl(
+                fileName
             );
 
-            if(!uploadError){
-
-                const { data } =
-
-                supabaseClient.storage
-
-                .from('photo')
-
-                .getPublicUrl(
-                    fileName
-                );
-
-                photo_url =
-                data.publicUrl;
-               if(referenceMode){
-
-    await supabaseClient
-    .storage
-    .from('reference-photos')
-    .upload(
-        personnel_code +
-        '/' +
-        Date.now() +
-        '.jpg',
-
-        photoFile,
-
-        {
-            upsert:true
-        }
-    );
-
-    if(referenceCount >= 5){
-
-        await supabaseClient
-
-        .from('personnel')
-
-        .upsert([{
-
-            personnel_code:
-            personnel_code,
-
-            photo_count:5,
-
-            photo_locked:true
-
-        }]);
-
-        referenceMode = false;
-
-        alert('۵ عکس مرجع ذخیره شد');
-    }
-}
-                const newCount =
-                person
-                ?
-                (person.photo_count || 0) + 1
-                :
-                1;
-
-                await supabaseClient
-                .from('personnel')
-                .upsert({
-
-                    personnel_code,
-
-                    photo_count:newCount,
-
-                    photo_locked:
-                    newCount >= 5,
-
-                    photo_url
-
-                });
-            }
+            photo_url =
+            data.publicUrl;
         }
 
         const { error } =
@@ -905,31 +649,7 @@ if(photoFile){
             document.getElementById(
                 'photo'
             ).value = '';
-         if(personData){
 
-    const remain =
-
-    5 - (personData.photo_count || 0) - 1;
-
-    if(remain > 0){
-
-        document.getElementById(
-            'photoBtn'
-        ).innerHTML =
-
-        '📷 گرفتن ' +
-        remain +
-        ' عکس از چهره';
-
-    }else{
-
-        document.getElementById(
-            'photoBtn'
-        ).innerHTML =
-
-        '📷 گرفتن عکس';
-    }
-}
             loadMyRecords();
         }
 
@@ -963,8 +683,6 @@ async function sendOfflineData(){
         let item of offlineData
     ){
 
-        const { error } =
-
         await supabaseClient
 
         .from('eagle')
@@ -991,24 +709,11 @@ async function sendOfflineData(){
                 photo_url:''
             }
         ]);
-
-        if(error){
-
-            console.log(error);
-
-            return;
-        }
     }
 
     localStorage.removeItem(
         'offline_attendance'
     );
-
-    document.getElementById(
-        'status'
-    ).innerHTML =
-
-    'اطلاعات آفلاین ارسال شد';
 }
 
 async function loadMyRecords(){
@@ -1024,7 +729,7 @@ async function loadMyRecords(){
         return;
     }
 
-    const { data, error } =
+    const { data } =
 
     await supabaseClient
 
@@ -1044,13 +749,6 @@ async function loadMyRecords(){
         }
     );
 
-    if(error){
-
-        console.log(error);
-
-        return;
-    }
-
     let html = `
 
     <h3 style="
@@ -1066,11 +764,8 @@ async function loadMyRecords(){
 
     data.forEach(item => {
 
-        const fullDate =
-        item.entry_time;
-
         const onlyDate =
-        fullDate.substring(0,10);
+        item.entry_time.substring(0,10);
 
         if(!grouped[onlyDate]){
 
@@ -1135,4 +830,4 @@ if('serviceWorker' in navigator){
 </body>
 
 </html>
-
+```
