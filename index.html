@@ -220,10 +220,17 @@ window.onload = async function(){
 
     if(savedCode){
 
-        document.getElementById(
-            'personnel_code'
-        ).value = savedCode;
+    document.getElementById(
+        'personnel_code'
+    ).value = savedCode;
 
+    document.getElementById(
+        'personnel_code'
+    ).disabled = true;
+
+    document.getElementById(
+        'personnel_code'
+    ).style.background = '#eee';
         const { data } =
 
         await supabaseClient
