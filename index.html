@@ -330,11 +330,21 @@ async function captureReferencePhoto(){
 
         if(!file) return;
 
-        const fileName =
-        personnelCode +
-        '_' +
-        Date.now() +
-        '.jpg';
+       const fileName =
+
+personnelCode +
+
+'_' +
+
+Date.now() +
+
+'_' +
+
+Math.floor(
+    Math.random() * 999999
+) +
+
+'.jpg';
 
         const { error } =
 
