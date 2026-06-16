@@ -203,7 +203,19 @@ async function saveAttendance(){
     document.getElementById(
         'photo'
     ).files[0];
-   
+   const { data: person } =
+await supabaseClient
+.from('personnel')
+.select('*')
+.eq('personnel_code', personnelCode)
+.single();
+
+if(person && person.photo_locked){
+
+    alert('ثبت عکس برای این پرسنل غیرفعال شده');
+
+    return;
+}
 localStorage.setItem(
     'employee_fullname',
     fullname
