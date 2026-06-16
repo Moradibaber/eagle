@@ -31,9 +31,9 @@ body{
     background:white;
     border-radius:15px;
     padding:15px;
-    margin-bottom:15px;
+    margin-bottom:12px;
 
-    box-shadow:0 0 10px rgba(0,0,0,0.1);
+    box-shadow:0 0 10px rgba(0,0,0,0.08);
 }
 
 .card-top{
@@ -42,19 +42,29 @@ body{
     justify-content:space-between;
     align-items:flex-start;
     gap:15px;
-
-    flex-wrap:nowrap;
 }
 
 .card-info{
     flex:1;
 }
 
+.card-info h3{
+
+    margin-top:0;
+    margin-bottom:10px;
+    color:#1a2a6c;
+}
+
+.card-info p{
+
+    margin:6px 0;
+    font-size:14px;
+}
+
 .card-images{
 
     display:flex;
     gap:8px;
-    flex-wrap:wrap;
 }
 
 .card-images img{
@@ -76,15 +86,10 @@ button{
     background:#c62828;
     color:white;
     border:none;
-    padding:10px 15px;
+    padding:8px 14px;
     border-radius:8px;
     cursor:pointer;
-    font-size:14px;
-}
-
-h2{
-    text-align:center;
-    color:#1a2a6c;
+    font-size:13px;
 }
 
 .export-btn{
@@ -93,6 +98,48 @@ h2{
     background:#1a2a6c;
 }
 
+h2{
+    text-align:center;
+    color:#1a2a6c;
+}
+
+@media(max-width:700px){
+
+    body{
+        padding:10px;
+    }
+
+    .card{
+
+        padding:12px;
+    }
+
+    .card-top{
+
+        display:block;
+    }
+
+    .card-info h3{
+
+        font-size:18px;
+    }
+
+    .card-info p{
+
+        font-size:13px;
+    }
+
+    .card-images{
+
+        display:none;
+    }
+
+    button{
+
+        width:100%;
+        margin-top:10px;
+    }
+}
 
 </style>
 
@@ -128,7 +175,7 @@ const SUPABASE_URL =
 'https://kddhnohquohbnemmegdy.supabase.co';
 
 const SUPABASE_ANON_KEY =
-'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
+'YOUR_SUPABASE_KEY';
 
 const supabaseClient =
 supabase.createClient(
@@ -165,14 +212,6 @@ function normalizeDate(str){
     .replaceAll('۸','8')
     .replaceAll('۹','9');
 
-    if(fixed.includes(',')){
-
-        return fixed
-        .split(',')[1]
-        .trim()
-        .substring(0,10);
-    }
-
     return fixed.substring(0,10);
 }
 
@@ -202,44 +241,32 @@ async function loadRecords(){
 
     const grouped = {};
 
-data.forEach(item => {
+    data.forEach(item => {
 
-    let fixedTime =
-    item.entry_time;
+        const onlyDate =
+        normalizeDate(
+            item.entry_time
+        );
 
-    fixedTime = fixedTime
-    .replaceAll('۰','0')
-    .replaceAll('۱','1')
-    .replaceAll('۲','2')
-    .replaceAll('۳','3')
-    .replaceAll('۴','4')
-    .replaceAll('۵','5')
-    .replaceAll('۶','6')
-    .replaceAll('۷','7')
-    .replaceAll('۸','8')
-    .replaceAll('۹','9');
+        const key =
 
-    const onlyDate =
-    fixedTime.substring(0,10);
+        item.personnel_code +
+        '_' +
+        onlyDate;
 
-    const key =
-    item.personnel_code +
-    '_' +
-    onlyDate;
+        if(!grouped[key]){
 
-    if(!grouped[key]){
+            grouped[key] = [];
+        }
 
-        grouped[key] = [];
-    }
-
-    grouped[key].push(item);
-});
+        grouped[key].push(item);
+    });
 
     let html = '';
 
     Object.values(grouped)
-.slice(0,7)
-.forEach(records => {
+
+    .forEach(records => {
 
         records.sort(
             (a,b)=> a.id - b.id
@@ -254,7 +281,9 @@ data.forEach(item => {
         ];
 
         const date =
-       last.entry_time.substring(0,10);
+        normalizeDate(
+            last.entry_time
+        );
 
         html += `
 
@@ -289,18 +318,59 @@ data.forEach(item => {
         </p>
 
         <p>
-موقعیت:
-${last.latitude.substring(0,8)}
-,
-${last.longitude.substring(0,8)}
-</p>
+        GPS:
+        ${String(last.latitude).substring(0,8)}
+        ,
+        ${String(last.longitude).substring(0,8)}
+        </p>
 
         </div>
 
-       
+        <div class="card-images">
+
+        ${
+            first.photo_url
+            ?
+
+            `
+            <img
+            src="${first.photo_url}"
+            onclick="
+            window.open(this.src)
+            ">
+            `
+
+            :
+
+            ''
+        }
+
+        ${
+            last.photo_url &&
+            last.photo_url !==
+            first.photo_url
+
+            ?
+
+            `
+            <img
+            src="${last.photo_url}"
+            onclick="
+            window.open(this.src)
+            "
+            style="
+            border:2px solid green;
+            ">
+            `
+
+            :
+
+            ''
+        }
+
         </div>
 
-        <br>
+        </div>
 
         <button onclick="
         deleteRecord(
