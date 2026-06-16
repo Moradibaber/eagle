@@ -353,10 +353,13 @@ Math.floor(
         .from('reference-photos')
 
         .upload(
-            fileName,
-            file,
-            { upsert:true }
-        );
+    fileName,
+    file,
+    {
+        cacheControl:'3600',
+        upsert:false
+    }
+);
 
         if(error){
 
