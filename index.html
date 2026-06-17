@@ -542,6 +542,21 @@ document.getElementById(
                         contentType:'image/jpeg'
                     }
                 );
+               console.log(upload);
+
+if(upload.error){
+    alert(
+        'خطای آپلود: ' +
+        upload.error.message
+    );
+}else{
+    photoName = fileName;
+
+    console.log(
+        'photoName=',
+        photoName
+    );
+}
 
                 if(!upload.error){
 
@@ -575,7 +590,10 @@ document.getElementById(
             };
 
             if(isOnline){
-
+                console.log(
+                    'attendanceData',
+                    attendanceData
+                    
                 const insert =
                 await supabaseClient
                 .from('eagle')
