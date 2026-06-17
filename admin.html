@@ -321,6 +321,23 @@ white-space:nowrap;
 
             const last =
             records[records.length-1];
+            const firstPhotoUrl =
+first.photo_name
+?
+SUPABASE_URL +
+'/storage/v1/object/public/reference-photos/attendance/' +
+first.photo_name
+:
+'';
+
+const lastPhotoUrl =
+last.photo_name
+?
+SUPABASE_URL +
+'/storage/v1/object/public/reference-photos/attendance/' +
+last.photo_name
+:
+'';
 
             const date =
             String(last.entry_time)
@@ -387,6 +404,23 @@ ${String(last.longitude).substring(0,7)}
 
             const last =
             records[records.length-1];
+const firstPhotoUrl =
+first.photo_name
+?
+SUPABASE_URL +
+'/storage/v1/object/public/reference-photos/attendance/' +
+first.photo_name
+:
+'';
+
+const lastPhotoUrl =
+last.photo_name
+?
+SUPABASE_URL +
+'/storage/v1/object/public/reference-photos/attendance/' +
+last.photo_name
+:
+'';
 
             const date =
             String(last.entry_time)
@@ -439,45 +473,36 @@ ${String(last.longitude).substring(0,8)}
 
             <div class="card-images">
 
-            ${
-                first.photo_url
-                ?
+           ${ firstPhotoUrl ? `
+<img
+src="${firstPhotoUrl}"
+onclick="
+window.open(this.src)
+">
+`
+:
+''
+}
+               
 
-                `
-                <img
-                src="${first.photo_url}"
-                onclick="
-                window.open(this.src)
-                ">
-                `
+            ${ lastPhotoUrl &&
+lastPhotoUrl !==
+firstPhotoUrl
+?
+`
+<img
+src="${lastPhotoUrl}"
+onclick="
+window.open(this.src)
+"
+style="
+border:2px solid green;
+">
+`
+:
+''
+}
 
-                :
-
-                ''
-            }
-
-            ${
-                last.photo_url &&
-                last.photo_url !==
-                first.photo_url
-
-                ?
-
-                `
-                <img
-                src="${last.photo_url}"
-                onclick="
-                window.open(this.src)
-                "
-                style="
-                border:2px solid green;
-                ">
-                `
-
-                :
-
-                ''
-            }
 
             </div>
 
@@ -545,8 +570,8 @@ async function exportExcel(){
         'طول جغرافیایی':
         item.longitude,
 
-        'لینک عکس':
-        item.photo_url
+        'نام عکس':
+        item.photo_name
     }));
 
     const worksheet =
