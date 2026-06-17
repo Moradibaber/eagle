@@ -480,7 +480,9 @@ document.getElementById(
 
             const file =
             e.target.files[0];
-
+             console.log(
+    'Photo Selected'
+);
             if(!file){
 
                 return;
@@ -508,7 +510,14 @@ document.getElementById(
             ).classList.contains(
                 'online'
             );
+            console.log(
+    'isOnline = ',
+    isOnline
+);
 
+console.log(
+    attendanceData
+);
             if(isOnline){
 
                 const upload =
