@@ -1,4 +1,4 @@
-```javascript
+
 const CACHE_NAME = "attendance-pwa-v1";
 
 const urlsToCache = [
@@ -33,7 +33,7 @@ self.addEventListener('fetch', event => {
         })
     );
 });
-```
+
 
 
 
