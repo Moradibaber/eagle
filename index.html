@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
@@ -59,6 +60,10 @@ button{
     margin-top:10px;
 }
 
+button:hover{
+    background:green;
+}
+
 .status{
     text-align:center;
     color:white;
@@ -82,6 +87,14 @@ button{
     border-radius:10px;
     padding:10px;
     margin-top:10px;
+}
+
+#loading{
+    display:none;
+    text-align:center;
+    margin-top:15px;
+    color:#1a2a6c;
+    font-weight:bold;
 }
 
 </style>
@@ -129,6 +142,10 @@ type="button"
 >
 📷 ثبت تردد
 </button>
+
+<div id="loading">
+در حال ثبت اطلاعات...
+</div>
 
 <div id="myRecords"></div>
 
@@ -187,7 +204,7 @@ window.addEventListener(
     updateNetworkStatus
 );
 
-/* قفل */
+/* قفل فیلدها */
 
 function lockFields(){
 
@@ -198,11 +215,19 @@ function lockFields(){
     document.getElementById(
         'personnel_code'
     ).readOnly = true;
+
+    document.getElementById(
+        'fullname'
+    ).style.background = '#eee';
+
+    document.getElementById(
+        'personnel_code'
+    ).style.background = '#eee';
 }
 
 /* شروع */
 
-window.onload = function(){
+window.onload = async function(){
 
     updateNetworkStatus();
 
@@ -234,6 +259,8 @@ window.onload = function(){
 
         lockFields();
     }
+
+    await sendOfflineData();
 
     loadRecords();
 };
@@ -287,7 +314,7 @@ function getLocation(){
     });
 }
 
-/* فشرده سازی */
+/* فشرده سازی عکس */
 
 async function compressImage(file){
 
@@ -313,7 +340,7 @@ async function compressImage(file){
                     'canvas'
                 );
 
-                const maxWidth = 500;
+                const maxWidth = 600;
 
                 let width =
                 img.width;
@@ -355,7 +382,7 @@ async function compressImage(file){
 
                     },
                     'image/jpeg',
-                    0.6
+                    0.7
                 );
             };
         };
@@ -411,10 +438,21 @@ document.getElementById(
 
         try{
 
+            document.getElementById(
+                'loading'
+            ).style.display =
+            'block';
+
             const file =
             e.target.files[0];
 
             if(!file){
+
+                document.getElementById(
+                    'loading'
+                ).style.display =
+                'none';
+
                 return;
             }
 
@@ -431,32 +469,37 @@ document.getElementById(
             Date.now() +
             '.jpg';
 
-            const upload =
-            await supabaseClient.storage
-            .from('reference-photos')
-            .upload(
-                'attendance/' +
-                fileName,
-                compressed,
-                {
-                    upsert:true,
-                    contentType:'image/jpeg'
-                }
-            );
+            /* آپلود عکس */
 
-            if(upload.error){
+            let uploaded = false;
 
-                alert(
-                    upload.error.message
+            let photoName = '';
+
+            if(navigator.onLine){
+
+                const upload =
+                await supabaseClient.storage
+                .from('photo')
+                .upload(
+                    fileName,
+                    compressed,
+                    {
+                        upsert:true,
+                        contentType:'image/jpeg'
+                    }
                 );
 
-                return;
+                if(!upload.error){
+
+                    uploaded = true;
+
+                    photoName = fileName;
+                }
             }
 
-            const insert =
-            await supabaseClient
-            .from('eagle')
-            .insert([{
+            /* داده */
+
+            const attendanceData = {
 
                 personnel_code:
                 personnelCode,
@@ -477,35 +520,126 @@ document.getElementById(
                 location.lng,
 
                 photo_name:
-                fileName
+                photoName
+            };
 
-            }]);
+            /* آنلاین */
 
-            if(insert.error){
+            if(navigator.onLine){
+
+                const insert =
+                await supabaseClient
+                .from('eagle')
+                .insert([
+                    attendanceData
+                ]);
+
+                if(insert.error){
+
+                    throw insert.error;
+                }
 
                 alert(
-                    insert.error.message
+                    'تردد ثبت شد'
                 );
 
-                return;
-            }
+            }else{
 
-            alert(
-                'تردد ثبت شد'
-            );
+                /* آفلاین */
+
+                let offlineData =
+
+                JSON.parse(
+
+                    localStorage.getItem(
+                        'offline_attendance'
+                    ) || '[]'
+                );
+
+                offlineData.push(
+                    attendanceData
+                );
+
+                localStorage.setItem(
+                    'offline_attendance',
+                    JSON.stringify(
+                        offlineData
+                    )
+                );
+
+                alert(
+                    'آفلاین ذخیره شد'
+                );
+            }
 
             loadRecords();
 
         }catch(err){
 
+            console.log(err);
+
             alert(
+                'خطا: ' +
                 err.message
             );
+
+        }finally{
+
+            document.getElementById(
+                'loading'
+            ).style.display =
+            'none';
         }
     };
 
     input.click();
 };
+
+/* ارسال آفلاین */
+
+async function sendOfflineData(){
+
+    if(!navigator.onLine){
+
+        return;
+    }
+
+    let offlineData =
+
+    JSON.parse(
+
+        localStorage.getItem(
+            'offline_attendance'
+        ) || '[]'
+    );
+
+    if(
+        offlineData.length === 0
+    ){
+
+        return;
+    }
+
+    for(
+        let item of offlineData
+    ){
+
+        try{
+
+            await supabaseClient
+            .from('eagle')
+            .insert([item]);
+
+        }catch(err){
+
+            console.log(err);
+        }
+    }
+
+    localStorage.removeItem(
+        'offline_attendance'
+    );
+}
 
 /* سوابق */
 
@@ -583,3 +717,4 @@ async function loadRecords(){
 </body>
 
 </html>
+
