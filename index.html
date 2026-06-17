@@ -175,7 +175,77 @@ supabase.createClient(
     SUPABASE_ANON_KEY
 );
 
+
 /* وضعیت شبکه */
+
+function updateFieldsState(){
+
+    const fullnameInput =
+    document.getElementById(
+        'fullname'
+    );
+
+    const personnelInput =
+    document.getElementById(
+        'personnel_code'
+    );
+
+    const savedName =
+    localStorage.getItem(
+        'employee_fullname'
+    );
+
+    const savedCode =
+    localStorage.getItem(
+        'employee_code'
+    );
+
+    /* اگر اطلاعات قبلا ثبت شده */
+
+    if(savedName && savedCode){
+
+        /* آنلاین */
+
+        if(navigator.onLine){
+
+            fullnameInput.readOnly = true;
+
+            personnelInput.readOnly = true;
+
+            fullnameInput.style.background =
+            '#eee';
+
+            personnelInput.style.background =
+            '#eee';
+
+        }else{
+
+            /* آفلاین */
+
+            fullnameInput.readOnly = false;
+
+            personnelInput.readOnly = false;
+
+            fullnameInput.style.background =
+            'white';
+
+            personnelInput.style.background =
+            'white';
+        }
+
+    }else{
+
+        fullnameInput.readOnly = false;
+
+        personnelInput.readOnly = false;
+
+        fullnameInput.style.background =
+        'white';
+
+        personnelInput.style.background =
+        'white';
+    }
+}
 
 function updateNetworkStatus(){
 
@@ -200,9 +270,9 @@ function updateNetworkStatus(){
         status.className =
         'status offline';
     }
+
+    updateFieldsState();
 }
-
-
 
 window.addEventListener(
     'online',
@@ -214,30 +284,9 @@ window.addEventListener(
     updateNetworkStatus
 );
 
-/* قفل فیلدها */
-
-function lockFields(){
-
-    document.getElementById(
-        'fullname'
-    ).readOnly = true;
-
-    document.getElementById(
-        'personnel_code'
-    ).readOnly = true;
-
-    document.getElementById(
-        'fullname'
-    ).style.background = '#eee';
-
-    document.getElementById(
-        'personnel_code'
-    ).style.background = '#eee';
-}
-
 /* شروع */
 
-window.onload = async function(){
+window.onload = function(){
 
     updateNetworkStatus();
 
@@ -265,21 +314,11 @@ window.onload = async function(){
         ).value = savedCode;
     }
 
-if(
-    savedName &&
-    savedCode &&
-    navigator.onLine
-){
-
-    lockFields();
-}
-
-
-
-    await sendOfflineData();
+    updateFieldsState();
 
     loadRecords();
 };
+
 
 /* GPS */
 
