@@ -545,6 +545,7 @@ document.getElementById(
         alert(
 JSON.stringify(upload)
 );
+return;
 console.log(upload);
         alert(
            'UPLOAD RESULT:\n' +
