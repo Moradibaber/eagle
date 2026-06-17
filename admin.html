@@ -359,9 +359,10 @@ line-height:11px;
 white-space:nowrap;
 padding:2px;
 ">
-${last.latitude}
+${String(last.latitude).substring(0,7)}
 <br>
-${last.longitude}
+${String(last.longitude).substring(0,7)}
+
 </td>
 
             </tr>
