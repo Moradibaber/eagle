@@ -494,6 +494,11 @@ document.getElementById(
 
             const location =
             await getLocation();
+            alert(
+            'GPS=' +
+            ',' +
+            location.lng
+            );
             console.log(
                 'GPS:',
                 location.lat,
@@ -542,7 +547,7 @@ document.getElementById(
                     fileName;
                 }
             }
-
+            
             const attendanceData = {
 
                 personnel_code:
