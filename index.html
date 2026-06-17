@@ -284,7 +284,7 @@ window.addEventListener(
     updateNetworkStatus
 );
 
-/* شروع */
+/* شروع برنامه */
 
 window.onload = function(){
 
@@ -300,24 +300,44 @@ window.onload = function(){
         'employee_code'
     );
 
-    if(savedName){
+    /* اگر قبلا ثبت شده */
+
+    if(savedName && savedCode){
 
         document.getElementById(
             'fullname'
         ).value = savedName;
-    }
-
-    if(savedCode){
 
         document.getElementById(
             'personnel_code'
         ).value = savedCode;
-    }
 
-    updateFieldsState();
+        /* مخفی کردن فیلدها */
+
+        document.getElementById(
+            'fullname'
+        ).style.display = 'none';
+
+        document.getElementById(
+            'personnel_code'
+        ).style.display = 'none';
+
+    }else{
+
+        /* اولین ورود */
+
+        document.getElementById(
+            'fullname'
+        ).style.display = 'block';
+
+        document.getElementById(
+            'personnel_code'
+        ).style.display = 'block';
+    }
 
     loadRecords();
 };
+
 
 
 /* GPS */
