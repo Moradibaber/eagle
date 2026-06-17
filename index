@@ -543,6 +543,10 @@ document.getElementById(
                     }
                 );
         alert(
+JSON.stringify(upload)
+);
+console.log(upload);
+        alert(
            'UPLOAD RESULT:\n' +
             JSON.stringify(upload)
      );
