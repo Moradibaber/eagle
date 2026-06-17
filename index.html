@@ -494,16 +494,17 @@ document.getElementById(
 
             const location =
             await getLocation();
+            console.log(
+                'GPS:',
+                location.lat,
+                location.lng);
             alert(
             'GPS=' +
             ',' +
             location.lat +
             location.lng
             );
-            console.log(
-                'GPS:',
-                location.lat,
-                location.lng);
+            
             const compressed =
             await compressImage(file);
 
