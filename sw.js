@@ -1,42 +1,40 @@
-
-const CACHE_NAME = 'attendance-cache-v2';
+```javascript
+const CACHE_NAME = "attendance-pwa-v1";
 
 const urlsToCache = [
-
-  './',
-  './index.html',
-  './admin.html'
-
+    "./",
+    "./index.html",
+    "./manifest.json",
+    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
 ];
 
 self.addEventListener('install', event => {
 
-  event.waitUntil(
+    event.waitUntil(
 
-    caches.open(CACHE_NAME)
+        caches.open(CACHE_NAME)
 
-    .then(cache => {
+        .then(cache => {
 
-      return cache.addAll(urlsToCache);
-
-    })
-
-  );
+            return cache.addAll(urlsToCache);
+        })
+    );
 });
 
 self.addEventListener('fetch', event => {
 
-  event.respondWith(
+    event.respondWith(
 
-    caches.match(event.request)
+        caches.match(event.request)
 
-    .then(response => {
+        .then(response => {
 
-      return response || fetch(event.request);
-
-    })
-
-  );
+            return response || fetch(event.request);
+        })
+    );
 });
+```
+
+
 
 
