@@ -567,39 +567,43 @@ if(upload.error){
                     fileName;
                 }
             }
-            const photoUrl =
-                SUPABASE_URL +
-            '/storage/v1/object/public/photo/' +
-                photoName;
-            alert(
-                'photoName=' + photoName
-                );
-             const attendanceData = {
+           const photoUrl =
+    photoName
+    ? SUPABASE_URL +
+      '/storage/v1/object/public/photo/' +
+      photoName
+    : '';
 
-                personnel_code:
-                personnelCode,
+alert(
+    'photoName=' + photoName
+);
 
-                fullname:
-                fullname,
+const attendanceData = {
 
-                entry_time:
-                new Date()
-                .toLocaleString(
-                    'fa-IR'
-                ),
+    personnel_code:
+    personnelCode,
 
-                latitude:
-                location.lat,
+    fullname:
+    fullname,
 
-                longitude:
-                location.lng,
+    entry_time:
+    new Date()
+    .toLocaleString(
+        'fa-IR'
+    ),
 
-                photo_name:
-                photoName
+    latitude:
+    location.lat,
 
-                photo_url;
-                photoUrl
-            };
+    longitude:
+    location.lng,
+
+    photo_name:
+    photoName,
+
+    photo_url:
+    photoUrl
+};
 
             if(isOnline){
                 console.log(
