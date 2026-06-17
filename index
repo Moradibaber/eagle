@@ -610,6 +610,12 @@ const attendanceData = {
     photo_url:
     photoUrl
 };
+ alert(
+   JSON.stringify(attendanceData,
+   null,
+   2
+)
+     );
 
             if(isOnline){
                 console.log(
