@@ -507,7 +507,11 @@ document.getElementById(
             
             const compressed =
             await compressImage(file);
-
+            alert('عکس فشرده شد');
+            console.log(compressed);
+            alert(
+           'size=' + compressed.size
+            );
             const fileName =
             'attendance_' +
             personnelCode +
