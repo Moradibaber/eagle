@@ -542,7 +542,7 @@ document.getElementById(
                         contentType:'image/jpeg'
                     }
                 );
-               console.log('UPLOAD'=,upload);
+               console.log('UPLOAD =',upload);
                 alert(
                     'UPLOAD ERROR = ' +
                     JSON.stringify(upload.error)
