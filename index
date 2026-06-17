@@ -534,7 +534,7 @@ document.getElementById(
 );
 
             if(isOnline){
-
+                alert('ENTER UPLOAD BLOCK');    
                 const upload =
                 await supabaseClient.storage
                 .from('photo')
