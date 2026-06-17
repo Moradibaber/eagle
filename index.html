@@ -544,7 +544,8 @@ document.getElementById(
                 );
                console.log('UPLOAD'=,upload);
                 alert(
-                    JSON.stringify(upload)
+                    'UPLOAD ERROR = ' +
+                    JSON.stringify(upload.error)
                     );
 
 if(upload.error){
