@@ -22,7 +22,6 @@ name="theme-color"
 content="#1a2a6c"
 >
 
-
 <style>
 
 body{
@@ -66,10 +65,6 @@ button{
     font-size:16px;
     cursor:pointer;
     margin-top:10px;
-}
-
-button:hover{
-    background:green;
 }
 
 .status{
@@ -175,77 +170,7 @@ supabase.createClient(
     SUPABASE_ANON_KEY
 );
 
-
 /* وضعیت شبکه */
-
-function updateFieldsState(){
-
-    const fullnameInput =
-    document.getElementById(
-        'fullname'
-    );
-
-    const personnelInput =
-    document.getElementById(
-        'personnel_code'
-    );
-
-    const savedName =
-    localStorage.getItem(
-        'employee_fullname'
-    );
-
-    const savedCode =
-    localStorage.getItem(
-        'employee_code'
-    );
-
-    /* اگر اطلاعات قبلا ثبت شده */
-
-    if(savedName && savedCode){
-
-        /* آنلاین */
-
-        if(navigator.onLine){
-
-            fullnameInput.readOnly = true;
-
-            personnelInput.readOnly = true;
-
-            fullnameInput.style.background =
-            '#eee';
-
-            personnelInput.style.background =
-            '#eee';
-
-        }else{
-
-            /* آفلاین */
-
-            fullnameInput.readOnly = false;
-
-            personnelInput.readOnly = false;
-
-            fullnameInput.style.background =
-            'white';
-
-            personnelInput.style.background =
-            'white';
-        }
-
-    }else{
-
-        fullnameInput.readOnly = false;
-
-        personnelInput.readOnly = false;
-
-        fullnameInput.style.background =
-        'white';
-
-        personnelInput.style.background =
-        'white';
-    }
-}
 
 function updateNetworkStatus(){
 
@@ -270,13 +195,16 @@ function updateNetworkStatus(){
         status.className =
         'status offline';
     }
-
-    updateFieldsState();
 }
 
 window.addEventListener(
     'online',
-    updateNetworkStatus
+    async ()=>{
+
+        updateNetworkStatus();
+
+        await sendOfflineData();
+    }
 );
 
 window.addEventListener(
@@ -284,11 +212,37 @@ window.addEventListener(
     updateNetworkStatus
 );
 
-/* شروع برنامه */
+/* ذخیره اطلاعات */
 
-window.onload = function(){
+function saveEmployeeInfo(){
 
-    updateNetworkStatus();
+    const fullname =
+    document.getElementById(
+        'fullname'
+    ).value.trim();
+
+    const personnelCode =
+    document.getElementById(
+        'personnel_code'
+    ).value.trim();
+
+    if(fullname && personnelCode){
+
+        localStorage.setItem(
+            'employee_fullname',
+            fullname
+        );
+
+        localStorage.setItem(
+            'employee_code',
+            personnelCode
+        );
+    }
+}
+
+/* بارگذاری اطلاعات */
+
+function loadEmployeeInfo(){
 
     const savedName =
     localStorage.getItem(
@@ -300,45 +254,44 @@ window.onload = function(){
         'employee_code'
     );
 
-    /* اگر قبلا ثبت شده */
+    if(savedName){
+
+        document.getElementById(
+            'fullname'
+        ).value = savedName;
+    }
+
+    if(savedCode){
+
+        document.getElementById(
+            'personnel_code'
+        ).value = savedCode;
+    }
 
     if(savedName && savedCode){
 
         document.getElementById(
             'fullname'
-        ).value = savedName;
-
-        document.getElementById(
-            'personnel_code'
-        ).value = savedCode;
-
-        /* مخفی کردن فیلدها */
-
-        document.getElementById(
-            'fullname'
         ).style.display = 'none';
 
         document.getElementById(
             'personnel_code'
         ).style.display = 'none';
-
-    }else{
-
-        /* اولین ورود */
-
-        document.getElementById(
-            'fullname'
-        ).style.display = 'block';
-
-        document.getElementById(
-            'personnel_code'
-        ).style.display = 'block';
     }
+}
+
+/* شروع */
+
+window.onload = async function(){
+
+    updateNetworkStatus();
+
+    loadEmployeeInfo();
+
+    await sendOfflineData();
 
     loadRecords();
 };
-
-
 
 /* GPS */
 
@@ -372,7 +325,7 @@ function getLocation(){
 
             },
 
-            () => {
+            ()=>{
 
                 resolve({
                     lat:null,
@@ -389,7 +342,7 @@ function getLocation(){
     });
 }
 
-/* فشرده سازی عکس */
+/* فشرده سازی */
 
 async function compressImage(file){
 
@@ -451,12 +404,15 @@ async function compressImage(file){
                 );
 
                 canvas.toBlob(
+
                     blob => {
 
                         resolve(blob);
 
                     },
+
                     'image/jpeg',
+
                     0.7
                 );
             };
@@ -471,11 +427,19 @@ document.getElementById(
 ).onclick = function(){
 
     const fullname =
+    localStorage.getItem(
+        'employee_fullname'
+    ) ||
+
     document.getElementById(
         'fullname'
     ).value.trim();
 
     const personnelCode =
+    localStorage.getItem(
+        'employee_code'
+    ) ||
+
     document.getElementById(
         'personnel_code'
     ).value.trim();
@@ -489,17 +453,9 @@ document.getElementById(
         return;
     }
 
-    localStorage.setItem(
-        'employee_fullname',
-        fullname
-    );
+    saveEmployeeInfo();
 
-    localStorage.setItem(
-        'employee_code',
-        personnelCode
-    );
-
-    lockFields();
+    loadEmployeeInfo();
 
     const input =
     document.getElementById(
@@ -523,11 +479,6 @@ document.getElementById(
 
             if(!file){
 
-                document.getElementById(
-                    'loading'
-                ).style.display =
-                'none';
-
                 return;
             }
 
@@ -543,10 +494,6 @@ document.getElementById(
             '_' +
             Date.now() +
             '.jpg';
-
-            /* آپلود عکس */
-
-            let uploaded = false;
 
             let photoName = '';
 
@@ -566,13 +513,10 @@ document.getElementById(
 
                 if(!upload.error){
 
-                    uploaded = true;
-
-                    photoName = fileName;
+                    photoName =
+                    fileName;
                 }
             }
-
-            /* داده */
 
             const attendanceData = {
 
@@ -598,8 +542,6 @@ document.getElementById(
                 photoName
             };
 
-            /* آنلاین */
-
             if(navigator.onLine){
 
                 const insert =
@@ -619,8 +561,6 @@ document.getElementById(
                 );
 
             }else{
-
-                /* آفلاین */
 
                 let offlineData =
 
@@ -654,7 +594,6 @@ document.getElementById(
             console.log(err);
 
             alert(
-                'خطا: ' +
                 err.message
             );
 
@@ -670,7 +609,7 @@ document.getElementById(
     input.click();
 };
 
-/* ارسال آفلاین */
+/* ارسال داده آفلاین */
 
 async function sendOfflineData(){
 
@@ -688,16 +627,12 @@ async function sendOfflineData(){
         ) || '[]'
     );
 
-    if(
-        offlineData.length === 0
-    ){
+    if(offlineData.length === 0){
 
         return;
     }
 
-    for(
-        let item of offlineData
-    ){
+    for(let item of offlineData){
 
         try{
 
@@ -726,10 +661,12 @@ async function loadRecords(){
     );
 
     if(!personnelCode){
+
         return;
     }
 
     if(!navigator.onLine){
+
         return;
     }
 
@@ -751,6 +688,7 @@ async function loadRecords(){
         );
 
         if(!data){
+
             return;
         }
 
@@ -787,9 +725,7 @@ async function loadRecords(){
     }
 }
 
-</script>
-
-<script>
+/* Service Worker */
 
 if('serviceWorker' in navigator){
 
@@ -799,7 +735,6 @@ if('serviceWorker' in navigator){
 }
 
 </script>
-
 
 </body>
 
