@@ -537,7 +537,7 @@ document.getElementById(
                 alert('ENTER UPLOAD BLOCK');    
                 const upload =
                 await supabaseClient.storage
-                .from('photo')
+                .from('reference_photo')
                 .upload(
                     fileName,
                     compressed,
