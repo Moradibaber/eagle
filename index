@@ -1,217 +1,100 @@
+
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
+
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>مدیریت شارژ ساختمان</title>
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0"
+>
 
-<link href="https://cdn.fontcdn.ir/Font/Persian/B-Koodak/B-Koodak.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<title>
+سیستم ثبت تردد پرسنل
+</title>
 
 <style>
 
-*{
-box-sizing:border-box;
-font-family:'B Koodak',Tahoma;
-font-size:20px;
-}
-
 body{
-background:#4a648b;
-margin:0;
-padding:10px;
+    font-family:tahoma;
+    background:#f4f7fa;
+    margin:0;
+    padding:20px;
 }
 
 .container{
-max-width:600px;
-margin:auto;
-background:rgb(109,44,44);
-padding:15px;
-border-radius:15px;
-box-shadow:0 5px 15px rgba(0,0,0,0.08);
+    max-width:500px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 0 15px rgba(0,0,0,0.1);
 }
 
 h2{
-text-align:center;
-color:#fff;
-font-size:34px;
-margin-bottom:15px;
-}
-
-#reportMonth,
-#prevBalance{
-width:100%;
-padding:12px;
-border:2px solid #1a73e8;
-border-radius:10px;
-text-align:center;
-margin-bottom:15px;
-font-size:24px;
-}
-
-.section-title{
-font-weight:bold;
-margin:15px 0 10px;
-border-right:4px solid #1a73e8;
-padding-right:8px;
-font-size:25px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-color:white;
-}
-
-.input-row{
-display:flex;
-gap:6px;
-margin-bottom:8px;
-align-items:center;
-width:100%;
-}
-
-.input-row input{
-min-width:0;
-}
-
-#expenses .input-row input:first-child{
-flex:2;
-}
-
-#expenses .input-row input:last-child{
-flex:1;
-}
-
-label{
-width:75px;
-font-size:22px;
-flex-shrink:0;
-color:white;
+    text-align:center;
+    color:#1a2a6c;
 }
 
 input{
-padding:10px;
-border:1px solid #f7faf3;
-border-radius:8px;
-text-align:center;
-font-size:22px;
-width:100%;
+    width:100%;
+    padding:12px;
+    margin-bottom:15px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:16px;
+    box-sizing:border-box;
 }
 
-textarea{
-width:100%;
-min-height:80px;
-text-align:right;
-margin-top:5px;
-padding:10px;
-border:1px solid #f7faf3;
-border-radius:8px;
-font-size:22px;
+button{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:8px;
+    background:#1a2a6c;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+    margin-top:10px;
 }
 
-.btn{
-width:100%;
-padding:12px;
-border:none;
-border-radius:8px;
-margin-top:8px;
-cursor:pointer;
-font-size:22px;
-color:white;
+button:hover{
+    background:green;
 }
 
-.save{
-background:#28a745;
+.record{
+    background:#fff;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:15px;
+    margin-top:15px;
 }
 
-.excel{
-background:#007bff;
+#status{
+    margin-top:20px;
+    text-align:center;
+    font-weight:bold;
+    color:green;
 }
 
-.pdf{
-background:#dc3545;
+#photoCounter{
+    text-align:center;
+    margin-top:10px;
+    font-size:14px;
+    color:#1a2a6c;
+    font-weight:bold;
 }
 
-.small-btn{
-padding:6px 10px;
-font-size:16px;
-margin-top:6px;
-width:auto;
-display:inline-block;
-}
-
-.backup{
-background:#6f42c1;
-}
-
-.restore{
-background:#ff9800;
-}
-
-.card{
-border:1px solid #ddd;
-padding:12px;
-border-radius:10px;
-margin-top:10px;
-background:#fafafa;
-}
-
-.edit-btn{
-border:none;
-background:#1a73e8;
-color:white;
-padding:5px 12px;
-border-radius:6px;
-cursor:pointer;
-font-size:18px;
-}
-
-.balance-box{
-margin-top:10px;
-padding:15px;
-border-radius:10px;
-background:#f1f1f1;
-line-height:2;
-font-size:22px;
-border:1px solid #e0e0e0;
-}
-
-.debt-card{
-background:#ffe5e5;
-border:1px solid #ffb3b3;
-padding:12px;
-border-radius:10px;
-margin-top:10px;
-line-height:2;
-}
-
-.debt-title{
-font-weight:bold;
-color:#c62828;
-font-size:22px;
-margin-bottom:5px;
-}
-
-.unit-details{
-font-size:18px;
-margin-top:8px;
-padding-left:15px;
-border-left:2px solid #ccc;
-}
-
-.unit-detail-item{
-margin-bottom:5px;
-}
-
-.exp-list{
-font-size:18px;
-margin-top:8px;
-padding-left:15px;
-border-left:2px solid #ccc;
+.disabled{
+    background:#ccc !important;
+    cursor:not-allowed;
 }
 
 </style>
+
+<script defer src="./face-api/face-api.min.js"></script>
 
 </head>
 
@@ -219,897 +102,849 @@ border-left:2px solid #ccc;
 
 <div class="container">
 
-<h2>مدیریت شارژ ساختمان</h2>
+<h2>
+سیستم ثبت تردد پرسنل
+</h2>
 
 <input
-id="reportMonth"
-placeholder="مثال: خرداد ۱۴۰۵"
-onblur="loadMonth()">
+type="text"
+id="fullname"
+placeholder="نام و نام خانوادگی"
+>
 
 <input
-id="prevBalance"
-placeholder="مانده اولیه صندوق"
-oninput="money(this)">
+type="text"
+id="personnel_code"
+placeholder="کد پرسنلی"
+>
 
-<div class="section-title">
-<span>شارژ واحدها</span>
-<span>(حداکثر ۵ واحد)</span>
-</div>
-
-<div id="units"></div>
-
-<div class="section-title">
-<span>هزینه‌ها</span>
-<span>(حداکثر ۵ مورد)</span>
-</div>
-
-<div id="expenses"></div>
-
-<textarea id="extraNote" placeholder="توضیحات"></textarea>
-
-<button class="btn save" onclick="saveData()">
-ذخیره اطلاعات
-</button>
-
-<button class="btn excel" onclick="exportExcel()">
-دانلود اکسل
-</button>
-
-<button class="btn pdf" onclick="exportPDF()">
-دانلود PDF
-
-</button>
-
-<div style="display:flex;gap:6px;margin-top:8px;">
-
-<button class="btn backup small-btn" onclick="backupData()">
-Backup
-</button>
-
-<button class="btn restore small-btn" onclick="document.getElementById('restoreFile').click()">
-Restore
-</button>
-
-<input type="file" id="restoreFile" style="display:none" onchange="restoreBackup(event)">
-
-</div>
-
-<div class="section-title">
-<span>گزارش ماهانه</span>
-</div>
-
-<div id="history"></div>
-
-<div class="balance-box">
-
-<div class="section-title">
-<span style="color:black;">وضعیت صندوق</span>
-</div>
-
-<div id="balance"></div>
-
-</div>
-
-<div class="debt-card">
-
-<div class="section-title">
-<span style="color:black;">گزارش بدهکارها</span>
-</div>
-
-<div id="debtReport"></div>
+<input
+type="file"
+id="photo"
+accept="image/*"
+capture="user"
+style="display:none"
+>
 
 <button
-class="btn"
-style="background:#455a64;margin-top:10px;"
-onclick="toggleHiddenDebts()">
-نمایش بدهکارهای مخفی
+id="captureBtn"
+type="button"
+onclick="captureReferencePhoto()"
+style="background:#00897b;"
+>
+📸 گرفتن 5 عکس مرجع
 </button>
 
-<div
-id="hiddenDebtsBox"
-style="display:none;margin-top:10px;">
+<div id="photoCounter">
+5 عکس باقی مانده
 </div>
+
+<button
+type="button"
+id="photoBtn"
+onclick="saveAttendance()"
+>
+📷 ثبت ورود
+</button>
+
+<div id="status"></div>
+
+<div id="myRecords"></div>
 
 </div>
 
-</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
 <script>
 
-for(let i=1;i<=5;i++){
+const SUPABASE_URL =
+'https://kddhnohquohbnemmegdy.supabase.co';
 
-units.innerHTML += `
-<div class="input-row">
-<label>واحد ${i}</label>
-<input id="u${i}" oninput="money(this)">
-</div>
-`
+const SUPABASE_ANON_KEY =
+'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
 
+const supabaseClient =
+supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
+
+let remainingPhotos = 5;
+
+let faceModelsLoaded = false;
+
+async function loadFaceModels(){
+
+    if(faceModelsLoaded) return;
+
+    await faceapi.nets.tinyFaceDetector.loadFromUri('./face-api/models');
+
+    await faceapi.nets.faceLandmark68Net.loadFromUri('./face-api/models');
+
+    await faceapi.nets.faceRecognitionNet.loadFromUri('./face-api/models');
+
+    faceModelsLoaded = true;
 }
 
-for(let i=1;i<=5;i++){
+function lockPersonnelFields(){
 
-expenses.innerHTML += `
-<div class="input-row">
-<input id="en${i}" placeholder="شرح هزینه">
-<input id="ev${i}" placeholder="مبلغ" oninput="money(this)">
-</div>
-`
+    const fullnameInput =
+    document.getElementById('fullname');
 
+    const codeInput =
+    document.getElementById('personnel_code');
+
+    fullnameInput.readOnly = true;
+    codeInput.readOnly = true;
+
+    fullnameInput.style.background = '#eee';
+    codeInput.style.background = '#eee';
 }
 
-function money(i){
+window.onload = async function(){
 
-let n=i.value.replace(/,/g,'').replace(/[^\d]/g,'')
+    await loadFaceModels();
 
-i.value=n ? Number(n).toLocaleString() : ""
+    const savedName =
+    localStorage.getItem(
+        'employee_fullname'
+    );
 
+    const savedCode =
+    localStorage.getItem(
+        'employee_code'
+    );
+
+    if(savedName){
+
+        document.getElementById(
+            'fullname'
+        ).value = savedName;
+    }
+
+    if(savedCode){
+
+        document.getElementById(
+            'personnel_code'
+        ).value = savedCode;
+    }
+
+    if(savedName && savedCode){
+
+        lockPersonnelFields();
+
+        const { data } =
+
+        await supabaseClient
+
+        .from('personnel')
+
+        .select('*')
+
+        .eq(
+            'personnel_code',
+            savedCode
+        )
+
+        .single();
+
+        if(data){
+
+            remainingPhotos =
+            Math.max(
+                0,
+                5 - (data.photo_count || 0)
+            );
+
+            updatePhotoCounter();
+        }
+    }
+
+    loadMyRecords();
+};
+
+function updatePhotoCounter(){
+
+    if(remainingPhotos > 0){
+
+        document.getElementById(
+            'photoCounter'
+        ).innerHTML =
+
+        remainingPhotos +
+        ' عکس باقی مانده';
+
+        document.getElementById(
+            'captureBtn'
+        ).innerHTML =
+
+        '📸 گرفتن ' +
+        remainingPhotos +
+        ' عکس مرجع';
+
+    }else{
+
+        document.getElementById(
+            'photoCounter'
+        ).innerHTML =
+
+        '✅ عکس‌های مرجع تکمیل شد';
+
+        document.getElementById(
+            'captureBtn'
+        ).disabled = true;
+
+        document.getElementById(
+            'captureBtn'
+        ).classList.add(
+            'disabled'
+        );
+    }
 }
 
-function val(id){
+async function captureReferencePhoto(){
 
-return Number(document.getElementById(id).value.replace(/,/g,''))||0
+    const fullname =
+    document.getElementById(
+        'fullname'
+    ).value.trim();
 
+    const personnelCode =
+    document.getElementById(
+        'personnel_code'
+    ).value.trim();
+
+    if(!fullname || !personnelCode){
+
+        alert(
+            'ابتدا نام و کد پرسنلی را وارد کنید'
+        );
+
+        return;
+    }
+
+    const savedName =
+    localStorage.getItem(
+        'employee_fullname'
+    );
+
+    const savedCode =
+    localStorage.getItem(
+        'employee_code'
+    );
+
+    if(savedName && savedName !== fullname){
+
+        alert(
+            'نام قابل تغییر نیست'
+        );
+
+        return;
+    }
+
+    if(savedCode && savedCode !== personnelCode){
+
+        alert(
+            'کد پرسنلی قابل تغییر نیست'
+        );
+
+        return;
+    }
+
+    localStorage.setItem(
+        'employee_fullname',
+        fullname
+    );
+
+    localStorage.setItem(
+        'employee_code',
+        personnelCode
+    );
+
+    lockPersonnelFields();
+
+    if(remainingPhotos <= 0){
+
+        alert(
+            '۵ عکس مرجع ثبت شده'
+        );
+
+        return;
+    }
+
+    const photoInput =
+    document.getElementById(
+        'photo'
+    );
+
+    photoInput.value = '';
+
+    photoInput.onchange = async function(e){
+
+        try{
+
+            const file =
+            e.target.files[0];
+
+            if(!file) return;
+
+            const fileName =
+
+            personnelCode +
+
+            '_' +
+
+            Date.now() +
+
+            '_' +
+
+            Math.floor(
+                Math.random() * 999999
+            ) +
+
+            '.jpg';
+
+            const { error } =
+
+            await supabaseClient.storage
+
+            .from('reference-photos')
+
+            .upload(
+                fileName,
+                file,
+                {
+                    cacheControl:'3600',
+                    upsert:false
+                }
+            );
+
+            if(error){
+
+                console.log(error);
+
+                alert(
+                    'خطا در آپلود: ' +
+                    error.message
+                );
+
+                return;
+            }
+
+            remainingPhotos--;
+
+            const { data: existingPerson } =
+
+            await supabaseClient
+
+            .from('personnel')
+
+            .select('*')
+
+            .eq(
+                'personnel_code',
+                personnelCode
+            )
+
+            .single();
+
+            let saveError = null;
+
+            if(existingPerson){
+
+                const { error } =
+
+                await supabaseClient
+
+                .from('personnel')
+
+                .update({
+
+                    fullname:
+                    fullname,
+
+                    photo_count:
+                    5 - remainingPhotos
+
+                })
+
+                .eq(
+                    'personnel_code',
+                    personnelCode
+                );
+
+                saveError = error;
+
+            }else{
+
+                const { error } =
+
+                await supabaseClient
+
+                .from('personnel')
+
+                .insert([{
+
+                    personnel_code:
+                    personnelCode,
+
+                    fullname:
+                    fullname,
+
+                    photo_count:
+                    5 - remainingPhotos
+
+                }]);
+
+                saveError = error;
+            }
+
+            if(saveError){
+
+                console.log(saveError);
+
+                alert(
+                    'خطا در ذخیره اطلاعات'
+                );
+
+                return;
+            }
+
+            updatePhotoCounter();
+
+            photoInput.value = '';
+
+            if(remainingPhotos > 0){
+
+                setTimeout(() => {
+
+                    captureReferencePhoto();
+
+                }, 500);
+
+            }else{
+
+                alert(
+                    'ثبت ۵ عکس کامل شد'
+                );
+            }
+
+        }catch(err){
+
+            console.log(err);
+
+            alert(
+                'خطا: ' + err.message
+            );
+        }
+    };
+
+    photoInput.click();
 }
 
-function now(){
+async function saveAttendance(){
 
-return new Date().toLocaleString('fa-IR')
+    const fullname =
+    localStorage.getItem(
+        'employee_fullname'
+    );
 
+    const personnel_code =
+    localStorage.getItem(
+        'employee_code'
+    );
+
+    if(!fullname || !personnel_code){
+
+        alert(
+            'ابتدا اطلاعات پرسنلی را ثبت کنید'
+        );
+
+        return;
+    }
+
+    if(remainingPhotos > 0){
+
+        alert(
+            'ابتدا ۵ عکس مرجع را کامل ثبت کنید'
+        );
+
+        return;
+    }
+
+    const photoInput =
+    document.getElementById(
+        'photo'
+    );
+
+    photoInput.value = '';
+
+    photoInput.onchange = async function(){
+
+        try{
+
+            const photoFile =
+            this.files[0];
+
+            if(!photoFile) return;
+
+            const img =
+            await faceapi.bufferToImage(
+                photoFile
+            );
+
+            const detection =
+
+            await faceapi
+
+            .detectSingleFace(
+                img,
+                new faceapi.TinyFaceDetectorOptions()
+            )
+
+            .withFaceLandmarks()
+
+            .withFaceDescriptor();
+
+            if(!detection){
+
+                alert(
+                    'چهره تشخیص داده نشد'
+                );
+
+                return;
+            }
+
+            const currentDescriptor =
+            detection.descriptor;
+
+            const { data: allPhotos } =
+
+            await supabaseClient.storage
+
+            .from('reference-photos')
+
+            .list();
+
+            const referencePhotos =
+
+            allPhotos.filter(photo =>
+
+                photo.name.startsWith(
+                    personnel_code + '_'
+                )
+            );
+
+            let matched = false;
+
+            for(const photo of referencePhotos){
+
+                try{
+
+                    const photoUrl =
+
+                    SUPABASE_URL +
+
+                    '/storage/v1/object/public/reference-photos/' +
+
+                    photo.name;
+
+                    const refImg =
+
+                    await faceapi.fetchImage(
+                        photoUrl
+                   );
+
+                    const refDetection =
+
+                    await faceapi
+
+                    .detectSingleFace(
+                        refImg,
+                        new faceapi.TinyFaceDetectorOptions()
+                    )
+
+                    .withFaceLandmarks()
+
+                    .withFaceDescriptor();
+
+                    if(!refDetection){
+
+                        continue;
+                    }
+
+                    const distance =
+
+                    faceapi.euclideanDistance(
+
+                        currentDescriptor,
+
+                        refDetection.descriptor
+                    );
+
+                    if(distance < 0.45){
+
+                        matched = true;
+
+                        break;
+                    }
+
+                }catch(err){
+
+                    console.log(err);
+                }
+            }
+
+            if(!matched){
+
+                alert(
+                    'چهره مطابقت ندارد'
+                );
+
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+
+            async position => {
+
+                try{
+
+                    const latitude =
+                    position.coords.latitude;
+
+                    const longitude =
+                    position.coords.longitude;
+
+                    const now =
+                    new Date().toLocaleString(
+                        'fa-IR'
+                    );
+
+                    let photo_url = '';
+
+                    const fileName =
+                    Date.now() + '.jpg';
+
+                    const { error: uploadError } =
+
+                    await supabaseClient.storage
+
+                    .from('photos')
+
+                    .upload(
+                        fileName,
+                        photoFile,
+                        {
+                            upsert:true
+                        }
+                    );
+
+                    if(!uploadError){
+
+                        const { data } =
+
+                        supabaseClient.storage
+
+                        .from('photos')
+
+                        .getPublicUrl(
+                            fileName
+                        );
+
+                        photo_url =
+                        data.publicUrl;
+                    }
+
+                    const { error } =
+
+                    await supabaseClient
+
+                    .from('eagle')
+
+                    .insert([
+
+                        {
+
+                            fullname:
+                            fullname,
+
+                            personnel_code:
+                            personnel_code,
+
+                            entry_time:
+                            now,
+
+                            latitude:
+                            latitude.toString(),
+
+                            longitude:
+                            longitude.toString(),
+
+                            photo_url:
+                            photo_url
+                        }
+                    ]);
+
+                    if(error){
+
+                        console.log(error);
+
+                        document.getElementById(
+                            'status'
+                        ).innerHTML =
+
+                        'خطا در ثبت اطلاعات';
+
+                    }else{
+
+                        document.getElementById(
+                            'status'
+                        ).innerHTML =
+
+                        'اطلاعات با موفقیت ثبت شد';
+
+                        loadMyRecords();
+                    }
+
+                    photoInput.value = '';
+
+                }catch(err){
+
+                    console.log(err);
+
+                    alert(
+                        'خطا: ' + err.message
+                    );
+                }
+            });
+
+        }catch(err){
+
+            console.log(err);
+
+            alert(
+                'خطا: ' + err.message
+            );
+        }
+    };
+
+    photoInput.click();
 }
 
-function loadMainBalance(){
+async function loadMyRecords(){
 
-let b=Number(localStorage.getItem("main_balance"))||0
+    const personnel_code =
 
-document.getElementById("prevBalance").value=b?b.toLocaleString():""
+    localStorage.getItem(
+        'employee_code'
+    );
 
+    if(!personnel_code){
+
+        return;
+    }
+
+    const { data } =
+
+    await supabaseClient
+
+    .from('eagle')
+
+    .select('*')
+
+    .eq(
+        'personnel_code',
+        personnel_code
+    )
+
+    .order(
+        'id',
+        {
+            ascending:false
+        }
+    );
+
+    if(!data) return;
+
+    let html = `
+
+    <h3 style="
+    margin-top:30px;
+    text-align:center;
+    color:#1a2a6c;
+    ">
+    ۳ روز اخیر
+    </h3>
+    `;
+
+    const grouped = {};
+
+    data.forEach(item => {
+
+        const onlyDate =
+        item.entry_time.substring(0,10);
+
+        if(!grouped[onlyDate]){
+
+            grouped[onlyDate] = [];
+        }
+
+        grouped[onlyDate].push(item);
+    });
+
+    const dates =
+    Object.keys(grouped).slice(0,3);
+
+    dates.forEach(date => {
+
+        const records =
+        grouped[date];
+
+        const first =
+        records[
+            records.length - 1
+        ];
+
+        const last =
+        records[0];
+
+        html += `
+
+        <div class="record">
+
+        <h4>
+        ${date}
+        </h4>
+
+        <p>
+        اولین تردد:
+        ${first.entry_time}
+        </p>
+
+        <p>
+        آخرین تردد:
+        ${last.entry_time}
+        </p>
+
+        </div>
+        `;
+    });
+
+    document.getElementById(
+        'myRecords'
+    ).innerHTML = html;
 }
 
-function loadMonth(){
+if('serviceWorker' in navigator){
 
-let m=document.getElementById("reportMonth").value.trim()
-
-if(!m)return
-
-let db=JSON.parse(localStorage.getItem("db_charge")||"[]")
-
-let data=db.find(x=>x.month==m)
-
-for(let i=1;i<=5;i++){
-
-document.getElementById("u"+i).value=""
-
+    navigator.serviceWorker.register(
+        './sw.js'
+    );
 }
-
-for(let i=1;i<=5;i++){
-
-document.getElementById("en"+i).value=""
-document.getElementById("ev"+i).value=""
-
-}
-
-document.getElementById("extraNote").value=""
-
-if(data){
-
-for(let i=1;i<=5;i++){
-
-if(data.units && data.units.hasOwnProperty(i)){
-
-document.getElementById("u"+i).value=data.units[i].val.toLocaleString()
-
-}
-
-}
-
-for(let i=1;i<=5;i++){
-
-if(data.exp && data.exp[i-1]){
-
-document.getElementById("en"+i).value=data.exp[i-1].name
-document.getElementById("ev"+i).value=data.exp[i-1].val.toLocaleString()
-
-}
-
-}
-
-document.getElementById("extraNote").value=data.note||""
-
-}
-
-}
-
-function saveData(){
-
-let m=document.getElementById("reportMonth").value.trim()
-
-if(!m){
-
-alert("نام ماه را وارد کنید")
-return
-
-}
-
-localStorage.setItem("main_balance",val("prevBalance"))
-
-let db=JSON.parse(localStorage.getItem("db_charge")||"[]")
-
-let index=db.findIndex(x=>x.month==m)
-
-let data=index>=0?db[index]:{
-month:m,
-units:{},
-exp:[],
-note:"",
-id:Date.now()
-}
-
-for(let i=1;i<=5;i++){
-
-let v=val("u"+i)
-
-if(v>0){
-
-data.units[i]={
-val:v,
-date:now()
-}
-
-}else{
-
-delete data.units[i]
-
-}
-
-}
-
-let e=[]
-
-for(let i=1;i<=5;i++){
-
-let name=document.getElementById("en"+i).value
-let v=val("ev"+i)
-
-if(v>0){
-
-e.push({
-name:name||"هزینه",
-val:v,
-date:now()
-})
-
-}
-
-}
-
-data.exp=e
-data.note=document.getElementById("extraNote").value
-
-if(index>=0){
-
-db[index]=data
-
-}else{
-
-db.push(data)
-
-}
-
-localStorage.setItem("db_charge",JSON.stringify(db))
-
-render()
-
-alert("اطلاعات ذخیره شد")
-
-}
-
-function deleteMonth(month){
-
-let ok=confirm(`آیا ماه ${month} حذف شود؟`)
-
-if(!ok)return
-
-let db=JSON.parse(localStorage.getItem("db_charge")||"[]")
-
-db=db.filter(x=>x.month!==month)
-
-localStorage.setItem("db_charge",JSON.stringify(db))
-
-render()
-
-}
-
-function hideDebt(month){
-
-let hidden=JSON.parse(localStorage.getItem("hidden_debts")||"[]")
-
-if(hidden.includes(month)){
-
-hidden=hidden.filter(x=>x!==month)
-
-}else{
-
-hidden.push(month)
-
-}
-
-localStorage.setItem("hidden_debts",JSON.stringify(hidden))
-
-render()
-
-}
-
-function toggleHiddenDebts(){
-
-let box=document.getElementById("hiddenDebtsBox")
-
-if(box.style.display=="none"){
-
-box.style.display="block"
-
-}else{
-
-box.style.display="none"
-
-}
-
-}
-
-function render(){
-
-let db=JSON.parse(localStorage.getItem("db_charge")||"[]")
-
-let hiddenDebts=JSON.parse(localStorage.getItem("hidden_debts")||"[]")
-
-history.innerHTML=""
-debtReport.innerHTML=""
-hiddenDebtsBox.innerHTML=""
-
-let totalIncome=0
-let totalCost=0
-
-db.sort((a,b)=>b.id-a.id)
-
-db.forEach(x=>{
-
-let income=0
-
-for(let i=1;i<=5;i++){
-
-if(x.units && x.units.hasOwnProperty(i)){
-
-income += x.units[i].val
-
-}
-
-}
-
-let cost=0
-
-if(x.exp && x.exp.length){
-
-x.exp.forEach(item=>{
-
-cost += item.val
-
-})
-
-}
-
-totalIncome += income
-totalCost += cost
-
-let debt=[]
-
-if(x.units && Object.keys(x.units).length>0){
-
-for(let i=1;i<=5;i++){
-
-if(!x.units.hasOwnProperty(i)){
-
-debt.push(i)
-
-}
-
-}
-
-}
-
-history.innerHTML += `
-<div class="card">
-
-<div style="display:flex;justify-content:space-between;align-items:center;">
-
-<b>${x.month}</b>
-
-<button class="edit-btn" onclick="editMonth('${x.month}')">
-ویرایش
-</button>
-
-</div>
-
-<div style="margin-top:10px">
-
-<b>دریافتی کل:</b>
-${income.toLocaleString()}
-
-<br>
-
-<b>هزینه کل:</b>
-${cost.toLocaleString()}
-
-<br>
-
-<b>مانده:</b>
-${(income-cost).toLocaleString()}
-
-</div>
-
-</div>
-`
-
-if(debt.length){
-
-let isHidden=hiddenDebts.includes(x.month)
-
-let cardHtml=`
-
-<div class="debt-card">
-
-<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-
-<div
-class="debt-title"
-style="cursor:pointer;"
-onclick="editMonth('${x.month}')">
-
-${x.month}
-
-</div>
-
-<div style="display:flex;gap:6px;">
-
-<button
-onclick="hideDebt('${x.month}')"
-style="
-border:none;
-background:#616161;
-color:white;
-padding:6px 12px;
-border-radius:6px;
-cursor:pointer;
-font-size:18px;
-">
-
-${isHidden ? 'بازگشت' : 'مخفی'}
-
-</button>
-
-<button
-onclick="deleteMonth('${x.month}')"
-style="
-border:none;
-background:#d32f2f;
-color:white;
-padding:6px 12px;
-border-radius:6px;
-cursor:pointer;
-font-size:18px;
-">
-
-حذف
-
-</button>
-
-</div>
-
-</div>
-
-<div style="margin-top:8px;">
-
-بدهکارها:
-${debt.map(d=>`واحد ${d}`).join(" ، ")}
-
-</div>
-
-</div>
-`
-
-if(isHidden){
-
-hiddenDebtsBox.innerHTML += cardHtml
-
-}else{
-
-debtReport.innerHTML += cardHtml
-
-}
-
-}
-
-})
-
-let mainBalance=Number(localStorage.getItem("main_balance"))||0
-
-let finalBalance=(mainBalance+totalIncome)-totalCost
-
-balance.innerHTML=`
-
-مانده اولیه صندوق:
-${mainBalance.toLocaleString()}
-
-<br><br>
-
-جمع دریافتی:
-${totalIncome.toLocaleString()}
-
-<br><br>
-
-جمع هزینه‌ها:
-${totalCost.toLocaleString()}
-
-<br><br>
-
-<b>
-
-${finalBalance>=0?"وضعیت صندوق: طلبکار":"وضعیت صندوق: بدهکار"}
-
-<br>
-
-${Math.abs(finalBalance).toLocaleString()}
-
-</b>
-`
-
-}
-
-function editMonth(month){
-
-document.getElementById("reportMonth").value=month
-
-loadMonth()
-
-window.scrollTo({
-top:0,
-behavior:"smooth"
-})
-
-}
-
-function exportExcel(){
-
-let db=JSON.parse(localStorage.getItem("db_charge")||"[]")
-
-let rows=[]
-
-db.forEach(m=>{
-
-let income=0
-
-for(let u in m.units){
-
-income += m.units[u].val
-
-}
-
-let cost=0
-
-m.exp.forEach(e=>{
-
-cost += e.val
-
-})
-
-rows.push({
-ماه:m.month,
-دریافتی:income,
-هزینه:cost,
-مانده:income-cost
-})
-
-})
-
-let ws=XLSX.utils.json_to_sheet(rows)
-
-let wb=XLSX.utils.book_new()
-
-XLSX.utils.book_append_sheet(wb,ws,"charge")
-
-XLSX.writeFile(wb,"building_charge.xlsx")
-
-}
-
-function backupData(){
-
-let data={
-main_balance:localStorage.getItem("main_balance"),
-db_charge:localStorage.getItem("db_charge"),
-hidden_debts:localStorage.getItem("hidden_debts")
-}
-
-let blob=new Blob([JSON.stringify(data)],{
-type:"application/json"
-})
-
-let url=URL.createObjectURL(blob)
-
-let a=document.createElement("a")
-
-a.href=url
-
-a.download="backup_charge.json"
-
-a.click()
-
-}
-
-function restoreBackup(event){
-
-let file=event.target.files[0]
-
-if(!file)return
-
-let reader=new FileReader()
-
-reader.onload=function(e){
-
-try{
-
-let data=JSON.parse(e.target.result)
-
-if(data.main_balance)
-localStorage.setItem("main_balance",data.main_balance)
-
-if(data.db_charge)
-localStorage.setItem("db_charge",data.db_charge)
-
-if(data.hidden_debts)
-localStorage.setItem("hidden_debts",data.hidden_debts)
-
-alert("بکاپ بازیابی شد")
-
-location.reload()
-
-}catch(error){
-
-alert("خطا در خواندن فایل")
-
-}
-
-}
-
-reader.readAsText(file)
-
-}
-function exportPDF(){
-
-let db=JSON.parse(localStorage.getItem("db_charge")||"[]")
-
-let mainBalance=Number(localStorage.getItem("main_balance"))||0
-
-let totalIncome=0
-let totalCost=0
-
-let html=`
-
-<html dir="rtl">
-
-<head>
-
-<title>گزارش شارژ ساختمان</title>
-
-<link href="https://cdn.fontcdn.ir/Font/Persian/B-Koodak/B-Koodak.css" rel="stylesheet">
-
-<style>
-
-body{
-background:#4a648b;
-padding:20px;
-font-family:'B Koodak',Tahoma;
-}
-
-.container{
-max-width:700px;
-margin:auto;
-background:white;
-padding:20px;
-border-radius:15px;
-box-shadow:0 5px 15px rgba(0,0,0,0.2);
-}
-
-h1{
-text-align:center;
-color:#1a73e8;
-font-size:38px;
-margin-bottom:20px;
-}
-
-.card{
-border:1px solid #ddd;
-padding:15px;
-border-radius:12px;
-margin-bottom:12px;
-background:#fafafa;
-line-height:2;
-}
-
-.title{
-font-size:28px;
-font-weight:bold;
-color:#c62828;
-margin-bottom:10px;
-}
-
-.balance{
-background:#f1f1f1;
-padding:20px;
-border-radius:12px;
-margin-top:20px;
-line-height:2.2;
-font-size:24px;
-border:1px solid #ddd;
-}
-
-.units{
-margin-top:10px;
-padding-right:15px;
-border-right:3px solid #ccc;
-font-size:20px;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="container">
-
-<h1>گزارش شارژ ساختمان</h1>
-
-`
-
-db.sort((a,b)=>b.id-a.id)
-
-db.forEach(x=>{
-
-let income=0
-let cost=0
-
-let unitsHtml=""
-
-for(let i=1;i<=5;i++){
-
-if(x.units && x.units.hasOwnProperty(i)){
-
-income += x.units[i].val
-
-unitsHtml += `
-<div>
-واحد ${i} :
-${x.units[i].val.toLocaleString()}
-</div>
-`
-
-}
-
-}
-
-if(x.exp){
-
-x.exp.forEach(e=>{
-
-cost += e.val
-
-})
-
-}
-
-totalIncome += income
-totalCost += cost
-
-html += `
-
-<div class="card">
-
-<div class="title">
-${x.month}
-</div>
-
-<div>
-<b>جمع دریافتی:</b>
-${income.toLocaleString()}
-</div>
-
-<div>
-<b>جمع هزینه:</b>
-${cost.toLocaleString()}
-</div>
-
-<div>
-<b>مانده:</b>
-${(income-cost).toLocaleString()}
-</div>
-
-${x.note ? `
-<div>
-<b>توضیحات:</b>
-${x.note}
-</div>
-` : ""}
-
-<div class="units">
-
-${unitsHtml}
-
-</div>
-
-</div>
-
-`
-
-})
-
-let finalBalance=(mainBalance+totalIncome)-totalCost
-
-html += `
-
-<div class="balance">
-
-<div>
-مانده اولیه صندوق:
-${mainBalance.toLocaleString()}
-</div>
-
-<div>
-جمع کل دریافتی:
-${totalIncome.toLocaleString()}
-</div>
-
-<div>
-جمع کل هزینه‌ها:
-${totalCost.toLocaleString()}
-</div>
-
-<br>
-
-<div>
-
-<b>
-
-${finalBalance>=0 ? "وضعیت صندوق: طلبکار" : "وضعیت صندوق: بدهکار"}
-
-<br>
-
-${Math.abs(finalBalance).toLocaleString()}
-
-</b>
-
-</div>
-
-</div>
-
-</div>
-
-</body>
-
-</html>
-
-`
-let win=window.open("","_blank")
-
-win.document.write(html)
-
-win.document.close()
-
-}
-
-
-loadMainBalance()
-render()
 
 </script>
 
 </body>
+
 </html>
