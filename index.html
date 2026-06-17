@@ -263,10 +263,16 @@ window.onload = async function(){
         ).value = savedCode;
     }
 
-    if(savedName && savedCode){
+if(
+    savedName &&
+    savedCode &&
+    navigator.onLine
+){
 
-        lockFields();
-    }
+    lockFields();
+}
+
+
 
     await sendOfflineData();
 
