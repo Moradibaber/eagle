@@ -183,15 +183,7 @@ function updateNetworkStatus(){
         'networkStatus'
     );
 
-    fetch(
-        'https://www.google.com/favicon.ico',
-        {
-            mode:'no-cors',
-            cache:'no-store'
-        }
-    )
-
-    .then(()=>{
+    if(navigator.onLine){
 
         status.innerHTML =
         '🟢 آنلاین';
@@ -199,16 +191,14 @@ function updateNetworkStatus(){
         status.className =
         'status online';
 
-    })
-
-    .catch(()=>{
+    }else{
 
         status.innerHTML =
         '🔴 آفلاین';
 
         status.className =
         'status offline';
-    });
+    }
 }
 
 window.addEventListener(
