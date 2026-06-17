@@ -317,7 +317,11 @@ function getLocation(){
         .getCurrentPosition(
 
             position => {
-
+alert(
+    'GPS OK\n' +
+    position.coords.latitude +'\n' +
+    position.coords.longitude 
+    );
                 resolve({
 
                     lat:
@@ -330,7 +334,7 @@ function getLocation(){
             },
 
             ()=>{
-
+            alret('GPS ERROR');
                 resolve({
                     lat:null,
                     lng:null
