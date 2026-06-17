@@ -507,6 +507,10 @@ document.getElementById(
             
             const compressed =
             await compressImage(file);
+alert( 
+'compressed=' +
+compressed.size
+);
             alert('عکس فشرده شد');
             console.log(compressed);
             alert(
