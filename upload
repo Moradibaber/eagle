@@ -578,6 +578,9 @@ if(upload.error){
 alert(
     'photoName=' + photoName
 );
+alert(
+    'photoUrl=' + photoUrl
+);
 
 const attendanceData = {
 
