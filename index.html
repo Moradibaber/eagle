@@ -67,6 +67,10 @@ button{
     margin-top:10px;
 }
 
+button:hover{
+    background:green;
+}
+
 .status{
     text-align:center;
     color:white;
@@ -179,7 +183,15 @@ function updateNetworkStatus(){
         'networkStatus'
     );
 
-    if(navigator.onLine){
+    fetch(
+        'https://www.google.com/favicon.ico',
+        {
+            mode:'no-cors',
+            cache:'no-store'
+        }
+    )
+
+    .then(()=>{
 
         status.innerHTML =
         '🟢 آنلاین';
@@ -187,14 +199,16 @@ function updateNetworkStatus(){
         status.className =
         'status online';
 
-    }else{
+    })
+
+    .catch(()=>{
 
         status.innerHTML =
         '🔴 آفلاین';
 
         status.className =
         'status offline';
-    }
+    });
 }
 
 window.addEventListener(
@@ -342,7 +356,7 @@ function getLocation(){
     });
 }
 
-/* فشرده سازی */
+/* فشرده سازی عکس */
 
 async function compressImage(file){
 
@@ -497,7 +511,15 @@ document.getElementById(
 
             let photoName = '';
 
-            if(navigator.onLine){
+            const isOnline =
+
+            document.getElementById(
+                'networkStatus'
+            ).classList.contains(
+                'online'
+            );
+
+            if(isOnline){
 
                 const upload =
                 await supabaseClient.storage
@@ -542,7 +564,7 @@ document.getElementById(
                 photoName
             };
 
-            if(navigator.onLine){
+            if(isOnline){
 
                 const insert =
                 await supabaseClient
@@ -594,6 +616,7 @@ document.getElementById(
             console.log(err);
 
             alert(
+                'خطا: ' +
                 err.message
             );
 
@@ -609,11 +632,19 @@ document.getElementById(
     input.click();
 };
 
-/* ارسال داده آفلاین */
+/* ارسال اطلاعات آفلاین */
 
 async function sendOfflineData(){
 
-    if(!navigator.onLine){
+    const isOnline =
+
+    document.getElementById(
+        'networkStatus'
+    ).classList.contains(
+        'online'
+    );
+
+    if(!isOnline){
 
         return;
     }
@@ -665,7 +696,15 @@ async function loadRecords(){
         return;
     }
 
-    if(!navigator.onLine){
+    const isOnline =
+
+    document.getElementById(
+        'networkStatus'
+    ).classList.contains(
+        'online'
+    );
+
+    if(!isOnline){
 
         return;
     }
