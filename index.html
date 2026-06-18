@@ -112,6 +112,16 @@ class="status"
 >
 🟢 آنلاین
 </div>
+<!-- --- اضافه شده: نمایش اطلاعات پرسنل در بالای صفحه --- -->
+<div
+id="userInfo"
+style="text-align:center;margin-bottom:15px;font-weight:bold;color:#1a2a6c;"
+>
+نام: <span id="showName">-</span>
+|
+کد پرسنلی: <span id="showCode">-</span>
+</div>
+<!-- --- پایان اضافه --- -->
 
 <input
 type="text"
@@ -218,6 +228,33 @@ function updateNetworkStatus(){
         'status offline';
     }
 }
+// --- اضافه شده ---
+// نمایش اطلاعات کاربر از localStorage
+function showUserInfo(){
+
+    const name =
+    localStorage.getItem(
+        'employee_fullname'
+    );
+
+    const code =
+    localStorage.getItem(
+        'employee_code'
+    );
+
+    if(name){
+        document.getElementById(
+            'showName'
+        ).innerText = name;
+    }
+
+    if(code){
+        document.getElementById(
+            'showCode'
+        ).innerText = code;
+    }
+}
+// --- پایان اضافه ---
 
 window.addEventListener(
     'online',
@@ -286,6 +323,9 @@ function updatePhotoCounter(){
 window.onload = async function(){
 
     updateNetworkStatus();
+    // --- اضافه شده ---
+    showUserInfo();
+    // --- پایان اضافه ---
 
     /*
     بازیابی اطلاعات حتی بعد پاک شدن کش
@@ -339,6 +379,9 @@ window.onload = async function(){
                     'employee_code',
                     data.personnel_code
                 );
+                   // --- اضافه شده ---
+showUserInfo();
+// --- پایان اضافه ---
 
                 remainingPhotos =
                 Math.max(
