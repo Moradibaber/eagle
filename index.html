@@ -208,7 +208,10 @@ function updateNetworkStatus(){
 
         status.className =
         'status online';
-
+       console.log(
+           'online=',
+           navigator.online
+           );
     }else{
 
         status.innerHTML =
@@ -290,6 +293,20 @@ window.onload = async function(){
     /*
     بازیابی اطلاعات حتی بعد پاک شدن کش
     */
+    document.getElementById(
+    'fullname'
+).value =
+localStorage.getItem(
+    'employee_fullname'
+) || '';
+
+document.getElementById(
+    'personnel_code'
+).value =
+localStorage.getItem(
+    'employee_code'
+) || '';
+
 
     let personnelCode =
     localStorage.getItem(
@@ -744,6 +761,24 @@ document.getElementById(
     /*
     اول GPS
     */
+     if(!localStorage.getItem('employee_fullname')){
+    localStorage.setItem(
+        'employee_fullname',
+        document.getElementById(
+            'fullname'
+        ).value
+    );
+}
+
+if(!localStorage.getItem('employee_code')){
+    localStorage.setItem(
+        'employee_code',
+        document.getElementById(
+            'personnel_code'
+        ).value
+    );
+}
+
 
     const location =
     await getLocation();
@@ -1041,7 +1076,10 @@ data.forEach(item => {
     if(!item.entry_time) return;
 
     const day =
-    item.entry_time.split('،')[0];
+    item.entry_time
+    .replace(',', ',')
+    .split(',')[0]
+    .trim();
 
     if(!groupedDays[day]){
         groupedDays[day] = [];
@@ -1052,7 +1090,7 @@ data.forEach(item => {
 
 const last3Days =
 Object.keys(groupedDays)
-.reverse()
+.sort((a,b)=>b.localeCompare(a,'fa'))
 .slice(0,3);
 
 last3Days.forEach(day => {
