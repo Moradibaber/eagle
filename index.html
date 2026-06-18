@@ -374,7 +374,88 @@ window.onload = async function(){
             );
         }
 
-        if(personnelCode){
+       if(personnelCode){
+
+    if(!navigator.onLine){
+
+        const savedName =
+        localStorage.getItem(
+            'employee_fullname'
+        );
+
+        if(savedName){
+
+            document.getElementById(
+                'fullname'
+            ).value =
+            savedName;
+
+            document.getElementById(
+                'personnel_code'
+            ).value =
+            personnelCode;
+
+            lockPersonnelFields();
+        }
+
+    }else{
+
+        try{
+
+            const { data } =
+            await supabaseClient
+            .from('personnel')
+            .select('*')
+            .eq(
+                'personnel_code',
+                personnelCode
+            )
+            .maybeSingle();
+
+            if(data){
+
+                document.getElementById(
+                    'fullname'
+                ).value =
+                data.fullname;
+
+                document.getElementById(
+                    'personnel_code'
+                ).value =
+                data.personnel_code;
+
+                localStorage.setItem(
+                    'employee_fullname',
+                    data.fullname
+                );
+
+                localStorage.setItem(
+                    'employee_code',
+                    data.personnel_code
+                );
+
+                showUserInfo();
+
+                remainingPhotos =
+                Math.max(
+                    0,
+                    1 - (
+                        data.photo_count || 0
+                    )
+                );
+
+                updatePhotoCounter();
+
+                lockPersonnelFields();
+            }
+
+        }catch(err){
+
+            console.log(err);
+        }
+
+    }
+}
 
             try{
 
@@ -1187,7 +1268,9 @@ async function loadMyRecords(){
             }
 
             const day =
-            item.entry_time.split('،')[0];
+            const day =
+           item.entry_time.substring(0,10);
+
 
             if(!groupedDays[day]){
                 groupedDays[day] = [];
@@ -1201,24 +1284,22 @@ async function loadMyRecords(){
         */
 
         const sortedDays =
-        Object.keys(groupedDays)
-        .sort((a,b) => {
+Object.keys(groupedDays)
+.sort((a,b)=>{
 
-            const lastA =
-            groupedDays[a][0];
+    const timeA =
+    new Date(
+        groupedDays[a][0].entry_time
+    ).getTime();
 
-            const lastB =
-            groupedDays[b][0];
+    const timeB =
+    new Date(
+        groupedDays[b][0].entry_time
+    ).getTime();
 
-            const idA =
-            lastA.id || 0;
+    return timeB - timeA;
 
-            const idB =
-            lastB.id || 0;
-
-            return idB - idA;
-        })
-        .slice(0,3);
+}).slice(0,3);
 
         let html = '';
 
