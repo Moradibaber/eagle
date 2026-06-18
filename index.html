@@ -1194,9 +1194,7 @@ async function loadMyRecords(){
 
         let allRecords = [];
 
-        /*
-        دریافت ترددهای آنلاین از Supabase
-        */
+        /* دریافت اطلاعات آنلاین */
 
         if(navigator.onLine){
 
@@ -1210,22 +1208,15 @@ async function loadMyRecords(){
             )
             .order(
                 'id',
-                {
-                    ascending:false
-                }
+                { ascending:false }
             );
 
             if(data){
-                allRecords =
-                allRecords.concat(
-                    data
-                );
+                allRecords = data;
             }
         }
 
-        /*
-        اضافه کردن ترددهای آفلاین ذخیره‌شده در موبایل
-        */
+        /* اضافه کردن ترددهای آفلاین */
 
         const offlineAttendance =
         JSON.parse(
@@ -1234,143 +1225,83 @@ async function loadMyRecords(){
             ) || '[]'
         );
 
-        const myOfflineRecords =
+        const myOffline =
         offlineAttendance.filter(
             item =>
             item.personnel_code === personnel_code
         );
 
         allRecords =
-        allRecords.concat(
-            myOfflineRecords
-        );
+        allRecords.concat(myOffline);
 
         if(allRecords.length === 0){
 
             document.getElementById(
                 'myRecords'
             ).innerHTML =
-            '<div class="record">هنوز ترددی ثبت نشده است.</div>';
+            '<div class="record">هنوز ترددی ثبت نشده است</div>';
 
             return;
         }
 
-        /*
-        گروه‌بندی بر اساس روز
-        */
+        /* گروه بندی بر اساس روز */
 
-        const groupedDays = {};
+        const grouped = {};
 
-        allRecords.forEach(item => {
+        allRecords.forEach(item=>{
 
-            if(!item.entry_time){
-                return;
-            }
+            if(!item.entry_time) return;
 
             const day =
-            const day =
-           item.entry_time.substring(0,10);
+            item.entry_time.substring(0,10);
 
-
-            if(!groupedDays[day]){
-                groupedDays[day] = [];
+            if(!grouped[day]){
+                grouped[day] = [];
             }
 
-            groupedDays[day].push(item);
+            grouped[day].push(item);
+
         });
 
-        /*
-        مرتب‌سازی روزها بر اساس آخرین تردد همان روز
-        */
-
-        const sortedDays =
-Object.keys(groupedDays)
-.sort((a,b)=>{
-
-    const timeA =
-    new Date(
-        groupedDays[a][0].entry_time
-    ).getTime();
-
-    const timeB =
-    new Date(
-        groupedDays[b][0].entry_time
-    ).getTime();
-
-    return timeB - timeA;
-
-}).slice(0,3);
+        const days =
+        Object.keys(grouped)
+        .slice(0,3);
 
         let html = '';
 
-        sortedDays.forEach(day => {
+        days.forEach(day=>{
 
             const records =
-            groupedDays[day];
+            grouped[day];
 
-            /*
-            چون اطلاعات آنلاین با id نزولی آمده،
-            ولی اطلاعات آفلاین id ندارد،
-            اینجا با همان ترتیب موجود کار می‌کنیم.
-            */
+            const first =
+            records[records.length-1];
 
-            records.sort((a,b) => {
-
-                const idA =
-                a.id || 0;
-
-                const idB =
-                b.id || 0;
-
-                return idA - idB;
-            });
-
-            const firstRecord =
+            const last =
             records[0];
-
-            const lastRecord =
-            records[
-                records.length - 1
-            ];
 
             html += `
             <div class="record">
 
-                <p>
-                    📅 تاریخ:
-                    ${day}
-                </p>
+            <p>
+            📅 تاریخ: ${day}
+            </p>
 
-                <hr>
+            <hr>
 
-                <p>
-                    🟢 اولین ورود:
-                    ${firstRecord.entry_time}
-                </p>
-            `;
+            <p>
+            🟢 اولین ورود:
+            ${first.entry_time}
+            </p>
 
-            if(records.length > 1){
+            <p>
+            🔴 آخرین خروج:
+            ${last.entry_time}
+            </p>
 
-                html += `
-                <p>
-                    🔴 آخرین خروج:
-                    ${lastRecord.entry_time}
-                </p>
-                `;
-
-            }else{
-
-                html += `
-                <p>
-                    🔴 آخرین خروج:
-                    هنوز ثبت نشده
-                </p>
-                `;
-            }
-
-            html += `
             </div>
             `;
+
         });
 
         document.getElementById(
