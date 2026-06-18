@@ -1,1 +1,1115 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
 
+<head>
+
+<meta charset="UTF-8">
+
+<meta 
+name="viewport"
+content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+سیستم ثبت تردد پرسنل
+</title>
+
+<style>
+
+body{
+    font-family:tahoma;
+    background:#f4f7fa;
+    margin:0;
+    padding:20px;
+}
+
+.container{
+    max-width:500px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 0 15px rgba(0,0,0,0.1);
+}
+
+h2{
+    text-align:center;
+    color:#1a2a6c;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin-bottom:15px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:16px;
+    box-sizing:border-box;
+}
+
+button{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:8px;
+    background:#1a2a6c;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+    margin-top:10px;
+}
+
+.record{
+    background:#fff;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:15px;
+    margin-top:15px;
+}
+
+#photoCounter{
+    text-align:center;
+    margin-top:10px;
+    font-size:14px;
+    color:#1a2a6c;
+    font-weight:bold;
+}
+
+.disabled{
+    background:#999 !important;
+    cursor:not-allowed;
+}
+
+.status{
+    text-align:center;
+    margin-bottom:15px;
+    font-weight:bold;
+}
+
+.online{
+    color:green;
+}
+
+.offline{
+    color:red;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>
+سیستم ثبت تردد پرسنل
+</h2>
+
+<!-- شروع وضعیت اینترنت و نمایش نام -->
+<div id="networkStatus" class="status online" style="color:green; text-align:center; margin-bottom:10px; font-weight:bold;">
+    🟢 آنلاین
+</div>
+
+<div id="userInfo" style="text-align:center; margin-bottom:15px; font-weight:bold; color:#1a2a6c; border-bottom:1px solid #ddd; padding-bottom:10px;">
+    نام: <span id="showName">در حال بارگذاری...</span> | 
+    کد پرسنلی: <span id="showCode">-</span>
+</div>
+<!-- پایان وضعیت اینترنت و نمایش نام -->
+
+<input
+type="text"
+id="fullname"
+placeholder="نام و نام خانوادگی"
+>
+
+<input
+type="text"
+id="personnel_code"
+placeholder="کد پرسنلی"
+>
+
+<input
+type="file"
+id="photo"
+accept="image/*"
+capture="user"
+style="display:none"
+>
+
+<input
+type="file"
+id="attendancePhoto"
+accept="image/*"
+capture="user"
+style="display:none"
+>
+
+<button
+id="captureBtn"
+type="button"
+onclick="captureReferencePhoto()"
+style="background:#00897b;"
+>
+📸 عکس تطبیقی
+</button>
+
+<button
+id="attendanceBtn"
+type="button"
+onclick="saveAttendance()"
+>
+📷 ثبت تردد
+</button>
+<div
+    id="saveStatus"
+    style="
+    text-align:center;
+    margin-top:10px;
+    font-weight:bold;
+    color:#1a2a6c;
+    display:none;
+    ">
+    در حال ذخیره سازی، صبر کنید...
+</div>
+<div id="myRecords"></div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+
+const SUPABASE_URL =
+'https://kddhnohquohbnemmegdy.supabase.co';
+
+const SUPABASE_ANON_KEY =
+'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
+
+const supabaseClient =
+supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
+
+let remainingPhotos = 1;
+
+/*
+وضعیت اینترنت
+*/
+
+// --- شروع توابع وضعیت و اطلاعات کاربر ---
+function updateNetworkStatus() {
+    const status = document.getElementById('networkStatus');
+    if (navigator.onLine) {
+        status.innerHTML = '🟢 آنلاین';
+        status.style.color = 'green';
+    } else {
+        status.innerHTML = '🔴 آفلاین';
+        status.style.color = 'red';
+    }
+}
+
+// چک کردن وضعیت آفلاین هر 3 ثانیه یکبار برای اطمینان
+setInterval(updateNetworkStatus, 3000);
+
+function showUserInfo() {
+    const name = localStorage.getItem('employee_fullname');
+    const code = localStorage.getItem('employee_code');
+    if (name) document.getElementById('showName').innerText = name;
+    if (code) document.getElementById('showCode').innerText = code;
+}
+// --- پایان توابع وضعیت و اطلاعات کاربر ---
+
+window.addEventListener(
+    'online',
+    updateNetworkStatus
+);
+
+window.addEventListener(
+    'offline',
+    updateNetworkStatus
+);
+
+/*
+قفل اطلاعات پرسنلی
+*/
+
+function lockPersonnelFields(){
+
+    const fullname =
+    document.getElementById(
+        'fullname'
+    );
+
+    const code =
+    document.getElementById(
+        'personnel_code'
+    );
+
+    fullname.readOnly = true;
+    code.readOnly = true;
+
+    fullname.style.background =
+    '#eee';
+
+    code.style.background =
+    '#eee';
+}
+
+/*
+شمارنده عکس
+*/
+
+function updatePhotoCounter(){
+
+    const btn =
+    document.getElementById(
+        'captureBtn'
+    );
+
+    if(remainingPhotos <= 0){
+
+        btn.disabled = true;
+
+        btn.classList.add(
+            'disabled'
+        );
+
+        btn.innerHTML =
+        '📸 عکس تطبیقی';
+    }
+}
+
+/*
+لود اولیه
+*/
+
+window.onload = async function(){
+
+    updateNetworkStatus();
+    // --- اضافه شده ---
+    showUserInfo();
+    // --- پایان اضافه ---
+
+    /*
+    بازیابی اطلاعات حتی بعد پاک شدن کش
+    */
+
+    let personnelCode =
+    localStorage.getItem(
+        'employee_code'
+    );
+
+    if(!personnelCode){
+
+        personnelCode =
+        prompt(
+            'کد پرسنلی خود را وارد کنید'
+        );
+    }
+
+    if(personnelCode){
+
+        try{
+
+            const { data } =
+            await supabaseClient
+            .from('personnel')
+            .select('*')
+            .eq(
+                'personnel_code',
+                personnelCode
+            )
+            .maybeSingle();
+
+            if(data){
+
+                document.getElementById(
+                    'fullname'
+                ).value =
+                data.fullname;
+
+                document.getElementById(
+                    'personnel_code'
+                ).value =
+                data.personnel_code;
+
+                localStorage.setItem(
+                    'employee_fullname',
+                    data.fullname
+                );
+
+                localStorage.setItem(
+                    'employee_code',
+                    data.personnel_code
+                );
+                   // --- اضافه شده ---
+showUserInfo();
+// --- پایان اضافه ---
+
+                remainingPhotos =
+                Math.max(
+                    0,
+                    1 - (
+                        data.photo_count || 0
+                    )
+                );
+
+                updatePhotoCounter();
+
+                lockPersonnelFields();
+            }
+
+        }catch(err){
+
+            console.log(err);
+        }
+    }
+
+    loadMyRecords();
+
+    syncOfflineAttendance();
+};
+
+/*
+فشرده سازی عکس
+*/
+
+async function compressImage(file){
+
+    return new Promise((resolve)=>{
+
+        const reader =
+        new FileReader();
+
+        reader.readAsDataURL(file);
+
+        reader.onload = function(event){
+
+            const img =
+            new Image();
+
+            img.src =
+            event.target.result;
+
+            img.onload = function(){
+
+                const canvas =
+                document.createElement(
+                    'canvas'
+                );
+
+                const maxWidth = 450;
+
+                let width =
+                img.width;
+
+                let height =
+                img.height;
+
+                if(width > maxWidth){
+
+                    height =
+                    height *
+                    (maxWidth / width);
+
+                    width =
+                    maxWidth;
+                }
+
+                canvas.width =
+                width;
+
+                canvas.height =
+                height;
+
+                const ctx =
+                canvas.getContext(
+                    '2d'
+                );
+
+                ctx.drawImage(
+                    img,
+                    0,
+                    0,
+                    width,
+                    height
+                );
+
+                canvas.toBlob(
+                    function(blob){
+
+                        resolve(blob);
+
+                    },
+                    'image/jpeg',
+                    0.55
+                );
+            };
+        };
+    });
+}
+
+/*
+ثبت عکس مرجع
+*/
+
+async function captureReferencePhoto(){
+
+    const fullname =
+    document.getElementById(
+        'fullname'
+    ).value.trim();
+
+    const personnelCode =
+    document.getElementById(
+        'personnel_code'
+    ).value.trim();
+
+    if(!fullname || !personnelCode){
+
+        alert(
+            'اطلاعات را وارد کنید'
+        );
+       document.getElementById(
+         'saveStatus'
+              ).style.display='none';
+        return;
+    }
+
+    localStorage.setItem(
+        'employee_fullname',
+        fullname
+    );
+
+    localStorage.setItem(
+        'employee_code',
+        personnelCode
+    );
+
+    lockPersonnelFields();
+
+    if(remainingPhotos <= 0){
+
+        alert(
+            'عکس تطبیقی قبلا ثبت شده است'
+        );
+document.getElementById(
+         'saveStatus'
+              ).style.display='none';
+        return;
+    }
+
+    const photoInput =
+    document.getElementById(
+        'photo'
+    );
+
+    photoInput.value = '';
+
+    photoInput.onchange =
+    async function(e){
+     document.getElementById(
+         'saveStatus'
+         ).style.display='block';
+        try{
+
+            const file =
+            e.target.files[0];
+
+            if(!file){
+          document.getElementById(
+         'saveStatus'
+              ).style.display='none';
+                return;
+            }
+
+            const compressedFile =
+            await compressImage(file);
+
+            const fileName =
+            personnelCode +
+            '_' +
+            Date.now() +
+            '.jpg';
+
+            /*
+            اگر آفلاین بود
+            */
+
+            if(!navigator.onLine){
+
+                let offlinePhotos =
+                JSON.parse(
+                    localStorage.getItem(
+                        'offline_reference_photos'
+                    ) || '[]'
+                );
+
+                offlinePhotos.push({
+                    fileName:fileName
+                });
+
+                localStorage.setItem(
+                    'offline_reference_photos',
+                    JSON.stringify(
+                        offlinePhotos
+                    )
+                );
+
+                remainingPhotos--;
+
+                updatePhotoCounter();
+
+                alert(
+                    'عکس مرجع آفلاین ذخیره شد'
+                );
+                document.getElementById(
+         'saveStatus'
+              ) .style.display='none';
+                return;
+            }
+
+            /*
+            آپلود عکس
+            */
+
+            const uploadResult =
+            await supabaseClient.storage
+            .from('reference-photos')
+            .upload(
+                fileName,
+                compressedFile,
+                {
+                    upsert:true,
+                    contentType:'image/jpeg'
+                }
+            );
+
+            if(uploadResult.error){
+
+                alert(
+                    'خطا:\n' +
+                    uploadResult.error.message
+                );
+document.getElementById(
+         'saveStatus'
+              ) .style.display='none';
+                return;
+            }
+
+            remainingPhotos--;
+
+            const uploadedCount =
+            1 - remainingPhotos;
+
+            /*
+            ذخیره اطلاعات
+            */
+
+            const {
+                data: existingPerson
+            } =
+            await supabaseClient
+            .from('personnel')
+            .select('*')
+            .eq(
+                'personnel_code',
+                personnelCode
+            )
+            .maybeSingle();
+
+            if(existingPerson){
+
+                await supabaseClient
+                .from('personnel')
+                .update({
+
+                    fullname:
+                    fullname,
+
+                    photo_count:
+                    uploadedCount
+
+                })
+                .eq(
+                    'personnel_code',
+                    personnelCode
+                );
+
+            }else{
+
+                await supabaseClient
+                .from('personnel')
+                .insert([{
+
+                    personnel_code:
+                    personnelCode,
+
+                    fullname:
+                    fullname,
+
+                    photo_count:
+                    uploadedCount
+
+                }]);
+            }
+
+            updatePhotoCounter();
+
+            alert(
+                'عکس تطبیقی ذخیره شد'
+            );
+            document.getElementById(
+         'saveStatus'
+                ).style.display='none';
+
+        }catch(err){
+
+            console.log(err);
+
+            alert(
+                err.message
+            );
+            document.getElementById(
+            'saveStatus'
+            ).style.display='none';
+        }
+        
+    };
+
+    photoInput.click();
+}
+
+/*
+گرفتن GPS
+*/
+
+function getLocation(){
+
+    return new Promise((resolve)=>{
+
+        if(!navigator.geolocation){
+
+            resolve({
+                lat:null,
+                lng:null
+            });
+document.getElementById(
+         'saveStatus'
+              ) .style.display='none';
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+
+            position => {
+
+                resolve({
+
+                    lat:
+                    position.coords.latitude,
+
+                    lng:
+                    position.coords.longitude
+                });
+            },
+
+            error => {
+
+                resolve({
+                    lat:null,
+                    lng:null
+                });
+            },
+
+            {
+                enableHighAccuracy:true,
+                timeout:10000
+            }
+        );
+    });
+}
+
+/*
+ثبت تردد
+*/
+
+async function saveAttendance(){
+
+    if(remainingPhotos > 0){
+
+        alert(
+            'ابتدا عکس تطبیقی را ثبت کنید'
+        );
+document.getElementById(
+         'saveStatus'
+              ) .style.display='none';
+        return;
+    }
+
+    /*
+    اول GPS
+    */
+
+    const location =
+    await getLocation();
+
+    if(
+        location.lat === null ||
+        location.lng === null
+    ){
+
+        const allow =
+        confirm(
+            'GPS خاموش است. ادامه می‌دهید؟'
+        );
+
+        if(!allow){
+            document.getElementById(
+         'saveStatus'
+              ) .style.display='none';
+            return;
+        }
+    }
+
+    const attendanceInput =
+    document.getElementById(
+        'attendancePhoto'
+    );
+
+    attendanceInput.value = '';
+
+    attendanceInput.onchange =
+    async function(e){
+     document.getElementById(
+         'saveStatus'
+         ).style.display='block';
+        try{
+
+            const file =
+            e.target.files[0];
+
+            if(!file){
+                document.getElementById(
+         'saveStatus'
+              ) .style.display='none';
+                return;
+            }
+
+            const compressedFile =
+            await compressImage(file);
+
+            const personnelCode =
+            localStorage.getItem(
+                'employee_code'
+            );
+
+            const fileName =
+           'attendance_' +
+            personnelCode +
+            '_' +
+            Date.now() +
+            '.jpg';
+
+            /*
+            آفلاین
+            */
+
+            if(!navigator.onLine){
+
+                let offlineAttendance =
+                JSON.parse(
+                    localStorage.getItem(
+                        'offline_attendance'
+                    ) || '[]'
+                );
+
+                offlineAttendance.push({
+
+                    personnel_code:
+                    personnelCode,
+
+                    fullname:
+                        localStorage.getItem('employee_fullname'),
+
+                    entry_time:
+                    new Date()
+                    .toLocaleString(
+                        'fa-IR'
+                    ),
+
+                    latitude:
+                    location.lat,
+
+                    longitude:
+                    location.lng,
+
+                    photo_name:
+                    fileName
+                });
+
+                localStorage.setItem(
+                    'offline_attendance',
+                    JSON.stringify(
+                        offlineAttendance
+                    )
+                );
+
+                alert(
+                    'تردد آفلاین ذخیره شد'
+                );
+document.getElementById(
+         'saveStatus'
+              ) .style.display='none';
+                return;
+            }
+
+            /*
+            آپلود عکس تردد
+            */
+
+            const uploadResult =
+            await supabaseClient.storage
+            .from('reference-photos')
+            .upload(
+                'attendance/' +
+                fileName,
+                compressedFile,
+                {
+                    upsert:true,
+                    contentType:'image/jpeg'
+                }
+            );
+
+            if(uploadResult.error){
+
+                alert(
+                    'خطا:\n' +
+                    uploadResult.error.message
+                );
+document.getElementById(
+         'saveStatus'
+              ) .style.display='none';
+                return;
+            }
+
+            /*
+            ذخیره دیتابیس
+            */
+
+            const insertResult =
+            await supabaseClient
+            .from('eagle')
+            .insert([{
+
+                personnel_code:
+                personnelCode,
+
+                fullname:
+                localStorage.getItem('employee_fullname'),
+
+                entry_time:
+                new Date()
+                .toLocaleString(
+                    'fa-IR'
+                ),
+
+                latitude:
+                location.lat,
+
+                longitude:
+                location.lng,
+
+                photo_name:
+                fileName
+
+            }]);
+
+            if(insertResult.error){
+
+                alert(
+                    'خطا:\n' +
+                    insertResult.error.message
+                );
+document.getElementById(
+         'saveStatus'
+              ) .style.display='none';
+                return;
+            }
+
+            alert(
+                'تردد ثبت شد'
+            );
+          document.getElementById(
+         'saveStatus').style.display='none';
+            loadMyRecords();
+
+        }catch(err){
+
+            console.log(err);
+
+            alert(
+                err.message
+            );
+            document.getElementById(
+            'saveStatus'
+            ).style.display='none';
+
+        }
+        
+    };
+
+    attendanceInput.click();
+}
+
+/*
+ارسال اطلاعات آفلاین
+*/
+
+async function syncOfflineAttendance(){
+
+    if(!navigator.onLine){
+        return;
+    }
+
+    let offlineAttendance =
+    JSON.parse(
+        localStorage.getItem(
+            'offline_attendance'
+        ) || '[]'
+    );
+
+    if(offlineAttendance.length === 0){
+        return;
+    }
+
+    for(const item of offlineAttendance){
+
+        try{
+
+            await supabaseClient
+            .from('eagle')
+            .insert([item]);
+
+        }catch(err){
+
+            console.log(err);
+        }
+    }
+
+    localStorage.removeItem(
+        'offline_attendance'
+    );
+}
+
+/*
+نمایش سوابق
+*/
+
+async function loadMyRecords(){
+
+    const personnel_code =
+    localStorage.getItem(
+        'employee_code'
+    );
+
+    if(!personnel_code){
+        return;
+    }
+
+    try{
+
+        const { data } =
+        await supabaseClient
+        .from('eagle')
+        .select('*')
+        .eq(
+            'personnel_code',
+            personnel_code
+        )
+        .order(
+            'id',
+            {
+                ascending:false
+            }
+        );
+
+        if(!data){
+            return;
+        }
+       
+       let html = '';
+
+const groupedDays = {};
+
+data.forEach(item => {
+
+    if(!item.entry_time) return;
+
+    const day =
+    item.entry_time.split('،')[0];
+
+    if(!groupedDays[day]){
+        groupedDays[day] = [];
+    }
+
+    groupedDays[day].push(item);
+});
+
+const last3Days =
+Object.keys(groupedDays)
+.reverse()
+.slice(0,3);
+
+last3Days.forEach(day => {
+
+    const records =
+    groupedDays[day];
+
+    const firstRecord =
+    records[records.length - 1];
+
+    const lastRecord =
+    records[0];
+
+    html += `
+    <div class="record">
+
+        <p>
+        📅 تاریخ:
+        ${day}
+        </p>
+
+        <hr>
+
+        <p>
+        🟢 اولین ورود:
+        ${firstRecord.entry_time}
+        </p>
+
+        <p>
+        🔴 آخرین خروج:
+        ${lastRecord.entry_time}
+        </p>
+
+    </div>
+    `;
+});
+
+document.getElementById(
+    'myRecords'
+).innerHTML = html;
+
+
+    }catch(err){
+
+        console.log(err);
+    }
+}
+
+</script>
+
+</body>
+</html>
