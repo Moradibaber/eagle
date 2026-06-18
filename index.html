@@ -665,6 +665,9 @@ document.getElementbyId(
                 err.message
             );
         }
+        document.getElementById(
+            'saveStatus'
+            ).style.display='none';
     };
 
     photoInput.click();
@@ -936,6 +939,10 @@ document.getElementbyId(
                 err.message
             );
         }
+        document.getElementById(
+            'saveStatus'
+            ).style.display='none';
+
     };
 
     attendanceInput.click();
@@ -1028,14 +1035,7 @@ async function loadMyRecords(){
                 زمان:
                 ${item.entry_time}
                 </p>
-
-                <p>
-                GPS:
-                ${item.latitude || '-'}
-                ,
-                ${item.longitude || '-'}
-                </p>
-
+               
             </div>
             `;
         });
