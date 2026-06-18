@@ -189,12 +189,31 @@ supabase.createClient(
 );
 
 let remainingPhotos = 1;
+    function restoreOfflineReferenceStatus(){
+
+    const offlinePhotos =
+    JSON.parse(
+        localStorage.getItem(
+            'offline_reference_photos'
+        ) || '[]'
+    );
+
+    if(offlinePhotos.length > 0){
+
+        remainingPhotos = 0;
+
+        updatePhotoCounter();
+
+        lockPersonnelFields();
+    }
+}
+
 
 /*
 وضعیت اینترنت
 */
 function updateNetworkStatus(){
-
+restoreOfflineReferenceStatus();
 
 
     console.log(
