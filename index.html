@@ -375,7 +375,20 @@ window.onload = async function(){
         }
 
         if(personnelCode){
+             // اگر آفلاین بود اصلا Supabase را صدا نزن
+    if(!navigator.onLine){
 
+        const name =
+        localStorage.getItem('employee_fullname');
+
+        if(name){
+            document.getElementById('fullname').value = name;
+            document.getElementById('personnel_code').value = personnelCode;
+            showUserInfo();
+            lockPersonnelFields();
+        }
+
+    }else{
             try{
 
                 const { data } =
