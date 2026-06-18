@@ -374,32 +374,31 @@ window.onload = async function(){
             );
         }
 
-        if(personnelCode){
-             // اگر آفلاین بود اصلا Supabase را صدا نزن
-    if(!navigator.onLine){
+       if(personnelCode){
 
-        const name =
+    if(!navigator.onLine){
+        // اگر آفلاین بود فقط از localStorage استفاده کن
+        const savedName =
         localStorage.getItem('employee_fullname');
 
-        if(name){
-            document.getElementById('fullname').value = name;
+        if(savedName){
+            document.getElementById('fullname').value = savedName;
             document.getElementById('personnel_code').value = personnelCode;
-            showUserInfo();
             lockPersonnelFields();
         }
-
     }else{
-            try{
 
-                const { data } =
-                await supabaseClient
-                .from('personnel')
-                .select('*')
-                .eq(
-                    'personnel_code',
-                    personnelCode
-                )
-                .maybeSingle();
+        try{
+
+            const { data } =
+            await supabaseClient
+            .from('personnel')
+            .select('*')
+            .eq(
+                'personnel_code',
+                personnelCode
+            )
+            .maybeSingle();
 
                 if(data){
 
