@@ -195,13 +195,18 @@ let remainingPhotos = 1;
 */
 
 function updateNetworkStatus(){
+alert('onLine=' + navigator.onLine
+);
+console.log(
+'navigator.onLine =',
+navigator.onLine
+    if(navigator.onLine){
 
     const status =
     document.getElementById(
         'networkStatus'
     );
 
-    if(navigator.onLine){
 
         status.innerHTML =
         '🟢 آنلاین';
@@ -210,8 +215,15 @@ function updateNetworkStatus(){
         'status online';
        console.log(
            'online=',
-           navigator.online
+           navigator.onLine
            );
+        console.log(
+            'Network Status:',
+            navigator.onLine
+            setIntrval(
+            updateNetworkStatus,
+            2000
+            );
     }else{
 
         status.innerHTML =
@@ -287,12 +299,22 @@ function updatePhotoCounter(){
 */
 
 window.onload = async function(){
+console.log(
+    'fullname:',
+    localStorage.getItem('employee_fullname')
+);
+
+console.log(
+    'code:',
+    localStorage.getItem('employee_code')
+);
+
+console.log(
+    'photos:',
+    remainingPhotos
+);
 
     updateNetworkStatus();
-
-    /*
-    بازیابی اطلاعات حتی بعد پاک شدن کش
-    */
     document.getElementById(
     'fullname'
 ).value =
@@ -306,7 +328,21 @@ document.getElementById(
 localStorage.getItem(
     'employee_code'
 ) || '';
+    if(localStorage.getItem('employee_fullname')
+       &&
+        if(localStorage.getItem('employee_code')
+           ){
+        lockPersonnelFields();
+    }
 
+   if(!navigator.online){
+       lockPersonnelFields();
+       loadMyRecords();
+       return;
+    /*
+    بازیابی اطلاعات حتی بعد پاک شدن کش
+    */
+   
 
     let personnelCode =
     localStorage.getItem(
