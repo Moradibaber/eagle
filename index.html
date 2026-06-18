@@ -900,7 +900,7 @@ document.getElementById(
                 personnelCode,
 
                 fullname:
-                localStorage.getItem('employee_fullname')
+                localStorage.getItem('employee_fullname'),
 
                 entry_time:
                 new Date()
@@ -1031,51 +1031,7 @@ async function loadMyRecords(){
         if(!data){
             return;
         }
-
-       let html = '';
-
-const today =
-new Date().toLocaleDateString('fa-IR');
-
-const todayRecords =
-data.filter(item =>
-item.entry_time &&
-item.entry_time.startsWith(today)
-);
-
-if(todayRecords.length > 0){
-
-   const firstRecord =
-   todayRecords[todayRecords.length - 1];
-
-   const lastRecord =
-   todayRecords[0];
-
-   html += `
-   <div class="record">
-
-      <p>
-      اولین ورود امروز:
-      ${firstRecord.entry_time}
-      </p>
-
-      <hr>
-
-      <p>
-      آخرین خروج امروز:
-      ${lastRecord.entry_time}
-      </p>
-
-   </div>
-   `;
-}else{
-
-   html = `
-   <div class="record">
-      هیچ ترددی برای امروز ثبت نشده است
-   </div>
-   `;
-}
+       
        let html = '';
 
 const groupedDays = {};
@@ -1096,6 +1052,7 @@ data.forEach(item => {
 
 const last3Days =
 Object.keys(groupedDays)
+.reverse()
 .slice(0,3);
 
 last3Days.forEach(day => {
