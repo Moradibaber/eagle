@@ -489,7 +489,7 @@ async function captureReferencePhoto(){
         );
 document.getElementById(
          'saveStatus'
-              ) .style.display='none';
+              ).style.display='none';
         return;
     }
 
@@ -513,7 +513,7 @@ document.getElementById(
             if(!file){
           document.getElementById(
          'saveStatus'
-              ) .style.display='none';
+              ).style.display='none';
                 return;
             }
 
@@ -664,10 +664,11 @@ document.getElementById(
             alert(
                 err.message
             );
-        }
-        document.getElementById(
+            document.getElementById(
             'saveStatus'
             ).style.display='none';
+        }
+        
     };
 
     photoInput.click();
@@ -928,7 +929,7 @@ document.getElementById(
                 'تردد ثبت شد'
             );
           document.getElementById(
-         'saveStatus')style.display='none';
+         'saveStatus').style.display='none';
             loadMyRecords();
 
         }catch(err){
@@ -938,11 +939,12 @@ document.getElementById(
             alert(
                 err.message
             );
-        }
-        document.getElementById(
+            document.getElementById(
             'saveStatus'
             ).style.display='none';
 
+        }
+        
     };
 
     attendanceInput.click();
