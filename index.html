@@ -189,42 +189,12 @@ supabase.createClient(
 );
 
 let remainingPhotos = 1;
-    function restoreOfflineReferenceStatus(){
-
-    const offlinePhotos =
-    JSON.parse(
-        localStorage.getItem(
-            'offline_reference_photos'
-        ) || '[]'
-    );
-
-    if(offlinePhotos.length > 0){
-
-        remainingPhotos = 0;
-
-        updatePhotoCounter();
-
-        lockPersonnelFields();
-    }
-}
-
 
 /*
 وضعیت اینترنت
 */
+
 function updateNetworkStatus(){
-restoreOfflineReferenceStatus();
-
-
-    console.log(
-        'navigator.onLine =',
-        navigator.onLine
-    );
-
-    console.log(
-        'Network Status:',
-        navigator.onLine
-    );
 
     const status =
     document.getElementById(
@@ -238,11 +208,6 @@ restoreOfflineReferenceStatus();
 
         status.className =
         'status online';
-
-        console.log(
-            'online=',
-            navigator.onLine
-        );
 
     }else{
 
@@ -263,12 +228,6 @@ window.addEventListener(
     'offline',
     updateNetworkStatus
 );
-
-setInterval(
-    updateNetworkStatus,
-    2000
-);
-
 
 /*
 قفل اطلاعات پرسنلی
@@ -325,63 +284,80 @@ function updatePhotoCounter(){
 */
 
 window.onload = async function(){
-console.log(
-    'fullname:',
-    localStorage.getItem('employee_fullname')
-);
-
-console.log(
-    'code:',
-    localStorage.getItem('employee_code')
-);
-
-console.log(
-    'photos:',
-    remainingPhotos
-);
 
     updateNetworkStatus();
-    document.getElementById(
-    'fullname'
-).value =
-localStorage.getItem(
-    'employee_fullname'
-) || '';
 
+    /*
+    بازیابی اطلاعات حتی بعد پاک شدن کش
+    */
 
-    if (
-    localStorage.getItem('employee_fullname') &&
-    localStorage.getItem('employee_code')
-){
-    lockPersonnelFields();
-}
+    let personnelCode =
+    localStorage.getItem(
+        'employee_code'
+    );
 
-document.getElementById(
-    'personnel_code'
-).value =
-localStorage.getItem(
-    'employee_code'
-) || '';
+    if(!personnelCode){
 
-   if(!navigator.onLine){
-
-    document.getElementById('fullname').value =
-        localStorage.getItem('employee_fullname') || '';
-
-    document.getElementById('personnel_code').value =
-        localStorage.getItem('employee_code') || '';
-
-    if(
-        localStorage.getItem('employee_fullname') &&
-        localStorage.getItem('employee_code')
-    ){
-        lockPersonnelFields();
+        personnelCode =
+        prompt(
+            'کد پرسنلی خود را وارد کنید'
+        );
     }
 
-    loadMyRecords();
-    return;
-}
+    if(personnelCode){
 
+        try{
+
+            const { data } =
+            await supabaseClient
+            .from('personnel')
+            .select('*')
+            .eq(
+                'personnel_code',
+                personnelCode
+            )
+            .maybeSingle();
+
+            if(data){
+
+                document.getElementById(
+                    'fullname'
+                ).value =
+                data.fullname;
+
+                document.getElementById(
+                    'personnel_code'
+                ).value =
+                data.personnel_code;
+
+                localStorage.setItem(
+                    'employee_fullname',
+                    data.fullname
+                );
+
+                localStorage.setItem(
+                    'employee_code',
+                    data.personnel_code
+                );
+
+                remainingPhotos =
+                Math.max(
+                    0,
+                    1 - (
+                        data.photo_count || 0
+                    )
+                );
+
+                updatePhotoCounter();
+
+                lockPersonnelFields();
+            }
+
+        }catch(err){
+
+            console.log(err);
+        }
+    }
 
     loadMyRecords();
 
@@ -768,24 +744,6 @@ document.getElementById(
     /*
     اول GPS
     */
-     if(!localStorage.getItem('employee_fullname')){
-    localStorage.setItem(
-        'employee_fullname',
-        document.getElementById(
-            'fullname'
-        ).value
-    );
-}
-
-if(!localStorage.getItem('employee_code')){
-    localStorage.setItem(
-        'employee_code',
-        document.getElementById(
-            'personnel_code'
-        ).value
-    );
-}
-
 
     const location =
     await getLocation();
@@ -841,7 +799,7 @@ if(!localStorage.getItem('employee_code')){
             );
 
             const fileName =
-            'attendance_' +
+           'attendance_' +
             personnelCode +
             '_' +
             Date.now() +
@@ -1083,10 +1041,7 @@ data.forEach(item => {
     if(!item.entry_time) return;
 
     const day =
-    item.entry_time
-    .replace(',', ',')
-    .split(',')[0]
-    .trim();
+    item.entry_time.split('،')[0];
 
     if(!groupedDays[day]){
         groupedDays[day] = [];
@@ -1097,7 +1052,7 @@ data.forEach(item => {
 
 const last3Days =
 Object.keys(groupedDays)
-.sort((a,b)=>b.localeCompare(a,'fa'))
+.reverse()
 .slice(0,3);
 
 last3Days.forEach(day => {
