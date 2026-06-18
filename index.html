@@ -140,9 +140,10 @@ button{
 </h2>
 
 <!-- شروع وضعیت اینترنت و نمایش نام -->
-<div id="networkStatus" class="status online" style="color:green; text-align:center; margin-bottom:10px; font-weight:bold;">
-    🟢 آنلاین
+<div id="networkStatus" class="status offline" style="color:red; text-align:center; margin-bottom:10px; font-weight:bold;">
+    🔴 در حال بررسی وضعیت اتصال...
 </div>
+
 
 <div id="userInfo" style="text-align:center; margin-bottom:15px; font-weight:bold; color:#1a2a6c; border-bottom:1px solid #ddd; padding-bottom:10px;">
     نام: <span id="showName">در حال بارگذاری...</span> | 
@@ -213,11 +214,23 @@ const SUPABASE_URL =
 const SUPABASE_ANON_KEY =
 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
 
-const supabaseClient =
-supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-);
+let supabaseClient = null;
+
+if(window.supabase){
+
+    supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY
+    );
+
+}else{
+
+    console.log(
+        'Supabase library is not loaded. App will work in offline mode.'
+    );
+}
+
 
 let remainingPhotos = 1;
 function showLoading(message){
@@ -259,16 +272,40 @@ function hideLoading(){
 */
 
 // --- شروع توابع وضعیت و اطلاعات کاربر ---
-function updateNetworkStatus() {
-    const status = document.getElementById('networkStatus');
-    if (navigator.onLine) {
-        status.innerHTML = '🟢 آنلاین';
-        status.style.color = 'green';
-    } else {
-        status.innerHTML = '🔴 آفلاین';
-        status.style.color = 'red';
+function updateNetworkStatus(){
+
+    const status =
+    document.getElementById(
+        'networkStatus'
+    );
+
+    if(!status){
+        return;
+    }
+
+    /*
+    اگر مرورگر آفلاین باشد یا کتابخانه Supabase لود نشده باشد،
+    برنامه را آفلاین در نظر می‌گیریم.
+    */
+
+    if(!navigator.onLine || !supabaseClient){
+
+        status.innerHTML =
+        '🔴 آفلاین';
+
+        status.style.color =
+        'red';
+
+    }else{
+
+        status.innerHTML =
+        '🟢 آنلاین';
+
+        status.style.color =
+        'green';
     }
 }
+
 
 // چک کردن وضعیت آفلاین هر 3 ثانیه یکبار برای اطمینان
 setInterval(updateNetworkStatus, 3000);
@@ -357,13 +394,14 @@ window.onload = async function(){
 
         showUserInfo();
 
-        /*
-        بازیابی اطلاعات حتی بعد پاک شدن کش
-        */
-
         let personnelCode =
         localStorage.getItem(
             'employee_code'
+        );
+
+        let savedName =
+        localStorage.getItem(
+            'employee_fullname'
         );
 
         if(!personnelCode){
@@ -372,7 +410,73 @@ window.onload = async function(){
             prompt(
                 'کد پرسنلی خود را وارد کنید'
             );
+
+            if(personnelCode){
+
+                localStorage.setItem(
+                    'employee_code',
+                    personnelCode
+                );
+            }
         }
+
+        if(personnelCode){
+
+            document.getElementById(
+                'personnel_code'
+            ).value =
+            personnelCode;
+        }
+
+        if(savedName){
+
+            document.getElementById(
+                'fullname'
+            ).value =
+            savedName;
+
+            showUserInfo();
+        }
+
+        /*
+        حالت آفلاین واقعی:
+        یا اینترنت قطع است،
+        یا کتابخانه Supabase از CDN لود نشده است.
+        در هر دو حالت نباید هیچ درخواست آنلاین بزنیم.
+        */
+
+        if(!navigator.onLine || !supabaseClient){
+
+            if(savedName && personnelCode){
+
+                document.getElementById(
+                    'fullname'
+                ).value =
+                savedName;
+
+                document.getElementById(
+                    'personnel_code'
+                ).value =
+                personnelCode;
+
+                lockPersonnelFields();
+
+                remainingPhotos = 0;
+
+                updatePhotoCounter();
+
+                showUserInfo();
+            }
+
+            await loadMyRecords();
+
+            return;
+        }
+
+        /*
+        فقط اگر هم اینترنت هست و هم Supabase واقعاً لود شده،
+        برو اطلاعات آنلاین را بگیر.
+        */
 
         if(personnelCode){
 
@@ -410,6 +514,11 @@ window.onload = async function(){
                         data.personnel_code
                     );
 
+                    localStorage.setItem(
+                        'employee_photo_count',
+                        data.photo_count || 0
+                    );
+
                     showUserInfo();
 
                     remainingPhotos =
@@ -423,19 +532,66 @@ window.onload = async function(){
                     updatePhotoCounter();
 
                     lockPersonnelFields();
+
+                }else{
+
+                    if(savedName && personnelCode){
+
+                        document.getElementById(
+                            'fullname'
+                        ).value =
+                        savedName;
+
+                        document.getElementById(
+                            'personnel_code'
+                        ).value =
+                        personnelCode;
+
+                        lockPersonnelFields();
+
+                        remainingPhotos = 0;
+
+                        updatePhotoCounter();
+
+                        showUserInfo();
+                    }
                 }
 
             }catch(err){
 
                 console.log(err);
+
+                if(savedName && personnelCode){
+
+                    document.getElementById(
+                        'fullname'
+                    ).value =
+                    savedName;
+
+                    document.getElementById(
+                        'personnel_code'
+                    ).value =
+                    personnelCode;
+
+                    lockPersonnelFields();
+
+                    remainingPhotos = 0;
+
+                    updatePhotoCounter();
+
+                    showUserInfo();
+                }
             }
         }
 
         await loadMyRecords();
 
-        await syncOfflineAttendance();
+        if(navigator.onLine && supabaseClient){
 
-        await loadMyRecords();
+            await syncOfflineAttendance();
+
+            await loadMyRecords();
+        }
 
     }catch(err){
 
@@ -444,6 +600,8 @@ window.onload = async function(){
     }finally{
 
         hideLoading();
+
+        updateNetworkStatus();
     }
 };
 
@@ -614,7 +772,7 @@ document.getElementById(
             اگر آفلاین بود
             */
 
-            if(!navigator.onLine){
+           if(!navigator.onLine || !supabaseClient){
 
                 let offlinePhotos =
                 JSON.parse(
@@ -904,7 +1062,7 @@ async function(e){
             آفلاین
             */
 
-            if(!navigator.onLine){
+         if(!navigator.onLine || !supabaseClient){
 
                 let offlineAttendance =
                 JSON.parse(
@@ -1060,9 +1218,9 @@ document.getElementById(
 
 async function syncOfflineAttendance(){
 
-    if(!navigator.onLine){
-        return;
-    }
+  if(!navigator.onLine || !supabaseClient){
+    return;
+}
 
     let offlineAttendance =
     JSON.parse(
@@ -1117,7 +1275,7 @@ async function loadMyRecords(){
         دریافت ترددهای آنلاین از Supabase
         */
 
-        if(navigator.onLine){
+      if(navigator.onLine && supabaseClient){
 
             const { data } =
             await supabaseClient
