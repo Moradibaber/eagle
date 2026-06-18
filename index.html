@@ -1133,161 +1133,63 @@ async function loadMyRecords(){
 
     try{
 
-        let allRecords = [];
-
-        /*
-        اگر آنلاین بود، سوابق Supabase را بگیر
-        */
-
-        if(navigator.onLine){
-
-            try{
-
-                const { data, error } =
-                await supabaseClient
-                .from('eagle')
-                .select('*')
-                .eq(
-                    'personnel_code',
-                    personnel_code
-                )
-                .order(
-                    'id',
-                    {
-                        ascending:false
-                    }
-                );
-
-                if(!error && data){
-                    allRecords = data;
-                }
-
-            }catch(err){
-
-                console.log(err);
+        const { data } =
+        await supabaseClient
+        .from('eagle')
+        .select('*')
+        .eq(
+            'personnel_code',
+            personnel_code
+        )
+        .order(
+            'id',
+            {
+                ascending:false
             }
-        }
-
-        /*
-        خواندن ترددهای آفلاین ذخیره‌شده
-        */
-
-        let offlineAttendance =
-        JSON.parse(
-            localStorage.getItem(
-                'offline_attendance'
-            ) || '[]'
         );
 
-        let myOffline =
-        offlineAttendance.filter(item => {
-
-            return item.personnel_code === personnel_code;
-
-        });
-
-        /*
-        ترددهای آفلاین باید از جدید به قدیم شوند
-        چون منطق درست کد شما بر اساس جدیدترین رکورد در ابتدای آرایه است
-        */
-
-        myOffline =
-        myOffline.reverse();
-
-        allRecords =
-        allRecords.concat(
-            myOffline
-        );
-
-        if(allRecords.length === 0){
-
-            document.getElementById(
-                'myRecords'
-            ).innerHTML =
-            '<div class="record">هنوز ترددی ثبت نشده است</div>';
-
+        if(!data){
             return;
-        }
-
-        /*
-        مرتب‌سازی نهایی از جدید به قدیم
-        بر اساس عدد داخل photo_name
-        مثل:
-        attendance_123_1780000000000.jpg
-        */
-
-        function getSortNumber(item){
-
-            if(item.photo_name){
-
-                const match =
-                String(item.photo_name)
-                .match(/_(\d+)\.jpg$/);
-
-                if(match){
-                    return Number(match[1]);
-                }
-            }
-
-            if(item.id){
-                return Number(item.id);
-            }
-
-            return 0;
-        }
-
-        allRecords.sort((a,b)=>{
-
-            return getSortNumber(b) - getSortNumber(a);
-
-        });
-
-        /*
-        جدا کردن تاریخ دقیقا شبیه کد درست خودتان
-        */
-
-        function getDay(entryTime){
-
-            if(!entryTime){
-                return '';
-            }
-
-            const text =
-            String(entryTime).trim();
-
-            if(text.includes(',')){
-
-                return text
-                .split(',')[0]
-                .trim();
-            }
-
-            if(text.includes('،')){
-
-                return text
-                .split('،')[0]
-                .trim();
-            }
-
-            return text
-            .substring(0,10)
-            .trim();
         }
 
         let html = '';
 
         const groupedDays = {};
 
-        allRecords.forEach(item => {
+        data.forEach(item => {
 
             if(!item.entry_time){
                 return;
             }
 
-            const day =
-            getDay(
+            /*
+            همان منطق قبلی شما،
+            فقط کمی امن‌تر شده
+            */
+
+            let day = '';
+
+            if(item.entry_time.includes(',')){
+
+                day =
                 item.entry_time
-            );
+                .split(',')[0]
+                .trim();
+
+            }else if(item.entry_time.includes('،')){
+
+                day =
+                item.entry_time
+                .split('،')[0]
+                .trim();
+
+            }else{
+
+                day =
+                item.entry_time
+                .substring(0,10)
+                .trim();
+            }
 
             if(!day){
                 return;
@@ -1300,28 +1202,15 @@ async function loadMyRecords(){
             groupedDays[day].push(item);
         });
 
-        /*
-        گرفتن ۳ روز آخر
-        چون allRecords از جدید به قدیم مرتب شده،
-        ترتیب Object.keys همین ترتیب روزهای جدیدتر است
-        */
-
         const last3Days =
         Object.keys(groupedDays)
+        .sort((a,b)=>b.localeCompare(a,'fa'))
         .slice(0,3);
 
         last3Days.forEach(day => {
 
             const records =
             groupedDays[day];
-
-            if(!records || records.length === 0){
-                return;
-            }
-
-            /*
-            این دو خط دقیقا منطق درست کد اول شماست
-            */
 
             const firstRecord =
             records[records.length - 1];
@@ -1360,11 +1249,6 @@ async function loadMyRecords(){
     }catch(err){
 
         console.log(err);
-
-        document.getElementById(
-            'myRecords'
-        ).innerHTML =
-        '<div class="record">خطا در نمایش سوابق</div>';
     }
 }
 
