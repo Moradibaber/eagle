@@ -157,7 +157,17 @@ onclick="saveAttendance()"
 >
 📷 ثبت تردد
 </button>
-
+<div
+    id="saveStatus"
+    style="
+    text-align:center;
+    margin-top:10px;
+    font-weight:bold;
+    color:#1a2a6c;
+    display:none;
+    ">
+    در حال ذخیره سازی، صبر کنید...
+</div>
 <div id="myRecords"></div>
 
 </div>
@@ -488,13 +498,18 @@ async function captureReferencePhoto(){
 
     photoInput.onchange =
     async function(e){
-
+     document.getElementbyId(
+         'saveStatus'
+         ).style.display='block';
         try{
 
             const file =
             e.target.files[0];
 
             if(!file){
+          document.getElementbyId(
+         'saveStatus'
+              ) .style.display='none';
                 return;
             }
 
@@ -630,6 +645,9 @@ async function captureReferencePhoto(){
             alert(
                 'عکس تطبیقی ذخیره شد'
             );
+            document.getElementbyId(
+         'saveStatus'
+                ).style.display='none';
 
         }catch(err){
 
@@ -738,7 +756,9 @@ async function saveAttendance(){
 
     attendanceInput.onchange =
     async function(e){
-
+     document.getElementbyId(
+         'saveStatus'
+         ).style.display='block';
         try{
 
             const file =
@@ -880,7 +900,8 @@ async function saveAttendance(){
             alert(
                 'تردد ثبت شد'
             );
-
+          document.getElementbyId(
+         'saveStatus')style.display='none';
             loadMyRecords();
 
         }catch(err){
