@@ -220,6 +220,25 @@ supabase.createClient(
 );
 
 let remainingPhotos = 1;
+    function withTimeout(promise, ms){
+
+    return Promise.race([
+
+        promise,
+
+        new Promise((resolve, reject) => {
+
+            setTimeout(() => {
+
+                reject(
+                    new Error('timeout')
+                );
+
+            }, ms);
+        })
+    ]);
+}
+
 function showLoading(message){
     const box =
     document.getElementById(
@@ -358,7 +377,7 @@ window.onload = async function(){
         showUserInfo();
 
         /*
-        بازیابی اطلاعات حتی بعد پاک شدن کش
+        بازیابی اطلاعات ذخیره‌شده در موبایل
         */
 
         let personnelCode =
@@ -366,39 +385,118 @@ window.onload = async function(){
             'employee_code'
         );
 
+        let savedName =
+        localStorage.getItem(
+            'employee_fullname'
+        );
+
+        /*
+        اگر کد پرسنلی ذخیره نشده بود، مثل قبل از کاربر بپرس
+        */
+
         if(!personnelCode){
 
             personnelCode =
             prompt(
                 'کد پرسنلی خود را وارد کنید'
             );
+
+            if(personnelCode){
+
+                localStorage.setItem(
+                    'employee_code',
+                    personnelCode
+                );
+            }
         }
 
-       if(personnelCode){
+        /*
+        اگر کد پرسنلی داریم، حداقل فیلد کد را پر کن
+        */
 
-    if(!navigator.onLine){
-        // اگر آفلاین بود فقط از localStorage استفاده کن
-        const savedName =
-        localStorage.getItem('employee_fullname');
+        if(personnelCode){
+
+            document.getElementById(
+                'personnel_code'
+            ).value =
+            personnelCode;
+        }
+
+        /*
+        اگر نام قبلاً در موبایل ذخیره شده، همان را نمایش بده
+        */
 
         if(savedName){
-            document.getElementById('fullname').value = savedName;
-            document.getElementById('personnel_code').value = personnelCode;
-            lockPersonnelFields();
+
+            document.getElementById(
+                'fullname'
+            ).value =
+            savedName;
+
+            showUserInfo();
         }
-    }else{
 
-        try{
+        /*
+        اگر برنامه از ابتدا آفلاین باز شده باشد:
+        اصلاً سراغ Supabase نرو
+        */
 
-            const { data } =
-            await supabaseClient
-            .from('personnel')
-            .select('*')
-            .eq(
-                'personnel_code',
-                personnelCode
-            )
-            .maybeSingle();
+        if(!navigator.onLine){
+
+            if(savedName && personnelCode){
+
+                lockPersonnelFields();
+
+                /*
+                چون در حالت آفلاین نمی‌توانیم از Supabase تعداد عکس را بخوانیم،
+                اگر قبلاً نام و کد در موبایل ذخیره شده باشد،
+                کاربر را معتبر فرض می‌کنیم تا ثبت تردد قفل نشود.
+                */
+
+                const savedPhotoCount =
+                parseInt(
+                    localStorage.getItem(
+                        'employee_photo_count'
+                    ) || '1'
+                );
+
+                remainingPhotos =
+                Math.max(
+                    0,
+                    1 - savedPhotoCount
+                );
+
+                updatePhotoCounter();
+            }
+
+            await loadMyRecords();
+
+            return;
+        }
+
+        /*
+        اگر آنلاین بود، اطلاعات را از Supabase بگیر
+        ولی اجازه نده درخواست بیشتر از چند ثانیه فرم را قفل کند
+        */
+
+        if(personnelCode){
+
+            try{
+
+                const { data } =
+                await withTimeout(
+
+                    supabaseClient
+                    .from('personnel')
+                    .select('*')
+                    .eq(
+                        'personnel_code',
+                        personnelCode
+                    )
+                    .maybeSingle(),
+
+                    6000
+                );
 
                 if(data){
 
@@ -422,6 +520,11 @@ window.onload = async function(){
                         data.personnel_code
                     );
 
+                    localStorage.setItem(
+                        'employee_photo_count',
+                        data.photo_count || 0
+                    );
+
                     showUserInfo();
 
                     remainingPhotos =
@@ -435,19 +538,101 @@ window.onload = async function(){
                     updatePhotoCounter();
 
                     lockPersonnelFields();
+
+                }else{
+
+                    /*
+                    اگر در Supabase اطلاعاتی پیدا نشد،
+                    ولی اطلاعات قبلی در موبایل هست، فرم را از کار نینداز
+                    */
+
+                    if(savedName && personnelCode){
+
+                        document.getElementById(
+                            'fullname'
+                        ).value =
+                        savedName;
+
+                        document.getElementById(
+                            'personnel_code'
+                        ).value =
+                        personnelCode;
+
+                        lockPersonnelFields();
+
+                        const savedPhotoCount =
+                        parseInt(
+                            localStorage.getItem(
+                                'employee_photo_count'
+                            ) || '1'
+                        );
+
+                        remainingPhotos =
+                        Math.max(
+                            0,
+                            1 - savedPhotoCount
+                        );
+
+                        updatePhotoCounter();
+                    }
                 }
 
             }catch(err){
 
                 console.log(err);
+
+                /*
+                اگر اینترنت ظاهراً آنلاین بود ولی Supabase جواب نداد،
+                باز هم فرم را با اطلاعات ذخیره‌شده بالا بیاور
+                */
+
+                savedName =
+                localStorage.getItem(
+                    'employee_fullname'
+                );
+
+                if(savedName && personnelCode){
+
+                    document.getElementById(
+                        'fullname'
+                    ).value =
+                    savedName;
+
+                    document.getElementById(
+                        'personnel_code'
+                    ).value =
+                    personnelCode;
+
+                    showUserInfo();
+
+                    lockPersonnelFields();
+
+                    const savedPhotoCount =
+                    parseInt(
+                        localStorage.getItem(
+                            'employee_photo_count'
+                        ) || '1'
+                    );
+
+                    remainingPhotos =
+                    Math.max(
+                        0,
+                        1 - savedPhotoCount
+                    );
+
+                    updatePhotoCounter();
+                }
             }
         }
 
         await loadMyRecords();
 
-        await syncOfflineAttendance();
+        if(navigator.onLine){
 
-        await loadMyRecords();
+            await syncOfflineAttendance();
+
+            await loadMyRecords();
+        }
 
     }catch(err){
 
@@ -646,13 +831,19 @@ document.getElementById(
                     )
                 );
 
-                remainingPhotos--;
+               remainingPhotos--;
 
-                updatePhotoCounter();
+localStorage.setItem(
+    'employee_photo_count',
+    1
+);
 
-                alert(
-                    'عکس مرجع آفلاین ذخیره شد'
-                );
+updatePhotoCounter();
+
+alert(
+    'عکس مرجع آفلاین ذخیره شد'
+);
+
                 document.getElementById(
          'saveStatus'
               ) .style.display='none';
@@ -692,6 +883,12 @@ document.getElementById(
             const uploadedCount =
             1 - remainingPhotos;
 
+           localStorage.setItem(
+    'employee_photo_count',
+    uploadedCount
+);
+
+            
             /*
             ذخیره اطلاعات
             */
