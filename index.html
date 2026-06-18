@@ -178,7 +178,7 @@ supabase.createClient(
     SUPABASE_ANON_KEY
 );
 
-let remainingPhotos = 3;
+let remainingPhotos = 1;
 
 /*
 وضعیت اینترنت
@@ -333,7 +333,7 @@ window.onload = async function(){
                 remainingPhotos =
                 Math.max(
                     0,
-                    3 - (
+                    1 - (
                         data.photo_count || 0
                     )
                 );
@@ -473,7 +473,7 @@ async function captureReferencePhoto(){
     if(remainingPhotos <= 0){
 
         alert(
-            '۳ عکس مرجع ثبت شده'
+            'عکس تطبیقی قبلا ثبت شده است'
         );
 
         return;
@@ -571,7 +571,7 @@ async function captureReferencePhoto(){
             remainingPhotos--;
 
             const uploadedCount =
-            3 - remainingPhotos;
+            1 - remainingPhotos;
 
             /*
             ذخیره اطلاعات
@@ -701,7 +701,7 @@ async function saveAttendance(){
     if(remainingPhotos > 0){
 
         alert(
-            'ابتدا ۳ عکس مرجع را کامل ثبت کنید'
+            'ابتدا عکس تطبیقی را ثبت کنید'
         );
 
         return;
