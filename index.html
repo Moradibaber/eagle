@@ -330,12 +330,13 @@ localStorage.getItem(
 ) || '';
 
 
-    if(localStorage.getItem('employee_fullname')
-       &&
-        if(localStorage.getItem('employee_code')
-           ){
-        lockPersonnelFields();
-    }
+    if (
+    localStorage.getItem('employee_fullname') &&
+    localStorage.getItem('employee_code')
+){
+    lockPersonnelFields();
+}
+
 document.getElementById(
     'personnel_code'
 ).value =
@@ -343,82 +344,25 @@ localStorage.getItem(
     'employee_code'
 ) || '';
 
-   if(!navigator.online){
-       lockPersonnelFields();
-       loadMyRecords();
-       return;
-    /*
-    بازیابی اطلاعات حتی بعد پاک شدن کش
-    */
-   
+   if(!navigator.onLine){
 
-    let personnelCode =
-    localStorage.getItem(
-        'employee_code'
-    );
+    document.getElementById('fullname').value =
+        localStorage.getItem('employee_fullname') || '';
 
-    if(!personnelCode){
+    document.getElementById('personnel_code').value =
+        localStorage.getItem('employee_code') || '';
 
-        personnelCode =
-        prompt(
-            'کد پرسنلی خود را وارد کنید'
-        );
+    if(
+        localStorage.getItem('employee_fullname') &&
+        localStorage.getItem('employee_code')
+    ){
+        lockPersonnelFields();
     }
 
-    if(personnelCode){
+    loadMyRecords();
+    return;
+}
 
-        try{
-
-            const { data } =
-            await supabaseClient
-            .from('personnel')
-            .select('*')
-            .eq(
-                'personnel_code',
-                personnelCode
-            )
-            .maybeSingle();
-
-            if(data){
-
-                document.getElementById(
-                    'fullname'
-                ).value =
-                data.fullname;
-
-                document.getElementById(
-                    'personnel_code'
-                ).value =
-                data.personnel_code;
-
-                localStorage.setItem(
-                    'employee_fullname',
-                    data.fullname
-                );
-
-                localStorage.setItem(
-                    'employee_code',
-                    data.personnel_code
-                );
-
-                remainingPhotos =
-                Math.max(
-                    0,
-                    1 - (
-                        data.photo_count || 0
-                    )
-                );
-
-                updatePhotoCounter();
-
-                lockPersonnelFields();
-            }
-
-        }catch(err){
-
-            console.log(err);
-        }
-    }
 
     loadMyRecords();
 
