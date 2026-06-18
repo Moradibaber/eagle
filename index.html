@@ -208,13 +208,69 @@ onclick="saveAttendance()"
 
 <script>
 
-const SUPABASE_URL =
-'https://kddhnohquohbnemmegdy.supabase.co';
-
-const SUPABASE_ANON_KEY =
-'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
-
 let supabaseClient = null;
+
+try {
+  if (typeof supabase !== "undefined" && supabase.createClient) {
+    supabaseClient = supabase.createClient('https://kddhnohquohbnemmegdy.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc');
+  } else {
+    console.warn("Supabase library is not available. App will work in offline mode.");
+  }
+} catch (error) {
+  console.error("Failed to create Supabase client:", error);
+  supabaseClient = null;
+}
+async function checkRealConnection() {
+  if (CHECKING_CONNECTION) {
+    return APP_ONLINE;
+  }
+
+  CHECKING_CONNECTION = true;
+
+  try {
+    if (!navigator.onLine) {
+      updateNetworkStatus(false);
+      return false;
+    }
+
+    if (!supabaseClient) {
+      updateNetworkStatus(false);
+      return false;
+    }
+
+    const connectionTest = supabaseClient
+      .from("personnel")
+      .select("id")
+      .limit(1);
+
+    const timeout = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("offline-timeout")), 2500);
+    });
+
+    const result = await Promise.race([
+      connectionTest,
+      timeout
+    ]);
+
+    if (result && result.error) {
+      console.warn("Connection test error:", result.error);
+      updateNetworkStatus(false);
+      return false;
+    }
+
+    updateNetworkStatus(true);
+    return true;
+
+  } catch (error) {
+    console.warn("Connection test failed:", error);
+    updateNetworkStatus(false);
+    return false;
+
+  } finally {
+    CHECKING_CONNECTION = false;
+  }
+}
+
 
 if(window.supabase){
 
@@ -272,38 +328,23 @@ function hideLoading(){
 */
 
 // --- شروع توابع وضعیت و اطلاعات کاربر ---
-function updateNetworkStatus(){
+function updateNetworkStatus(online) {
+  APP_ONLINE = !!online;
 
-    const status =
-    document.getElementById(
-        'networkStatus'
-    );
+  const status = document.getElementById("networkStatus");
+  if (!status) return;
 
-    if(!status){
-        return;
-    }
-
-    /*
-    اگر مرورگر آفلاین باشد یا کتابخانه Supabase لود نشده باشد،
-    برنامه را آفلاین در نظر می‌گیریم.
-    */
-
-    if(!navigator.onLine || !supabaseClient){
-
-        status.innerHTML =
-        '🔴 آفلاین';
-
-        status.style.color =
-        'red';
-
-    }else{
-
-        status.innerHTML =
-        '🟢 آنلاین';
-
-        status.style.color =
-        'green';
-    }
+  if (APP_ONLINE) {
+    status.textContent = "🟢 آنلاین";
+    status.style.backgroundColor = "#dcfce7";
+    status.style.color = "#166534";
+    status.style.border = "1px solid #bbf7d0";
+  } else {
+    status.textContent = "🔴 آفلاین";
+    status.style.backgroundColor = "#fee2e2";
+    status.style.color = "#991b1b";
+    status.style.border = "1px solid #fecaca";
+  }
 }
 
 
@@ -383,6 +424,36 @@ function updatePhotoCounter(){
 */
 
 window.onload = async function(){
+window.onload = async function () {
+  updateNetworkStatus(false);
+
+  try {
+    showUserInfo();
+
+    const online = await checkRealConnection();
+
+    if (!online) {
+      console.warn("Started in offline mode");
+
+      // اینجا نباید هیچ Supabase ای صدا زده شود
+      try {
+        loadMyRecords();
+      } catch (e) {
+        console.warn("Offline records load failed:", e);
+      }
+
+      return;
+    }
+
+    // از اینجا به بعد فقط کارهای آنلاین
+    await syncOfflineAttendance();
+    await loadMyRecords();
+
+  } catch (error) {
+    console.error("Startup error:", error);
+    updateNetworkStatus(false);
+  }
+};
 
     showLoading(
         'در حال بارگذاری فرم، لطفاً صبر کنید...'
@@ -1062,7 +1133,14 @@ async function(e){
             آفلاین
             */
 
-         if(!navigator.onLine || !supabaseClient){
+        const online = await checkRealConnection();
+
+if (online) {
+  // ثبت آنلاین فعلی
+} else {
+  // ثبت آفلاین فعلی
+}
+
 
                 let offlineAttendance =
                 JSON.parse(
