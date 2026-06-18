@@ -199,14 +199,38 @@ let remainingPhotos = 1;
 */
 
 // --- شروع توابع وضعیت و اطلاعات کاربر ---
-function updateNetworkStatus() {
-    const status = document.getElementById('networkStatus');
-    if (navigator.onLine) {
-        status.innerHTML = '🟢 آنلاین';
-        status.style.color = 'green';
-    } else {
-        status.innerHTML = '🔴 آفلاین';
-        status.style.color = 'red';
+function updateNetworkStatus(){
+
+    const status =
+    document.getElementById(
+        'networkStatus'
+    );
+
+    if(navigator.onLine){
+
+        status.innerHTML =
+        '🟢 آنلاین';
+
+        status.className =
+        'status online';
+
+        console.log(
+            'online=',
+            navigator.onLine
+        );
+
+    }else{
+
+        status.innerHTML =
+        '🔴 آفلاین';
+
+        status.className =
+        'status offline';
+
+        console.log(
+            'online=',
+            navigator.onLine
+        );
     }
 }
 
@@ -226,9 +250,9 @@ window.addEventListener(
     updateNetworkStatus
 );
 
-window.addEventListener(
-    'offline',
-    updateNetworkStatus
+setInterval(
+    updateNetworkStatus,
+    3000
 );
 
 /*
@@ -288,13 +312,24 @@ function updatePhotoCounter(){
 window.onload = async function(){
 
     updateNetworkStatus();
-    // --- اضافه شده ---
-    showUserInfo();
-    // --- پایان اضافه ---
 
     /*
-    بازیابی اطلاعات حتی بعد پاک شدن کش
+    بازیابی اطلاعات ذخیره شده
     */
+
+    document.getElementById(
+        'fullname'
+    ).value =
+    localStorage.getItem(
+        'employee_fullname'
+    ) || '';
+
+    document.getElementById(
+        'personnel_code'
+    ).value =
+    localStorage.getItem(
+        'employee_code'
+    ) || '';
 
     let personnelCode =
     localStorage.getItem(
@@ -307,63 +342,112 @@ window.onload = async function(){
         prompt(
             'کد پرسنلی خود را وارد کنید'
         );
+
+        if(personnelCode){
+
+            localStorage.setItem(
+                'employee_code',
+                personnelCode
+            );
+
+            document.getElementById(
+                'personnel_code'
+            ).value =
+            personnelCode;
+        }
     }
 
     if(personnelCode){
 
-        try{
+        /*
+        اگر آفلاین بود، اصلا درخواست Supabase نزن
+        */
 
-            const { data } =
-            await supabaseClient
-            .from('personnel')
-            .select('*')
-            .eq(
-                'personnel_code',
-                personnelCode
-            )
-            .maybeSingle();
+        if(!navigator.onLine){
 
-            if(data){
+            const savedName =
+            localStorage.getItem(
+                'employee_fullname'
+            );
+
+            const savedCode =
+            localStorage.getItem(
+                'employee_code'
+            );
+
+            if(savedName){
 
                 document.getElementById(
                     'fullname'
                 ).value =
-                data.fullname;
+                savedName;
+            }
+
+            if(savedCode){
 
                 document.getElementById(
                     'personnel_code'
                 ).value =
-                data.personnel_code;
+                savedCode;
+            }
 
-                localStorage.setItem(
-                    'employee_fullname',
-                    data.fullname
-                );
-
-                localStorage.setItem(
-                    'employee_code',
-                    data.personnel_code
-                );
-                   // --- اضافه شده ---
-showUserInfo();
-// --- پایان اضافه ---
-
-                remainingPhotos =
-                Math.max(
-                    0,
-                    1 - (
-                        data.photo_count || 0
-                    )
-                );
-
-                updatePhotoCounter();
-
+            if(savedName && savedCode){
                 lockPersonnelFields();
             }
 
-        }catch(err){
+        }else{
 
-            console.log(err);
+            try{
+
+                const { data } =
+                await supabaseClient
+                .from('personnel')
+                .select('*')
+                .eq(
+                    'personnel_code',
+                    personnelCode
+                )
+                .maybeSingle();
+
+                if(data){
+
+                    document.getElementById(
+                        'fullname'
+                    ).value =
+                    data.fullname;
+
+                    document.getElementById(
+                        'personnel_code'
+                    ).value =
+                    data.personnel_code;
+
+                    localStorage.setItem(
+                        'employee_fullname',
+                        data.fullname
+                    );
+
+                    localStorage.setItem(
+                        'employee_code',
+                        data.personnel_code
+                    );
+
+                    remainingPhotos =
+                    Math.max(
+                        0,
+                        1 - (
+                            data.photo_count || 0
+                        )
+                    );
+
+                    updatePhotoCounter();
+
+                    lockPersonnelFields();
+                }
+
+            }catch(err){
+
+                console.log(err);
+            }
         }
     }
 
@@ -371,6 +455,7 @@ showUserInfo();
 
     syncOfflineAttendance();
 };
+
 
 /*
 فشرده سازی عکس
@@ -857,14 +942,18 @@ document.getElementById(
                     )
                 );
 
-                alert(
-                    'تردد آفلاین ذخیره شد'
-                );
+               alert(
+    'تردد آفلاین ذخیره شد'
+);
+
 document.getElementById(
-         'saveStatus'
-              ) .style.display='none';
-                return;
-            }
+    'saveStatus'
+).style.display = 'none';
+
+loadMyRecords();
+
+return;
+
 
             /*
             آپلود عکس تردد
@@ -985,23 +1074,46 @@ async function syncOfflineAttendance(){
         return;
     }
 
+    let notSynced = [];
+
     for(const item of offlineAttendance){
 
         try{
 
+            const { error } =
             await supabaseClient
             .from('eagle')
             .insert([item]);
 
+            if(error){
+                notSynced.push(item);
+            }
+
         }catch(err){
 
             console.log(err);
+
+            notSynced.push(item);
         }
     }
 
-    localStorage.removeItem(
-        'offline_attendance'
-    );
+    if(notSynced.length === 0){
+
+        localStorage.removeItem(
+            'offline_attendance'
+        );
+
+    }else{
+
+        localStorage.setItem(
+            'offline_attendance',
+            JSON.stringify(
+                notSynced
+            )
+        );
+    }
+
+    loadMyRecords();
 }
 
 /*
@@ -1021,91 +1133,238 @@ async function loadMyRecords(){
 
     try{
 
-        const { data } =
-        await supabaseClient
-        .from('eagle')
-        .select('*')
-        .eq(
-            'personnel_code',
-            personnel_code
-        )
-        .order(
-            'id',
-            {
-                ascending:false
+        let allRecords = [];
+
+        /*
+        اگر آنلاین بود، سوابق Supabase را بگیر
+        */
+
+        if(navigator.onLine){
+
+            try{
+
+                const { data, error } =
+                await supabaseClient
+                .from('eagle')
+                .select('*')
+                .eq(
+                    'personnel_code',
+                    personnel_code
+                )
+                .order(
+                    'id',
+                    {
+                        ascending:false
+                    }
+                );
+
+                if(!error && data){
+                    allRecords = data;
+                }
+
+            }catch(err){
+
+                console.log(err);
             }
+        }
+
+        /*
+        خواندن ترددهای آفلاین ذخیره‌شده
+        */
+
+        let offlineAttendance =
+        JSON.parse(
+            localStorage.getItem(
+                'offline_attendance'
+            ) || '[]'
         );
 
-        if(!data){
+        let myOffline =
+        offlineAttendance.filter(item => {
+
+            return item.personnel_code === personnel_code;
+
+        });
+
+        /*
+        ترددهای آفلاین باید از جدید به قدیم شوند
+        چون منطق درست کد شما بر اساس جدیدترین رکورد در ابتدای آرایه است
+        */
+
+        myOffline =
+        myOffline.reverse();
+
+        allRecords =
+        allRecords.concat(
+            myOffline
+        );
+
+        if(allRecords.length === 0){
+
+            document.getElementById(
+                'myRecords'
+            ).innerHTML =
+            '<div class="record">هنوز ترددی ثبت نشده است</div>';
+
             return;
         }
-       
-       let html = '';
 
-const groupedDays = {};
+        /*
+        مرتب‌سازی نهایی از جدید به قدیم
+        بر اساس عدد داخل photo_name
+        مثل:
+        attendance_123_1780000000000.jpg
+        */
 
-data.forEach(item => {
+        function getSortNumber(item){
 
-    if(!item.entry_time) return;
+            if(item.photo_name){
 
-    const day =
-    item.entry_time.split('،')[0];
+                const match =
+                String(item.photo_name)
+                .match(/_(\d+)\.jpg$/);
 
-    if(!groupedDays[day]){
-        groupedDays[day] = [];
-    }
+                if(match){
+                    return Number(match[1]);
+                }
+            }
 
-    groupedDays[day].push(item);
-});
+            if(item.id){
+                return Number(item.id);
+            }
 
-const last3Days =
-Object.keys(groupedDays)
-.reverse()
-.slice(0,3);
+            return 0;
+        }
 
-last3Days.forEach(day => {
+        allRecords.sort((a,b)=>{
 
-    const records =
-    groupedDays[day];
+            return getSortNumber(b) - getSortNumber(a);
 
-    const firstRecord =
-    records[records.length - 1];
+        });
 
-    const lastRecord =
-    records[0];
+        /*
+        جدا کردن تاریخ دقیقا شبیه کد درست خودتان
+        */
 
-    html += `
-    <div class="record">
+        function getDay(entryTime){
 
-        <p>
-        📅 تاریخ:
-        ${day}
-        </p>
+            if(!entryTime){
+                return '';
+            }
 
-        <hr>
+            const text =
+            String(entryTime).trim();
 
-        <p>
-        🟢 اولین ورود:
-        ${firstRecord.entry_time}
-        </p>
+            if(text.includes(',')){
 
-        <p>
-        🔴 آخرین خروج:
-        ${lastRecord.entry_time}
-        </p>
+                return text
+                .split(',')[0]
+                .trim();
+            }
 
-    </div>
-    `;
-});
+            if(text.includes('،')){
 
-document.getElementById(
-    'myRecords'
-).innerHTML = html;
+                return text
+                .split('،')[0]
+                .trim();
+            }
 
+            return text
+            .substring(0,10)
+            .trim();
+        }
+
+        let html = '';
+
+        const groupedDays = {};
+
+        allRecords.forEach(item => {
+
+            if(!item.entry_time){
+                return;
+            }
+
+            const day =
+            getDay(
+                item.entry_time
+            );
+
+            if(!day){
+                return;
+            }
+
+            if(!groupedDays[day]){
+                groupedDays[day] = [];
+            }
+
+            groupedDays[day].push(item);
+        });
+
+        /*
+        گرفتن ۳ روز آخر
+        چون allRecords از جدید به قدیم مرتب شده،
+        ترتیب Object.keys همین ترتیب روزهای جدیدتر است
+        */
+
+        const last3Days =
+        Object.keys(groupedDays)
+        .slice(0,3);
+
+        last3Days.forEach(day => {
+
+            const records =
+            groupedDays[day];
+
+            if(!records || records.length === 0){
+                return;
+            }
+
+            /*
+            این دو خط دقیقا منطق درست کد اول شماست
+            */
+
+            const firstRecord =
+            records[records.length - 1];
+
+            const lastRecord =
+            records[0];
+
+            html += `
+            <div class="record">
+
+                <p>
+                📅 تاریخ:
+                ${day}
+                </p>
+
+                <hr>
+
+                <p>
+                🟢 اولین ورود:
+                ${firstRecord.entry_time}
+                </p>
+
+                <p>
+                🔴 آخرین خروج:
+                ${lastRecord.entry_time}
+                </p>
+
+            </div>
+            `;
+        });
+
+        document.getElementById(
+            'myRecords'
+        ).innerHTML = html;
 
     }catch(err){
 
         console.log(err);
+
+        document.getElementById(
+            'myRecords'
+        ).innerHTML =
+        '<div class="record">خطا در نمایش سوابق</div>';
     }
 }
 
