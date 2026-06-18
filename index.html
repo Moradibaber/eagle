@@ -92,6 +92,39 @@ button{
 
 .offline{
     color:red;
+    
+}
+.loading-box{
+    text-align:center;
+    margin-top:10px;
+    font-weight:bold;
+    color:#1a2a6c;
+    display:none;
+    background:#eef3ff;
+    border:1px solid #c8d6ff;
+    border-radius:8px;
+    padding:10px;
+}
+
+.spinner{
+    display:inline-block;
+    width:16px;
+    height:16px;
+    border:3px solid #c8d6ff;
+    border-top:3px solid #1a2a6c;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+    vertical-align:middle;
+    margin-left:6px;
+}
+
+@keyframes spin{
+    from{
+        transform:rotate(0deg);
+    }
+    to{
+        transform:rotate(360deg);
+    }
 }
 
 </style>
@@ -161,17 +194,11 @@ onclick="saveAttendance()"
 >
 📷 ثبت تردد
 </button>
-<div
-    id="saveStatus"
-    style="
-    text-align:center;
-    margin-top:10px;
-    font-weight:bold;
-    color:#1a2a6c;
-    display:none;
-    ">
-    در حال ذخیره سازی، صبر کنید...
+<div id="saveStatus" class="loading-box">
+    <span class="spinner"></span>
+    <span id="saveStatusText">در حال انجام عملیات، صبر کنید...</span>
 </div>
+
 <div id="myRecords"></div>
 
 </div>
@@ -193,6 +220,39 @@ supabase.createClient(
 );
 
 let remainingPhotos = 1;
+function showLoading(message){
+    const box =
+    document.getElementById(
+        'saveStatus'
+    );
+
+    const text =
+    document.getElementById(
+        'saveStatusText'
+    );
+
+    if(text){
+        text.innerText =
+        message || 'در حال انجام عملیات، صبر کنید...';
+    }
+
+    if(box){
+        box.style.display =
+        'block';
+    }
+}
+
+function hideLoading(){
+    const box =
+    document.getElementById(
+        'saveStatus'
+    );
+
+    if(box){
+        box.style.display =
+        'none';
+    }
+}
 
 /*
 وضعیت اینترنت
@@ -287,89 +347,104 @@ function updatePhotoCounter(){
 
 window.onload = async function(){
 
-    updateNetworkStatus();
-    // --- اضافه شده ---
-    showUserInfo();
-    // --- پایان اضافه ---
-
-    /*
-    بازیابی اطلاعات حتی بعد پاک شدن کش
-    */
-
-    let personnelCode =
-    localStorage.getItem(
-        'employee_code'
+    showLoading(
+        'در حال بارگذاری فرم، لطفاً صبر کنید...'
     );
 
-    if(!personnelCode){
+    try{
 
-        personnelCode =
-        prompt(
-            'کد پرسنلی خود را وارد کنید'
+        updateNetworkStatus();
+
+        showUserInfo();
+
+        /*
+        بازیابی اطلاعات حتی بعد پاک شدن کش
+        */
+
+        let personnelCode =
+        localStorage.getItem(
+            'employee_code'
         );
-    }
 
-    if(personnelCode){
+        if(!personnelCode){
 
-        try{
-
-            const { data } =
-            await supabaseClient
-            .from('personnel')
-            .select('*')
-            .eq(
-                'personnel_code',
-                personnelCode
-            )
-            .maybeSingle();
-
-            if(data){
-
-                document.getElementById(
-                    'fullname'
-                ).value =
-                data.fullname;
-
-                document.getElementById(
-                    'personnel_code'
-                ).value =
-                data.personnel_code;
-
-                localStorage.setItem(
-                    'employee_fullname',
-                    data.fullname
-                );
-
-                localStorage.setItem(
-                    'employee_code',
-                    data.personnel_code
-                );
-                   // --- اضافه شده ---
-showUserInfo();
-// --- پایان اضافه ---
-
-                remainingPhotos =
-                Math.max(
-                    0,
-                    1 - (
-                        data.photo_count || 0
-                    )
-                );
-
-                updatePhotoCounter();
-
-                lockPersonnelFields();
-            }
-
-        }catch(err){
-
-            console.log(err);
+            personnelCode =
+            prompt(
+                'کد پرسنلی خود را وارد کنید'
+            );
         }
+
+        if(personnelCode){
+
+            try{
+
+                const { data } =
+                await supabaseClient
+                .from('personnel')
+                .select('*')
+                .eq(
+                    'personnel_code',
+                    personnelCode
+                )
+                .maybeSingle();
+
+                if(data){
+
+                    document.getElementById(
+                        'fullname'
+                    ).value =
+                    data.fullname;
+
+                    document.getElementById(
+                        'personnel_code'
+                    ).value =
+                    data.personnel_code;
+
+                    localStorage.setItem(
+                        'employee_fullname',
+                        data.fullname
+                    );
+
+                    localStorage.setItem(
+                        'employee_code',
+                        data.personnel_code
+                    );
+
+                    showUserInfo();
+
+                    remainingPhotos =
+                    Math.max(
+                        0,
+                        1 - (
+                            data.photo_count || 0
+                        )
+                    );
+
+                    updatePhotoCounter();
+
+                    lockPersonnelFields();
+                }
+
+            }catch(err){
+
+                console.log(err);
+            }
+        }
+
+        await loadMyRecords();
+
+        await syncOfflineAttendance();
+
+        await loadMyRecords();
+
+    }catch(err){
+
+        console.log(err);
+
+    }finally{
+
+        hideLoading();
     }
-
-    loadMyRecords();
-
-    syncOfflineAttendance();
 };
 
 /*
@@ -510,9 +585,10 @@ document.getElementById(
 
     photoInput.onchange =
     async function(e){
-     document.getElementById(
-         'saveStatus'
-         ).style.display='block';
+     showLoading(
+    'در حال فشرده‌سازی و ذخیره عکس تطبیقی، لطفاً صبر کنید...'
+);
+
         try{
 
             const file =
@@ -753,8 +829,17 @@ document.getElementById(
     اول GPS
     */
 
+        /*
+    اول GPS
+    */
+
+    showLoading(
+        'در حال دریافت موقعیت مکانی، لطفاً صبر کنید...'
+    );
+
     const location =
     await getLocation();
+
 
     if(
         location.lat === null ||
@@ -782,10 +867,12 @@ document.getElementById(
     attendanceInput.value = '';
 
     attendanceInput.onchange =
-    async function(e){
-     document.getElementById(
-         'saveStatus'
-         ).style.display='block';
+async function(e){
+
+    showLoading(
+        'در حال فشرده‌سازی عکس و ثبت تردد، لطفاً صبر کنید...'
+    );
+
         try{
 
             const file =
@@ -858,12 +945,15 @@ document.getElementById(
                 );
 
                 alert(
-                    'تردد آفلاین ذخیره شد'
-                );
-document.getElementById(
-         'saveStatus'
-              ) .style.display='none';
-                return;
+    'تردد آفلاین ذخیره شد'
+);
+
+hideLoading();
+
+loadMyRecords();
+
+return;
+
             }
 
             /*
@@ -1021,93 +1111,197 @@ async function loadMyRecords(){
 
     try{
 
-        const { data } =
-        await supabaseClient
-        .from('eagle')
-        .select('*')
-        .eq(
-            'personnel_code',
-            personnel_code
-        )
-        .order(
-            'id',
-            {
-                ascending:false
+        let allRecords = [];
+
+        /*
+        دریافت ترددهای آنلاین از Supabase
+        */
+
+        if(navigator.onLine){
+
+            const { data } =
+            await supabaseClient
+            .from('eagle')
+            .select('*')
+            .eq(
+                'personnel_code',
+                personnel_code
+            )
+            .order(
+                'id',
+                {
+                    ascending:false
+                }
+            );
+
+            if(data){
+                allRecords =
+                allRecords.concat(
+                    data
+                );
             }
+        }
+
+        /*
+        اضافه کردن ترددهای آفلاین ذخیره‌شده در موبایل
+        */
+
+        const offlineAttendance =
+        JSON.parse(
+            localStorage.getItem(
+                'offline_attendance'
+            ) || '[]'
         );
 
-        if(!data){
+        const myOfflineRecords =
+        offlineAttendance.filter(
+            item =>
+            item.personnel_code === personnel_code
+        );
+
+        allRecords =
+        allRecords.concat(
+            myOfflineRecords
+        );
+
+        if(allRecords.length === 0){
+
+            document.getElementById(
+                'myRecords'
+            ).innerHTML =
+            '<div class="record">هنوز ترددی ثبت نشده است.</div>';
+
             return;
         }
-       
-       let html = '';
 
-const groupedDays = {};
+        /*
+        گروه‌بندی بر اساس روز
+        */
 
-data.forEach(item => {
+        const groupedDays = {};
 
-    if(!item.entry_time) return;
+        allRecords.forEach(item => {
 
-    const day =
-    item.entry_time.split('،')[0];
+            if(!item.entry_time){
+                return;
+            }
 
-    if(!groupedDays[day]){
-        groupedDays[day] = [];
-    }
+            const day =
+            item.entry_time.split('،')[0];
 
-    groupedDays[day].push(item);
-});
+            if(!groupedDays[day]){
+                groupedDays[day] = [];
+            }
 
-const last3Days =
-Object.keys(groupedDays)
-.reverse()
-.slice(0,3);
+            groupedDays[day].push(item);
+        });
 
-last3Days.forEach(day => {
+        /*
+        مرتب‌سازی روزها بر اساس آخرین تردد همان روز
+        */
 
-    const records =
-    groupedDays[day];
+        const sortedDays =
+        Object.keys(groupedDays)
+        .sort((a,b) => {
 
-    const firstRecord =
-    records[records.length - 1];
+            const lastA =
+            groupedDays[a][0];
 
-    const lastRecord =
-    records[0];
+            const lastB =
+            groupedDays[b][0];
 
-    html += `
-    <div class="record">
+            const idA =
+            lastA.id || 0;
 
-        <p>
-        📅 تاریخ:
-        ${day}
-        </p>
+            const idB =
+            lastB.id || 0;
 
-        <hr>
+            return idB - idA;
+        })
+        .slice(0,3);
 
-        <p>
-        🟢 اولین ورود:
-        ${firstRecord.entry_time}
-        </p>
+        let html = '';
 
-        <p>
-        🔴 آخرین خروج:
-        ${lastRecord.entry_time}
-        </p>
+        sortedDays.forEach(day => {
 
-    </div>
-    `;
-});
+            const records =
+            groupedDays[day];
 
-document.getElementById(
-    'myRecords'
-).innerHTML = html;
+            /*
+            چون اطلاعات آنلاین با id نزولی آمده،
+            ولی اطلاعات آفلاین id ندارد،
+            اینجا با همان ترتیب موجود کار می‌کنیم.
+            */
 
+            records.sort((a,b) => {
+
+                const idA =
+                a.id || 0;
+
+                const idB =
+                b.id || 0;
+
+                return idA - idB;
+            });
+
+            const firstRecord =
+            records[0];
+
+            const lastRecord =
+            records[
+                records.length - 1
+            ];
+
+            html += `
+            <div class="record">
+
+                <p>
+                    📅 تاریخ:
+                    ${day}
+                </p>
+
+                <hr>
+
+                <p>
+                    🟢 اولین ورود:
+                    ${firstRecord.entry_time}
+                </p>
+            `;
+
+            if(records.length > 1){
+
+                html += `
+                <p>
+                    🔴 آخرین خروج:
+                    ${lastRecord.entry_time}
+                </p>
+                `;
+
+            }else{
+
+                html += `
+                <p>
+                    🔴 آخرین خروج:
+                    هنوز ثبت نشده
+                </p>
+                `;
+            }
+
+            html += `
+            </div>
+            `;
+        });
+
+        document.getElementById(
+            'myRecords'
+        ).innerHTML = html;
 
     }catch(err){
 
         console.log(err);
     }
 }
+
 
 </script>
 
