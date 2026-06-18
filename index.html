@@ -140,10 +140,9 @@ button{
 </h2>
 
 <!-- شروع وضعیت اینترنت و نمایش نام -->
-<div id="networkStatus" class="status offline" style="color:red; text-align:center; margin-bottom:10px; font-weight:bold;">
-    🔴 در حال بررسی وضعیت اتصال...
+<div id="networkStatus" class="status online" style="color:green; text-align:center; margin-bottom:10px; font-weight:bold;">
+    🟢 آنلاین
 </div>
-
 
 <div id="userInfo" style="text-align:center; margin-bottom:15px; font-weight:bold; color:#1a2a6c; border-bottom:1px solid #ddd; padding-bottom:10px;">
     نام: <span id="showName">در حال بارگذاری...</span> | 
@@ -204,89 +203,21 @@ onclick="saveAttendance()"
 
 </div>
 
-<script src="supabase-js@2.108.2.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
 
-let supabaseClient = null;
+const SUPABASE_URL =
+'https://kddhnohquohbnemmegdy.supabase.co';
 
-try {
-  if (typeof supabase !== "undefined" && supabase.createClient) {
-    supabaseClient = supabase.createClient('https://kddhnohquohbnemmegdy.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc');
-  } else {
-    console.warn("Supabase library is not available. App will work in offline mode.");
-  }
-} catch (error) {
-  console.error("Failed to create Supabase client:", error);
-  supabaseClient = null;
-}
-async function checkRealConnection() {
-  if (CHECKING_CONNECTION) {
-    return APP_ONLINE;
-  }
+const SUPABASE_ANON_KEY =
+'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
 
-  CHECKING_CONNECTION = true;
-
-  try {
-    if (!navigator.onLine) {
-      updateNetworkStatus(false);
-      return false;
-    }
-
-    if (!supabaseClient) {
-      updateNetworkStatus(false);
-      return false;
-    }
-
-    const connectionTest = supabaseClient
-      .from("personnel")
-      .select("id")
-      .limit(1);
-
-    const timeout = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("offline-timeout")), 2500);
-    });
-
-    const result = await Promise.race([
-      connectionTest,
-      timeout
-    ]);
-
-    if (result && result.error) {
-      console.warn("Connection test error:", result.error);
-      updateNetworkStatus(false);
-      return false;
-    }
-
-    updateNetworkStatus(true);
-    return true;
-
-  } catch (error) {
-    console.warn("Connection test failed:", error);
-    updateNetworkStatus(false);
-    return false;
-
-  } finally {
-    CHECKING_CONNECTION = false;
-  }
-}
-
-
-if(window.supabase){
-
-    supabaseClient =
-    window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_ANON_KEY
-    );
-
-}else{
-
-    console.log(
-        'Supabase library is not loaded. App will work in offline mode.'
-    );
-}
-
+const supabaseClient =
+supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
 
 let remainingPhotos = 1;
 function showLoading(message){
@@ -328,25 +259,16 @@ function hideLoading(){
 */
 
 // --- شروع توابع وضعیت و اطلاعات کاربر ---
-function updateNetworkStatus(online) {
-  APP_ONLINE = !!online;
-
-  const status = document.getElementById("networkStatus");
-  if (!status) return;
-
-  if (APP_ONLINE) {
-    status.textContent = "🟢 آنلاین";
-    status.style.backgroundColor = "#dcfce7";
-    status.style.color = "#166534";
-    status.style.border = "1px solid #bbf7d0";
-  } else {
-    status.textContent = "🔴 آفلاین";
-    status.style.backgroundColor = "#fee2e2";
-    status.style.color = "#991b1b";
-    status.style.border = "1px solid #fecaca";
-  }
+function updateNetworkStatus() {
+    const status = document.getElementById('networkStatus');
+    if (navigator.onLine) {
+        status.innerHTML = '🟢 آنلاین';
+        status.style.color = 'green';
+    } else {
+        status.innerHTML = '🔴 آفلاین';
+        status.style.color = 'red';
+    }
 }
-
 
 // چک کردن وضعیت آفلاین هر 3 ثانیه یکبار برای اطمینان
 setInterval(updateNetworkStatus, 3000);
@@ -424,36 +346,6 @@ function updatePhotoCounter(){
 */
 
 window.onload = async function(){
-window.onload = async function () {
-  updateNetworkStatus(false);
-
-  try {
-    showUserInfo();
-
-    const online = await checkRealConnection();
-
-    if (!online) {
-      console.warn("Started in offline mode");
-
-      // اینجا نباید هیچ Supabase ای صدا زده شود
-      try {
-        loadMyRecords();
-      } catch (e) {
-        console.warn("Offline records load failed:", e);
-      }
-
-      return;
-    }
-
-    // از اینجا به بعد فقط کارهای آنلاین
-    await syncOfflineAttendance();
-    await loadMyRecords();
-
-  } catch (error) {
-    console.error("Startup error:", error);
-    updateNetworkStatus(false);
-  }
-};
 
     showLoading(
         'در حال بارگذاری فرم، لطفاً صبر کنید...'
@@ -465,14 +357,13 @@ window.onload = async function () {
 
         showUserInfo();
 
+        /*
+        بازیابی اطلاعات حتی بعد پاک شدن کش
+        */
+
         let personnelCode =
         localStorage.getItem(
             'employee_code'
-        );
-
-        let savedName =
-        localStorage.getItem(
-            'employee_fullname'
         );
 
         if(!personnelCode){
@@ -481,73 +372,7 @@ window.onload = async function () {
             prompt(
                 'کد پرسنلی خود را وارد کنید'
             );
-
-            if(personnelCode){
-
-                localStorage.setItem(
-                    'employee_code',
-                    personnelCode
-                );
-            }
         }
-
-        if(personnelCode){
-
-            document.getElementById(
-                'personnel_code'
-            ).value =
-            personnelCode;
-        }
-
-        if(savedName){
-
-            document.getElementById(
-                'fullname'
-            ).value =
-            savedName;
-
-            showUserInfo();
-        }
-
-        /*
-        حالت آفلاین واقعی:
-        یا اینترنت قطع است،
-        یا کتابخانه Supabase از CDN لود نشده است.
-        در هر دو حالت نباید هیچ درخواست آنلاین بزنیم.
-        */
-
-        if(!navigator.onLine || !supabaseClient){
-
-            if(savedName && personnelCode){
-
-                document.getElementById(
-                    'fullname'
-                ).value =
-                savedName;
-
-                document.getElementById(
-                    'personnel_code'
-                ).value =
-                personnelCode;
-
-                lockPersonnelFields();
-
-                remainingPhotos = 0;
-
-                updatePhotoCounter();
-
-                showUserInfo();
-            }
-
-            await loadMyRecords();
-
-            return;
-        }
-
-        /*
-        فقط اگر هم اینترنت هست و هم Supabase واقعاً لود شده،
-        برو اطلاعات آنلاین را بگیر.
-        */
 
         if(personnelCode){
 
@@ -585,11 +410,6 @@ window.onload = async function () {
                         data.personnel_code
                     );
 
-                    localStorage.setItem(
-                        'employee_photo_count',
-                        data.photo_count || 0
-                    );
-
                     showUserInfo();
 
                     remainingPhotos =
@@ -603,66 +423,19 @@ window.onload = async function () {
                     updatePhotoCounter();
 
                     lockPersonnelFields();
-
-                }else{
-
-                    if(savedName && personnelCode){
-
-                        document.getElementById(
-                            'fullname'
-                        ).value =
-                        savedName;
-
-                        document.getElementById(
-                            'personnel_code'
-                        ).value =
-                        personnelCode;
-
-                        lockPersonnelFields();
-
-                        remainingPhotos = 0;
-
-                        updatePhotoCounter();
-
-                        showUserInfo();
-                    }
                 }
 
             }catch(err){
 
                 console.log(err);
-
-                if(savedName && personnelCode){
-
-                    document.getElementById(
-                        'fullname'
-                    ).value =
-                    savedName;
-
-                    document.getElementById(
-                        'personnel_code'
-                    ).value =
-                    personnelCode;
-
-                    lockPersonnelFields();
-
-                    remainingPhotos = 0;
-
-                    updatePhotoCounter();
-
-                    showUserInfo();
-                }
             }
         }
 
         await loadMyRecords();
 
-        if(navigator.onLine && supabaseClient){
+        await syncOfflineAttendance();
 
-            await syncOfflineAttendance();
-
-            await loadMyRecords();
-        }
+        await loadMyRecords();
 
     }catch(err){
 
@@ -671,8 +444,6 @@ window.onload = async function () {
     }finally{
 
         hideLoading();
-
-        updateNetworkStatus();
     }
 };
 
@@ -843,7 +614,7 @@ document.getElementById(
             اگر آفلاین بود
             */
 
-           if(!navigator.onLine || !supabaseClient){
+            if(!navigator.onLine){
 
                 let offlinePhotos =
                 JSON.parse(
@@ -1133,14 +904,7 @@ async function(e){
             آفلاین
             */
 
-        const online = await checkRealConnection();
-
-if (online) {
-  // ثبت آنلاین فعلی
-} else {
-  // ثبت آفلاین فعلی
-}
-
+            if(!navigator.onLine){
 
                 let offlineAttendance =
                 JSON.parse(
@@ -1296,9 +1060,9 @@ document.getElementById(
 
 async function syncOfflineAttendance(){
 
-  if(!navigator.onLine || !supabaseClient){
-    return;
-}
+    if(!navigator.onLine){
+        return;
+    }
 
     let offlineAttendance =
     JSON.parse(
@@ -1353,7 +1117,7 @@ async function loadMyRecords(){
         دریافت ترددهای آنلاین از Supabase
         */
 
-      if(navigator.onLine && supabaseClient){
+        if(navigator.onLine){
 
             const { data } =
             await supabaseClient
