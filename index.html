@@ -106,22 +106,16 @@ button{
 سیستم ثبت تردد پرسنل
 </h2>
 
-<div
-id="networkStatus"
-class="status"
->
-🟢 آنلاین
+<!-- شروع وضعیت اینترنت و نمایش نام -->
+<div id="networkStatus" class="status online" style="color:green; text-align:center; margin-bottom:10px; font-weight:bold;">
+    🟢 آنلاین
 </div>
-<!-- --- اضافه شده: نمایش اطلاعات پرسنل در بالای صفحه --- -->
-<div
-id="userInfo"
-style="text-align:center;margin-bottom:15px;font-weight:bold;color:#1a2a6c;"
->
-نام: <span id="showName">-</span>
-|
-کد پرسنلی: <span id="showCode">-</span>
+
+<div id="userInfo" style="text-align:center; margin-bottom:15px; font-weight:bold; color:#1a2a6c; border-bottom:1px solid #ddd; padding-bottom:10px;">
+    نام: <span id="showName">در حال بارگذاری...</span> | 
+    کد پرسنلی: <span id="showCode">-</span>
 </div>
-<!-- --- پایان اضافه --- -->
+<!-- پایان وضعیت اینترنت و نمایش نام -->
 
 <input
 type="text"
@@ -204,57 +198,28 @@ let remainingPhotos = 1;
 وضعیت اینترنت
 */
 
-function updateNetworkStatus(){
-
-    const status =
-    document.getElementById(
-        'networkStatus'
-    );
-
-    if(navigator.onLine){
-
-        status.innerHTML =
-        '🟢 آنلاین';
-
-        status.className =
-        'status online';
-
-    }else{
-
-        status.innerHTML =
-        '🔴 آفلاین';
-
-        status.className =
-        'status offline';
+// --- شروع توابع وضعیت و اطلاعات کاربر ---
+function updateNetworkStatus() {
+    const status = document.getElementById('networkStatus');
+    if (navigator.onLine) {
+        status.innerHTML = '🟢 آنلاین';
+        status.style.color = 'green';
+    } else {
+        status.innerHTML = '🔴 آفلاین';
+        status.style.color = 'red';
     }
 }
-// --- اضافه شده ---
-// نمایش اطلاعات کاربر از localStorage
-function showUserInfo(){
 
-    const name =
-    localStorage.getItem(
-        'employee_fullname'
-    );
+// چک کردن وضعیت آفلاین هر 3 ثانیه یکبار برای اطمینان
+setInterval(updateNetworkStatus, 3000);
 
-    const code =
-    localStorage.getItem(
-        'employee_code'
-    );
-
-    if(name){
-        document.getElementById(
-            'showName'
-        ).innerText = name;
-    }
-
-    if(code){
-        document.getElementById(
-            'showCode'
-        ).innerText = code;
-    }
+function showUserInfo() {
+    const name = localStorage.getItem('employee_fullname');
+    const code = localStorage.getItem('employee_code');
+    if (name) document.getElementById('showName').innerText = name;
+    if (code) document.getElementById('showCode').innerText = code;
 }
-// --- پایان اضافه ---
+// --- پایان توابع وضعیت و اطلاعات کاربر ---
 
 window.addEventListener(
     'online',
