@@ -823,6 +823,9 @@ document.getElementById(
                     personnel_code:
                     personnelCode,
 
+                    fullname:
+                        localStorage.getItem('employee_fullname'),
+
                     entry_time:
                     new Date()
                     .toLocaleString(
@@ -895,6 +898,9 @@ document.getElementById(
 
                 personnel_code:
                 personnelCode,
+
+                fullname:
+                localStorage.getItem('employee_fullname')
 
                 entry_time:
                 new Date()
@@ -1026,25 +1032,111 @@ async function loadMyRecords(){
             return;
         }
 
-        let html = '';
+       let html = '';
 
-        data.slice(0,5).forEach(item => {
+const today =
+new Date().toLocaleDateString('fa-IR');
 
-            html += `
-            <div class="record">
+const todayRecords =
+data.filter(item =>
+item.entry_time &&
+item.entry_time.startsWith(today)
+);
 
-                <p>
-                زمان:
-                ${item.entry_time}
-                </p>
-               
-            </div>
-            `;
-        });
+if(todayRecords.length > 0){
 
-        document.getElementById(
-            'myRecords'
-        ).innerHTML = html;
+   const firstRecord =
+   todayRecords[todayRecords.length - 1];
+
+   const lastRecord =
+   todayRecords[0];
+
+   html += `
+   <div class="record">
+
+      <p>
+      اولین ورود امروز:
+      ${firstRecord.entry_time}
+      </p>
+
+      <hr>
+
+      <p>
+      آخرین خروج امروز:
+      ${lastRecord.entry_time}
+      </p>
+
+   </div>
+   `;
+}else{
+
+   html = `
+   <div class="record">
+      هیچ ترددی برای امروز ثبت نشده است
+   </div>
+   `;
+}
+       let html = '';
+
+const groupedDays = {};
+
+data.forEach(item => {
+
+    if(!item.entry_time) return;
+
+    const day =
+    item.entry_time.split('،')[0];
+
+    if(!groupedDays[day]){
+        groupedDays[day] = [];
+    }
+
+    groupedDays[day].push(item);
+});
+
+const last3Days =
+Object.keys(groupedDays)
+.slice(0,3);
+
+last3Days.forEach(day => {
+
+    const records =
+    groupedDays[day];
+
+    const firstRecord =
+    records[records.length - 1];
+
+    const lastRecord =
+    records[0];
+
+    html += `
+    <div class="record">
+
+        <p>
+        📅 تاریخ:
+        ${day}
+        </p>
+
+        <hr>
+
+        <p>
+        🟢 اولین ورود:
+        ${firstRecord.entry_time}
+        </p>
+
+        <p>
+        🔴 آخرین خروج:
+        ${lastRecord.entry_time}
+        </p>
+
+    </div>
+    `;
+});
+
+document.getElementById(
+    'myRecords'
+).innerHTML = html;
+
 
     }catch(err){
 
