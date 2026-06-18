@@ -251,32 +251,21 @@ function lockPersonnelFields(){
 
 function updatePhotoCounter(){
 
-    const counter =
-    document.getElementById(
-        'photoCounter'
-    );
-
     const btn =
     document.getElementById(
         'captureBtn'
     );
 
-    if(remainingPhotos > 0){
-
-        counter.innerHTML =
-        remainingPhotos +
-        ' عکس باقی مانده';
-
-    }else{
-
-        counter.innerHTML =
-        '✅ عکس‌های مرجع کامل شد';
+    if(remainingPhotos <= 0){
 
         btn.disabled = true;
 
         btn.classList.add(
             'disabled'
         );
+
+        btn.innerHTML =
+        '📸 عکس تطبیقی';
     }
 }
 
