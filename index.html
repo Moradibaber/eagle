@@ -45,7 +45,7 @@ input{
     border-radius:8px;
     font-size:16px;
     box-sizing:border-box;
-} 
+}
 
 button{
     width:100%;
@@ -164,29 +164,11 @@ placeholder="کد پرسنلی"
 
 <input
 type="file"
-id="photo"
-accept="image/*"
-capture="user"
-style="display:none"
->
-
-<input
-type="file"
 id="attendancePhoto"
 accept="image/*"
 capture="user"
 style="display:none"
 >
-
-<button
-id="captureBtn"
-type="button"
-onclick="captureReferencePhoto()"
-style="background:#00897b;"
->
-📸 عکس تطبیقی
-</button>
-
 <button
 id="attendanceBtn"
 type="button"
@@ -206,147 +188,18 @@ onclick="saveAttendance()"
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-window.onerror = function(msg, url, line){
-    alert(
-        'خطا:\n' +
-        msg +
-         'خطا:\n' +
-        line
-        );
-};
+
 const SUPABASE_URL =
 'https://kddhnohquohbnemmegdy.supabase.co';
 
 const SUPABASE_ANON_KEY =
 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
 
-let supabaseClient = null;
-
-try{
-    if(window.supabase){
-        supabaseClient =
-        window.supabase.createClient(
-            SUPABASE_URL,
-            SUPABASE_ANON_KEY
-        );
-    }else{
-        console.log('کتابخانه Supabase لود نشده است');
-    }
-}catch(err){
-    console.log('خطا در ساخت Supabase Client:', err);
-}
-
-
-let remainingPhotos = 1;
-    const OFFLINE_DB_NAME = 'attendance_offline_db';
-const OFFLINE_DB_VERSION = 1;
-const OFFLINE_STORE = 'attendance_queue';
-
-function openOfflineDB(){
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(
-            OFFLINE_DB_NAME,
-            OFFLINE_DB_VERSION
-        );
-
-        request.onupgradeneeded = function(event){
-            const db = event.target.result;
-
-            if(!db.objectStoreNames.contains(OFFLINE_STORE)){
-                db.createObjectStore(
-                    OFFLINE_STORE,
-                    {
-                        keyPath: 'id',
-                        autoIncrement: true
-                    }
-                );
-            }
-        };
-
-        request.onsuccess = function(event){
-            resolve(event.target.result);
-        };
-
-        request.onerror = function(event){
-            reject(event.target.error);
-        };
-    });
-}
-
-async function saveOfflineAttendanceToDB(record){
-    const db = await openOfflineDB();
-
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction(
-            OFFLINE_STORE,
-            'readwrite'
-        );
-
-        const store = tx.objectStore(
-            OFFLINE_STORE
-        );
-
-        const request = store.add(record);
-
-        request.onsuccess = function(){
-            resolve(request.result);
-        };
-
-        request.onerror = function(){
-            reject(request.error);
-        };
-    });
-}
-
-async function getAllOfflineAttendanceFromDB(){
-    const db = await openOfflineDB();
-
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction(
-            OFFLINE_STORE,
-            'readonly'
-        );
-
-        const store = tx.objectStore(
-            OFFLINE_STORE
-        );
-
-        const request = store.getAll();
-
-        request.onsuccess = function(){
-            resolve(request.result || []);
-        };
-
-        request.onerror = function(){
-            reject(request.error);
-        };
-    });
-}
-
-async function deleteOfflineAttendanceFromDB(id){
-    const db = await openOfflineDB();
-
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction(
-            OFFLINE_STORE,
-            'readwrite'
-        );
-
-        const store = tx.objectStore(
-            OFFLINE_STORE
-        );
-
-        const request = store.delete(id);
-
-        request.onsuccess = function(){
-            resolve();
-        };
-
-        request.onerror = function(){
-            reject(request.error);
-        };
-    });
-}
+const supabaseClient =
+supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+);
 
 function showLoading(message){
     const box =
@@ -412,12 +265,28 @@ function showUserInfo() {
 window.addEventListener(
     'online',
     async function(){
+
         updateNetworkStatus();
 
+        showLoading(
+            'اینترنت وصل شد، در حال ارسال ترددهای آفلاین...'
+        );
+
         try{
+
             await syncOfflineAttendance();
+
+            await loadMyRecords();
+
         }catch(err){
-            console.log(err);
+
+            console.log(
+                err
+            );
+
+        }finally{
+
+            hideLoading();
         }
     }
 );
@@ -457,30 +326,6 @@ function lockPersonnelFields(){
 شمارنده عکس
 */
 
-function updatePhotoCounter(){
-
-    const btn =
-    document.getElementById(
-        'captureBtn'
-    );
-
-    if(remainingPhotos <= 0){
-
-        btn.disabled = true;
-
-        btn.classList.add(
-            'disabled'
-        );
-
-        btn.innerHTML =
-        '📸 عکس تطبیقی';
-    }
-}
-
-/*
-لود اولیه
-*/
-
 window.onload = async function(){
 
     showLoading(
@@ -492,31 +337,6 @@ window.onload = async function(){
         updateNetworkStatus();
 
         showUserInfo();
-const savedName =
-localStorage.getItem(
-    'employee_fullname'
-);
-
-const savedCode =
-localStorage.getItem(
-    'employee_code'
-);
-
-if(savedName){
-    document.getElementById(
-        'fullname'
-    ).value = savedName;
-}
-
-if(savedCode){
-    document.getElementById(
-        'personnel_code'
-    ).value = savedCode;
-
-    lockPersonnelFields();
-    remainingPhotos = 0;
-    updatePhotoCounter();
-}
 
         /*
         بازیابی اطلاعات حتی بعد پاک شدن کش
@@ -691,29 +511,6 @@ async function compressImage(file){
 ثبت عکس مرجع
 */
 
-async function captureReferencePhoto(){
-
-    const fullname =
-    document.getElementById(
-        'fullname'
-    ).value.trim();
-
-    const personnelCode =
-    document.getElementById(
-        'personnel_code'
-    ).value.trim();
-
-    if(!fullname || !personnelCode){
-
-        alert(
-            'اطلاعات را وارد کنید'
-        );
-       document.getElementById(
-         'saveStatus'
-              ).style.display='none';
-        return;
-    }
-
     localStorage.setItem(
         'employee_fullname',
         fullname
@@ -811,13 +608,6 @@ document.getElementById(
             /*
             آپلود عکس
             */
-if(!supabaseClient){
-    alert(
-        'ارتباط با سرور برقرار نیست. لطفاً اتصال اینترنت یا بارگذاری Supabase را بررسی کنید.'
-    );
-    hideLoading();
-    return;
-}
 
             const uploadResult =
             await supabaseClient.storage
@@ -970,8 +760,7 @@ document.getElementById(
 
             {
                 enableHighAccuracy:true,
-                maximumAge:0,
-                timeout:30000
+                timeout:10000
             }
         );
     });
@@ -980,27 +769,7 @@ document.getElementById(
 /*
 ثبت تردد
 */
-
 async function saveAttendance(){
-alert('saveAttendanceاجرا شد');
-    if(remainingPhotos > 0){
-
-        alert(
-            'ابتدا عکس تطبیقی را ثبت کنید'
-        );
-document.getElementById(
-         'saveStatus'
-              ) .style.display='none';
-        return;
-    }
-
-    /*
-    اول GPS
-    */
-
-        /*
-    اول GPS
-    */
 
     showLoading(
         'در حال دریافت موقعیت مکانی، لطفاً صبر کنید...'
@@ -1009,7 +778,6 @@ document.getElementById(
     const location =
     await getLocation();
 
-
     if(
         location.lat === null ||
         location.lng === null
@@ -1017,13 +785,13 @@ document.getElementById(
 
         const allow =
         confirm(
-            'GPS خاموش است. ادامه می‌دهید؟'
+            'GPS خاموش است یا موقعیت دریافت نشد. ادامه می‌دهید؟'
         );
 
         if(!allow){
-            document.getElementById(
-         'saveStatus'
-              ) .style.display='none';
+
+            hideLoading();
+
             return;
         }
     }
@@ -1036,11 +804,11 @@ document.getElementById(
     attendanceInput.value = '';
 
     attendanceInput.onchange =
-async function(e){
+    async function(e){
 
-    showLoading(
-        'در حال فشرده‌سازی عکس و ثبت تردد، لطفاً صبر کنید...'
-    );
+        showLoading(
+            'در حال فشرده‌سازی عکس و ثبت تردد، لطفاً صبر کنید...'
+        );
 
         try{
 
@@ -1048,122 +816,112 @@ async function(e){
             e.target.files[0];
 
             if(!file){
-                document.getElementById(
-         'saveStatus'
-              ) .style.display='none';
+
+                hideLoading();
+
                 return;
             }
 
             const compressedFile =
-            await compressImage(file);
+            await compressImage(
+                file
+            );
 
             const personnelCode =
             localStorage.getItem(
                 'employee_code'
             );
 
+            const fullname =
+            localStorage.getItem(
+                'employee_fullname'
+            );
+
+            if(!personnelCode || !fullname){
+
+                alert(
+                    'اطلاعات پرسنلی در گوشی ذخیره نشده است. ابتدا با اینترنت فرم را باز کنید.'
+                );
+
+                hideLoading();
+
+                return;
+            }
+
             const fileName =
-           'attendance_' +
+            'attendance_' +
             personnelCode +
             '_' +
             Date.now() +
             '.jpg';
 
+            const attendanceItem = {
+
+                personnel_code:
+                personnelCode,
+
+                fullname:
+                fullname,
+
+                entry_time:
+                new Date()
+                .toLocaleString(
+                    'fa-IR'
+                ),
+
+                latitude:
+                location.lat,
+
+                longitude:
+                location.lng,
+
+                photo_name:
+                fileName
+            };
+
             /*
-            آفلاین
+            اگر آفلاین بود
             */
 
             if(!navigator.onLine){
 
-    const now =
-    new Date().toLocaleString('fa-IR');
+                await saveAttendancePhotoOffline(
+                    fileName,
+                    compressedFile
+                );
 
-    const offlineRecord = {
-        personnel_code: personnelCode,
-        fullname: localStorage.getItem('employee_fullname'),
-        entry_time: now,
-        latitude: location.lat,
-        longitude: location.lng,
-        photo_name: fileName,
-        photo_blob: compressedFile,
-        created_at: new Date().toISOString()
-    };
-const allOffline =
-await getAllOfflineAttendanceFromDB();
+                let offlineAttendance =
+                JSON.parse(
+                    localStorage.getItem(
+                        'offline_attendance'
+                    ) || '[]'
+                );
 
-const today =
-new Date().toLocaleDateString(
-    'fa-IR'
-);
+                offlineAttendance.push(
+                    attendanceItem
+                );
 
-const sameDay =
-allOffline.find(item => {
+                localStorage.setItem(
+                    'offline_attendance',
+                    JSON.stringify(
+                        offlineAttendance
+                    )
+                );
 
-    if(
-        item.personnel_code !==
-        personnelCode
-    ){
-        return false;
-    }
+                alert(
+                    'تردد آفلاین همراه عکس ذخیره شد'
+                );
 
-    return (
-        item.entry_time &&
-        item.entry_time.startsWith(
-            today
-        )
-    );
-});
+                hideLoading();
 
-if(sameDay){
+                loadMyRecords();
 
-    sameDay.exit_time = now;
-
-    const db =
-    await openOfflineDB();
-
-    const tx =
-    db.transaction(
-        OFFLINE_STORE,
-        'readwrite'
-    );
-
-    tx.objectStore(
-        OFFLINE_STORE
-    ).put(sameDay);
-
-}else{
-
-    await saveOfflineAttendanceToDB(
-        offlineRecord
-    );
-}
-
-
-    await saveOfflineAttendanceToDB(
-        offlineRecord
-    );
-
-    alert(
-        'تردد آفلاین همراه با عکس ذخیره شد و بعد از اتصال اینترنت ارسال می‌شود'
-    );
-
-    hideLoading();
-
-    await loadMyRecords();
-
-    return;
-}
+                return;
+            }
 
             /*
-            آپلود عکس تردد
+            اگر آنلاین بود
             */
-if(!supabaseClient){
-    alert(
-        'ارتباط با سرور برقرار نیست. لطفاً اتصال اینترنت یا بارگذاری Supabase را بررسی کنید.'
-    );
-    hideLoading();
-    return;
-}
 
             const uploadResult =
             await supabaseClient.storage
@@ -1181,64 +939,40 @@ if(!supabaseClient){
             if(uploadResult.error){
 
                 alert(
-                    'خطا:\n' +
+                    'خطا در آپلود عکس:\n' +
                     uploadResult.error.message
                 );
-document.getElementById(
-         'saveStatus'
-              ) .style.display='none';
+
+                hideLoading();
+
                 return;
             }
-
-            /*
-            ذخیره دیتابیس
-            */
 
             const insertResult =
             await supabaseClient
             .from('eagle')
-            .insert([{
-
-                personnel_code:
-                personnelCode,
-
-                fullname:
-                localStorage.getItem('employee_fullname'),
-
-                entry_time:
-                new Date()
-                .toLocaleString(
-                    'fa-IR'
-                ),
-
-                latitude:
-                location.lat,
-
-                longitude:
-                location.lng,
-
-                photo_name:
-                fileName
-
-            }]);
+            .insert([
+                attendanceItem
+            ]);
 
             if(insertResult.error){
 
                 alert(
-                    'خطا:\n' +
+                    'خطا در ثبت اطلاعات:\n' +
                     insertResult.error.message
                 );
-document.getElementById(
-         'saveStatus'
-              ) .style.display='none';
+
+                hideLoading();
+
                 return;
             }
 
             alert(
                 'تردد ثبت شد'
             );
-          document.getElementById(
-         'saveStatus').style.display='none';
+
+            hideLoading();
+
             loadMyRecords();
 
         }catch(err){
@@ -1248,12 +982,9 @@ document.getElementById(
             alert(
                 err.message
             );
-            document.getElementById(
-            'saveStatus'
-            ).style.display='none';
 
+            hideLoading();
         }
-        
     };
 
     attendanceInput.click();
@@ -1269,101 +1000,147 @@ async function syncOfflineAttendance(){
         return;
     }
 
-    if(!supabaseClient){
-        console.log('Supabase آماده نیست');
-        return;
-    }
-
-    const offlineItems =
-    await getAllOfflineAttendanceFromDB();
-
-    if(!offlineItems || offlineItems.length === 0){
-        return;
-    }
-
-    showLoading(
-        'در حال ارسال ترددهای آفلاین، لطفاً صبر کنید...'
+    let offlineAttendance =
+    JSON.parse(
+        localStorage.getItem(
+            'offline_attendance'
+        ) || '[]'
     );
 
-    for(const item of offlineItems){
+    if(
+        offlineAttendance.length === 0
+    ){
+        return;
+    }
+
+    let notSynced = [];
+
+    for(
+        const item of offlineAttendance
+    ){
 
         try{
 
-            if(!item.photo_blob){
-                console.log('photo_blob وجود ندارد:', item);
+            const photoBlob =
+            await getAttendancePhotoOffline(
+                item.photo_name
+            );
+
+            if(!photoBlob){
+
+                console.log(
+                    'عکس آفلاین پیدا نشد:',
+                    item.photo_name
+                );
+
+                notSynced.push(
+                    item
+                );
+
                 continue;
             }
 
             const uploadResult =
             await supabaseClient.storage
-            .from('reference-photos')
+            .from(
+                'reference-photos'
+            )
             .upload(
-                'attendance/' + item.photo_name,
-                item.photo_blob,
+                'attendance/' +
+                item.photo_name,
+                photoBlob,
                 {
-                    upsert: true,
-                    contentType: 'image/jpeg'
+                    upsert:true,
+                    contentType:'image/jpeg'
                 }
             );
 
             if(uploadResult.error){
+
                 console.log(
-                    'خطای آپلود عکس آفلاین:',
-                    uploadResult.error.message
+                    uploadResult.error
                 );
+
+                notSynced.push(
+                    item
+                );
+
                 continue;
             }
 
             const insertResult =
             await supabaseClient
-            .from('eagle')
-            .insert([{
+            .from(
+                'eagle'
+            )
+            .insert([
+                {
+                    personnel_code:
+                    item.personnel_code,
 
-    personnel_code:
-    item.personnel_code,
+                    fullname:
+                    item.fullname,
 
-    fullname:
-    item.fullname,
+                    entry_time:
+                    item.entry_time,
 
-    entry_time:
-    item.entry_time,
+                    latitude:
+                    item.latitude,
 
-    exit_time:
-    item.exit_time,
+                    longitude:
+                    item.longitude,
 
-    latitude:
-    item.latitude,
-
-    longitude:
-    item.longitude,
-
-    photo_name:
-    item.photo_name
-}]);
+                    photo_name:
+                    item.photo_name
+                }
+            ]);
 
             if(insertResult.error){
+
                 console.log(
-                    'خطای ثبت دیتابیس آفلاین:',
-                    insertResult.error.message
+                    insertResult.error
                 );
+
+                notSynced.push(
+                    item
+                );
+
                 continue;
             }
 
-            await deleteOfflineAttendanceFromDB(
-                item.id
+            await deleteAttendancePhotoOffline(
+                item.photo_name
             );
 
         }catch(err){
+
             console.log(
-                'خطا در syncOfflineAttendance:',
                 err
+            );
+
+            notSynced.push(
+                item
             );
         }
     }
 
-    hideLoading();
+    if(
+        notSynced.length > 0
+    ){
 
-    await loadMyRecords();
+        localStorage.setItem(
+            'offline_attendance',
+            JSON.stringify(
+                notSynced
+            )
+        );
+
+    }else{
+
+        localStorage.removeItem(
+            'offline_attendance'
+        );
+    }
 }
 
 /*
@@ -1418,23 +1195,18 @@ async function loadMyRecords(){
         اضافه کردن ترددهای آفلاین ذخیره‌شده در موبایل
         */
 
-        let offlineAttendance = [];
+        const offlineAttendance =
+        JSON.parse(
+            localStorage.getItem(
+                'offline_attendance'
+            ) || '[]'
+        );
 
-try{
-    offlineAttendance =
-    await getAllOfflineAttendanceFromDB();
-}catch(err){
-    console.log(
-        'خطا در خواندن ترددهای آفلاین:',
-        err
-    );
-}
-
-const myOfflineRecords =
-offlineAttendance.filter(
-    item =>
-    item.personnel_code === personnel_code
-);
+        const myOfflineRecords =
+        offlineAttendance.filter(
+            item =>
+            item.personnel_code === personnel_code
+        );
 
         allRecords =
         allRecords.concat(
