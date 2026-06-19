@@ -4,16 +4,17 @@
 <head>
 
 <meta charset="UTF-8">
+>
 
-<meta 
-name="viewport"
+<meta name="viewport"
 content="width=device-width, initial-scale=1.0"
 >
 
 <title>
 سیستم ثبت تردد پرسنل
 </title>
-
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#1a2a6c"
 <style>
 
 body{
@@ -128,6 +129,19 @@ button{
 }
 
 </style>
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./service-worker.js')
+            .then(function (registration) {
+                console.log('Service Worker ثبت شد:', registration.scope);
+            })
+            .catch(function (error) {
+                console.log('خطا در ثبت Service Worker:', error);
+            });
+    });
+}
+</script>
 
 </head>
 
