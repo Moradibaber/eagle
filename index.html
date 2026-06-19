@@ -752,55 +752,29 @@ async function compressImage(file){
 }
 
 function getLocation(){
-
     return new Promise(function(resolve){
-
         if(!navigator.geolocation){
-
-            resolve({
-                lat:null,
-                lng:null,
-                accuracy:null
-            });
-
+            resolve({lat:0, lng:0, accuracy:0});
             return;
         }
 
         navigator.geolocation.getCurrentPosition(
-
             function(position){
-
                 resolve({
-
-                    lat:
-                    position.coords.latitude,
-
-                    lng:
-                    position.coords.longitude,
-
-                    accuracy:
-                    position.coords.accuracy
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                    accuracy: position.coords.accuracy
                 });
             },
-
             function(error){
-
-                console.log(
-                    'Geolocation error:',
-                    error
-                );
-
-                resolve({
-                    lat:null,
-                    lng:null,
-                    accuracy:null
-                });
+                console.log('Geolocation error:', error);
+                // به جای متوقف کردن برنامه، مختصات صفر برمی‌گردانیم
+                resolve({lat:0, lng:0, accuracy:0});
             },
-
             {
-                enableHighAccuracy:false,
-                timeout:20000,
-                maximumAge:300000
+                enableHighAccuracy: false, // در حالت آفلاین بهتر است خاموش باشد تا خطا ندهد
+                timeout: 8000,             // حداکثر ۸ ثانیه منتظر موقعیت بماند
+                maximumAge: 60000          // استفاده از آخرین موقعیت کش شده تا ۱ دقیقه قبل
             }
         );
     });
@@ -854,44 +828,34 @@ async function saveAttendance(){
         'در حال دریافت موقعیت مکانی...'
     );
 
-    const location =
-    await getLocation();
+       const location = await getLocation();
 
-    if(
-        location.lat === null ||
-        location.lng === null
-    ){
-
-        hideLoading();
-
-        alert(
-            'موقعیت مکانی دریافت نشد.\n\n' +
-            'برای ثبت تردد، لطفاً Location / GPS گوشی را روشن کنید و اجازه دسترسی به موقعیت مکانی را بدهید.'
-        );
-
-        return;
+    // اگر در حالت آفلاین یا به هر دلیلی لوکیشن دریافت نشد، متوقف نشو و با صفر ادامه بده
+    if (location.lat === null || location.lng === null || location.lat === 0) {
+        console.log('موقعیت دریافت نشد یا دستگاه آفلاین است. ثبت بدون مختصات انجام می‌شود.');
+        location.lat = 0;
+        location.lng = 0;
+        location.accuracy = 0;
     }
 
-    const maxAllowedAccuracy =
-    5000;
-
-    if(
-        location.accuracy !== null &&
-        location.accuracy > maxAllowedAccuracy
-    ){
-
-        hideLoading();
-
-        alert(
-            'دقت موقعیت مکانی کافی نیست.\n\n' +
-            'دقت فعلی حدود ' +
-            Math.round(location.accuracy) +
-            ' متر است.\n' +
-            'حداکثر دقت قابل قبول ۵۰۰۰ متر است.\n\n' +
-            'لطفاً Location گوشی را روشن‌تر بررسی کنید یا در فضای بازتر دوباره تلاش کنید.'
-        );
-
-        return;
+    // بررسی دقت لوکیشن را فقط در حالت آنلاین فعال نگه می‌داریم تا در آفلاین مانع نشود
+    if (navigator.onLine && location.lat !== 0) {
+        const maxAllowedAccuracy = 5000;
+        if (
+            location.accuracy !== null &&
+            location.accuracy > maxAllowedAccuracy
+        ) {
+            hideLoading();
+            alert(
+                'دقت موقعیت مکانی کافی نیست.\n\n' +
+                'دقت فعلی حدود ' +
+                Math.round(location.accuracy) +
+                ' متر است.\n' +
+                'حداکثر دقت قابل قبول ۵۰۰۰ متر است.\n\n' +
+                'لطفاً Location گوشی را بررسی کنید یا در فضای بازتر دوباره تلاش کنید.'
+            );
+            return;
+        }
     }
 
     const attendanceInput =
