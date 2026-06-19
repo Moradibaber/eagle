@@ -350,13 +350,13 @@ window.onload = async function(){
     showLoading(
         'در حال بارگذاری فرم، لطفاً صبر کنید...'
     );
-
+alert('onload-start');
     try{
 
         updateNetworkStatus();
-
+alert('network-ok');
         showUserInfo();
-
+alert('userinfo-ok');
         /*
         بازیابی اطلاعات حتی بعد پاک شدن کش
         */
