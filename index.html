@@ -170,16 +170,18 @@ capture="user"
 style="display:none"
 >
 <button
-id="attendanceBtn"
-type="button"
-onclick="saveAttendance()"
+    type="button"
+    onclick="alert('دکمه ثبت تردد کلیک شد'); saveAttendance();"
+    class="btn"
 >
-📷 ثبت تردد
+    📷 ثبت تردد
 </button>
+
 <div id="saveStatus" class="loading-box">
     <span class="spinner"></span>
     <span id="saveStatusText">در حال انجام عملیات، صبر کنید...</span>
 </div>
+
 
 <div id="myRecords"></div>
 
