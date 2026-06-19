@@ -195,6 +195,9 @@ style="display:none"
     <span class="spinner"></span>
     <span id="saveStatusText">در حال انجام عملیات، صبر کنید...</span>
 </div>
+<div id="offlineCounter" style="text-align:center; margin-top:10px; font-size:14px; color:#b45309; font-weight:bold;">
+    ترددهای ذخیره‌شده آفلاین: 0
+</div>
 
 
 <div id="myRecords"></div>
@@ -211,11 +214,18 @@ const SUPABASE_URL =
 const SUPABASE_ANON_KEY =
 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
 
-const supabaseClient =
-supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-);
+let supabaseClient = null;
+
+if (typeof supabase !== 'undefined') {
+    supabaseClient =
+    supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY
+    );
+} else {
+    console.log('Supabase library لود نشده است. برنامه در حالت آفلاین ادامه می‌دهد.');
+}
+
 
 function showLoading(message){
     const box =
@@ -250,6 +260,22 @@ function hideLoading(){
         'none';
     }
 }
+    function updateOfflineCounter(){
+
+    const offlineAttendance =
+    JSON.parse(
+        localStorage.getItem('offline_attendance') || '[]'
+    );
+
+    const counter =
+    document.getElementById('offlineCounter');
+
+    if(counter){
+        counter.innerText =
+        'ترددهای ذخیره‌شده آفلاین: ' + offlineAttendance.length;
+    }
+}
+
    function openOfflineDB(){
 
     return new Promise((resolve, reject) => {
@@ -533,21 +559,22 @@ window.onload = async function(){
             );
         }
 
-        if(personnelCode){
+       if(personnelCode && navigator.onLine && supabaseClient){
 
-            try{
+    try{
 
-                const { data } =
-                await supabaseClient
-                .from('personnel')
-                .select('*')
-                .eq(
-                    'personnel_code',
-                    personnelCode
-                )
-                .maybeSingle();
+        const { data } =
+        await supabaseClient
+        .from('personnel')
+        .select('*')
+        .eq(
+            'personnel_code',
+            personnelCode
+        )
+        .maybeSingle();
 
-                if(data){
+        if(data){
+
 
                     document.getElementById(
                         'fullname'
@@ -855,11 +882,12 @@ async function saveAttendance(){
                 fileName
             };
 
-            /*
-            اگر آفلاین بود
-            */
+           /*
+اگر آفلاین بود یا Supabase آماده نبود
+*/
 
-            if(!navigator.onLine){
+if(!navigator.onLine || !supabaseClient){
+
 
                 await saveAttendancePhotoOffline(
                     fileName,
@@ -883,6 +911,7 @@ async function saveAttendance(){
                         offlineAttendance
                     )
                 );
+              updateOfflineCounter();
 
                 alert(
                     'تردد آفلاین همراه عکس ذخیره شد'
@@ -974,9 +1003,10 @@ async function saveAttendance(){
 
 async function syncOfflineAttendance(){
 
-    if(!navigator.onLine){
+    if(!navigator.onLine || !supabaseClient){
         return;
     }
+
 
     let offlineAttendance =
     JSON.parse(
@@ -1119,8 +1149,9 @@ async function syncOfflineAttendance(){
             'offline_attendance'
         );
     }
+    
 }
-
+updateOfflineCounter();
 /*
 نمایش سوابق
 */
@@ -1144,10 +1175,11 @@ async function loadMyRecords(){
         دریافت ترددهای آنلاین از Supabase
         */
 
-        if(navigator.onLine){
+       if(navigator.onLine && supabaseClient){
 
-            const { data } =
-            await supabaseClient
+    const { data } =
+    await supabaseClient
+
             .from('eagle')
             .select('*')
             .eq(
