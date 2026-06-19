@@ -794,8 +794,7 @@ function getLocation(){
         );
     });
 }
-
-/*
+    /*
 ثبت تردد
 */
 async function saveAttendance(){
@@ -845,49 +844,53 @@ async function saveAttendance(){
     );
 
     attendanceInput.value = '';
-           showLoading(
-    'در حال دریافت موقعیت مکانی، لطفاً صبر کنید...'
-);
 
-const location =
-await getLocation();
-
-if(
-    location.lat === null ||
-    location.lng === null
-){
-
-    alert(
-        'موقعیت مکانی دریافت نشد. لطفاً GPS گوشی را روشن کنید.'
+    showLoading(
+        'در حال دریافت موقعیت مکانی، لطفاً صبر کنید...'
     );
 
-    hideLoading();
+    const location =
+    await getLocation();
 
-    return;
-}
+    if(
+        location.lat === null ||
+        location.lng === null
+    ){
 
-          
-          if(
-    location.lat === null ||
-    location.lng === null
-){
+        alert(
+            'موقعیت مکانی دریافت نشد. لطفاً GPS گوشی را روشن کنید.'
+        );
 
-    alert(
-        'موقعیت مکانی دریافت نشد. لطفاً GPS گوشی را روشن کنید.'
-    );
+        hideLoading();
 
-    hideLoading();
+        return;
+    }
 
-    return;
-}
+    attendanceInput.onchange = async function(e){
+
+        try{
+
+            const file =
+            e.target.files[0];
+
+            if(!file){
+
+                alert(
+                    'هیچ عکسی انتخاب نشد.'
+                );
+
+                hideLoading();
+
+                return;
+            }
 
             showLoading(
                 'در حال فشرده‌سازی عکس و ثبت تردد، لطفاً صبر کنید...'
             );
 
             const compressedFile =
-            await compressImage( file
-            const file = e.target.files[0];
+            await compressImage(
+                file
             );
 
             const fileName =
@@ -921,12 +924,11 @@ if(
                 fileName
             };
 
-           /*
-اگر آفلاین بود یا Supabase آماده نبود
-*/
+            /*
+            اگر آفلاین بود یا Supabase آماده نبود
+            */
 
-if(!navigator.onLine || !supabaseClient){
-
+            if(!navigator.onLine || !supabaseClient){
 
                 await saveAttendancePhotoOffline(
                     fileName,
@@ -950,7 +952,8 @@ if(!navigator.onLine || !supabaseClient){
                         offlineAttendance
                     )
                 );
-              updateOfflineCounter();
+
+                updateOfflineCounter();
 
                 alert(
                     'تردد آفلاین همراه عکس ذخیره شد'
@@ -1018,9 +1021,6 @@ if(!navigator.onLine || !supabaseClient){
             hideLoading();
 
             loadMyRecords();
-      attendanceInput.onchange = async function(e){
-
-    try{
 
         }catch(err){
 
@@ -1035,10 +1035,10 @@ if(!navigator.onLine || !supabaseClient){
     };
 
     /*
-    نکته مهم:
-    این باید مستقیم بعد از کلیک کاربر اجرا شود
-    تا موبایل اجازه باز شدن دوربین را بدهد.
+    بعد از گرفتن GPS، دوربین باز می‌شود
     */
+
+    hideLoading();
 
     attendanceInput.click();
 }
