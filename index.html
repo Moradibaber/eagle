@@ -660,14 +660,16 @@ async function compressImage(file){
 }
 
 function getLocation(){
+
     return new Promise((resolve)=>{
+
         if(!navigator.geolocation){
-            resolve({ lat:null, lng:null });
-            return;
-        }
-document.getElementById(
-         'saveStatus'
-              ) .style.display='none';
+
+            resolve({
+                lat:null,
+                lng:null
+            });
+
             return;
         }
 
@@ -695,7 +697,8 @@ document.getElementById(
 
             {
                 enableHighAccuracy:true,
-                timeout:10000
+                timeout:10000,
+                maximumAge:0
             }
         );
     });
@@ -706,30 +709,44 @@ document.getElementById(
 */
 async function saveAttendance(){
 
-    showLoading(
-        'در حال دریافت موقعیت مکانی، لطفاً صبر کنید...'
+    const fullnameInput =
+    document.getElementById(
+        'fullname'
     );
 
-    const location =
-    await getLocation();
+    const codeInput =
+    document.getElementById(
+        'personnel_code'
+    );
 
-    if(
-        location.lat === null ||
-        location.lng === null
-    ){
+    const fullname =
+    fullnameInput.value.trim();
 
-        const allow =
-        confirm(
-            'GPS خاموش است یا موقعیت دریافت نشد. ادامه می‌دهید؟'
+    const personnelCode =
+    codeInput.value.trim();
+
+    if(!fullname || !personnelCode){
+
+        alert(
+            'لطفاً نام و کد پرسنلی را وارد کنید.'
         );
 
-        if(!allow){
-
-            hideLoading();
-
-            return;
-        }
+        return;
     }
+
+    localStorage.setItem(
+        'employee_fullname',
+        fullname
+    );
+
+    localStorage.setItem(
+        'employee_code',
+        personnelCode
+    );
+
+    showUserInfo();
+
+    lockPersonnelFields();
 
     const attendanceInput =
     document.getElementById(
@@ -742,7 +759,7 @@ async function saveAttendance(){
     async function(e){
 
         showLoading(
-            'در حال فشرده‌سازی عکس و ثبت تردد، لطفاً صبر کنید...'
+            'در حال آماده‌سازی عکس، لطفاً صبر کنید...'
         );
 
         try{
@@ -757,31 +774,39 @@ async function saveAttendance(){
                 return;
             }
 
+            showLoading(
+                'در حال دریافت موقعیت مکانی، لطفاً صبر کنید...'
+            );
+
+            const location =
+            await getLocation();
+
+            if(
+                location.lat === null ||
+                location.lng === null
+            ){
+
+                const allow =
+                confirm(
+                    'GPS خاموش است یا موقعیت دریافت نشد. ادامه می‌دهید؟'
+                );
+
+                if(!allow){
+
+                    hideLoading();
+
+                    return;
+                }
+            }
+
+            showLoading(
+                'در حال فشرده‌سازی عکس و ثبت تردد، لطفاً صبر کنید...'
+            );
+
             const compressedFile =
             await compressImage(
                 file
             );
-
-            const personnelCode =
-            localStorage.getItem(
-                'employee_code'
-            );
-
-            const fullname =
-            localStorage.getItem(
-                'employee_fullname'
-            );
-
-            if(!personnelCode || !fullname){
-
-                alert(
-                    'اطلاعات پرسنلی در گوشی ذخیره نشده است. ابتدا با اینترنت فرم را باز کنید.'
-                );
-
-                hideLoading();
-
-                return;
-            }
 
             const fileName =
             'attendance_' +
@@ -915,19 +940,21 @@ async function saveAttendance(){
             console.log(err);
 
             alert(
-                err.message
+                'خطا:\n' + err.message
             );
 
             hideLoading();
         }
     };
 
+    /*
+    نکته مهم:
+    این باید مستقیم بعد از کلیک کاربر اجرا شود
+    تا موبایل اجازه باز شدن دوربین را بدهد.
+    */
+
     attendanceInput.click();
 }
-
-/*
-ارسال اطلاعات آفلاین
-*/
 
 async function syncOfflineAttendance(){
 
