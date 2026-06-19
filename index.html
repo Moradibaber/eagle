@@ -753,13 +753,14 @@ async function compressImage(file){
 
 function getLocation(){
 
-    return new Promise((resolve)=>{
+    return new Promise(function(resolve){
 
         if(!navigator.geolocation){
 
             resolve({
                 lat:null,
-                lng:null
+                lng:null,
+                accuracy:null
             });
 
             return;
@@ -767,7 +768,7 @@ function getLocation(){
 
         navigator.geolocation.getCurrentPosition(
 
-            position => {
+            function(position){
 
                 resolve({
 
@@ -775,26 +776,36 @@ function getLocation(){
                     position.coords.latitude,
 
                     lng:
-                    position.coords.longitude
+                    position.coords.longitude,
+
+                    accuracy:
+                    position.coords.accuracy
                 });
             },
 
-            error => {
+            function(error){
+
+                console.log(
+                    'Geolocation error:',
+                    error
+                );
 
                 resolve({
                     lat:null,
-                    lng:null
+                    lng:null,
+                    accuracy:null
                 });
             },
 
             {
-                enableHighAccuracy:true,
-                timeout:10000,
-                maximumAge:0
+                enableHighAccuracy:false,
+                timeout:20000,
+                maximumAge:300000
             }
         );
     });
 }
+
     /*
 ثبت تردد
 */
@@ -839,15 +850,8 @@ async function saveAttendance(){
 
     lockPersonnelFields();
 
-    const attendanceInput =
-    document.getElementById(
-        'attendancePhoto'
-    );
-
-    attendanceInput.value = '';
-
     showLoading(
-        'در حال دریافت موقعیت مکانی، لطفاً صبر کنید...'
+        'در حال دریافت موقعیت مکانی...'
     );
 
     const location =
@@ -858,14 +862,44 @@ async function saveAttendance(){
         location.lng === null
     ){
 
-        alert(
-            'موقعیت مکانی دریافت نشد. لطفاً GPS گوشی را روشن کنید.'
-        );
-
         hideLoading();
+
+        alert(
+            'موقعیت مکانی دریافت نشد.\n\n' +
+            'برای ثبت تردد، لطفاً Location / GPS گوشی را روشن کنید و اجازه دسترسی به موقعیت مکانی را بدهید.'
+        );
 
         return;
     }
+
+    const maxAllowedAccuracy =
+    5000;
+
+    if(
+        location.accuracy !== null &&
+        location.accuracy > maxAllowedAccuracy
+    ){
+
+        hideLoading();
+
+        alert(
+            'دقت موقعیت مکانی کافی نیست.\n\n' +
+            'دقت فعلی حدود ' +
+            Math.round(location.accuracy) +
+            ' متر است.\n' +
+            'حداکثر دقت قابل قبول ۵۰۰۰ متر است.\n\n' +
+            'لطفاً Location گوشی را روشن‌تر بررسی کنید یا در فضای بازتر دوباره تلاش کنید.'
+        );
+
+        return;
+    }
+
+    const attendanceInput =
+    document.getElementById(
+        'attendancePhoto'
+    );
+
+    attendanceInput.value = '';
 
     attendanceInput.onchange = async function(e){
 
@@ -876,17 +910,17 @@ async function saveAttendance(){
 
             if(!file){
 
+                hideLoading();
+
                 alert(
                     'هیچ عکسی انتخاب نشد.'
                 );
-
-                hideLoading();
 
                 return;
             }
 
             showLoading(
-                'در حال فشرده‌سازی عکس و ثبت تردد، لطفاً صبر کنید...'
+                'در حال فشرده‌سازی عکس و ثبت تردد...'
             );
 
             const compressedFile =
@@ -921,15 +955,14 @@ async function saveAttendance(){
                 longitude:
                 location.lng,
 
+                location_accuracy:
+                location.accuracy,
+
                 photo_name:
                 fileName
             };
 
-            /*
-            اگر آفلاین بود یا Supabase آماده نبود
-            */
-
-            if(!navigator.onLine || !supabaseClient){
+            async function saveOffline(){
 
                 await saveAttendancePhotoOffline(
                     fileName,
@@ -956,93 +989,101 @@ async function saveAttendance(){
 
                 updateOfflineCounter();
 
-                alert(
-                    'تردد آفلاین همراه عکس ذخیره شد'
-                );
+                await loadMyRecords();
 
                 hideLoading();
 
-                loadMyRecords();
+                alert(
+                    'تردد به صورت آفلاین همراه با مختصات ذخیره شد.'
+                );
+            }
+
+            if(!navigator.onLine || !supabaseClient){
+
+                await saveOffline();
 
                 return;
             }
 
-            /*
-            اگر آنلاین بود
-            */
+            try{
 
-            const uploadResult =
-            await supabaseClient.storage
-            .from('reference-photos')
-            .upload(
-                'attendance/' +
-                fileName,
-                compressedFile,
-                {
-                    upsert:true,
-                    contentType:'image/jpeg'
+                const uploadResult =
+                await supabaseClient.storage
+                .from(
+                    'reference-photos'
+                )
+                .upload(
+                    'attendance/' +
+                    fileName,
+                    compressedFile,
+                    {
+                        upsert:true,
+                        contentType:'image/jpeg'
+                    }
+                );
+
+                if(uploadResult.error){
+
+                    throw new Error(
+                        uploadResult.error.message
+                    );
                 }
-            );
 
-            if(uploadResult.error){
+                const insertResult =
+                await supabaseClient
+                .from(
+                    'eagle'
+                )
+                .insert([
+                    attendanceItem
+                ]);
 
-                alert(
-                    'خطا در آپلود عکس:\n' +
-                    uploadResult.error.message
-                );
+                if(insertResult.error){
 
-                hideLoading();
-
-                return;
-            }
-
-            const insertResult =
-            await supabaseClient
-            .from('eagle')
-            .insert([
-                attendanceItem
-            ]);
-
-            if(insertResult.error){
-
-                alert(
-                    'خطا در ثبت اطلاعات:\n' +
-                    insertResult.error.message
-                );
+                    throw new Error(
+                        insertResult.error.message
+                    );
+                }
 
                 hideLoading();
 
+                alert(
+                    'تردد همراه با مختصات ثبت شد.'
+                );
+
+                await loadMyRecords();
+
+            }catch(onlineError){
+
+                console.log(
+                    'ثبت آنلاین ناموفق بود، ذخیره آفلاین انجام می‌شود:',
+                    onlineError
+                );
+
+                await saveOffline();
+
                 return;
             }
-
-            alert(
-                'تردد ثبت شد'
-            );
-
-            hideLoading();
-
-            loadMyRecords();
 
         }catch(err){
 
-            console.log(err);
+            console.log(
+                err
+            );
+
+            hideLoading();
 
             alert(
                 'خطا:\n' + err.message
             );
-
-            hideLoading();
         }
     };
-
-    /*
-    بعد از گرفتن GPS، دوربین باز می‌شود
-    */
 
     hideLoading();
 
     attendanceInput.click();
 }
+
 
 async function syncOfflineAttendance(){
 
