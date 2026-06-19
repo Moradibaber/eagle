@@ -232,6 +232,8 @@ function hideLoading(){
     if(box){
         box.style.display =
         'none';
+    }
+}
    function openOfflineDB(){
 
     return new Promise((resolve, reject) => {
@@ -347,7 +349,7 @@ async function getAttendancePhotoOffline(fileName){
                 );
             }else{
                 resolve(null);
-            }
+            } 
         };
 
         request.onerror =
@@ -658,15 +660,11 @@ async function compressImage(file){
 }
 
 function getLocation(){
-
     return new Promise((resolve)=>{
-
         if(!navigator.geolocation){
-
-            resolve({
-                lat:null,
-                lng:null
-            });
+            resolve({ lat:null, lng:null });
+            return;
+        }
 document.getElementById(
          'saveStatus'
               ) .style.display='none';
