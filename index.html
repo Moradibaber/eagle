@@ -788,7 +788,7 @@ function getLocation(){
 
             {
                 enableHighAccuracy:true,
-                timeout:30000,
+                timeout:10000,
                 maximumAge:0
             }
         );
@@ -845,25 +845,26 @@ async function saveAttendance(){
     );
 
     attendanceInput.value = '';
+           showLoading(
+    'در حال دریافت موقعیت مکانی، لطفاً صبر کنید...'
+);
 
-    attendanceInput.onchange =
-    async function(e){
+const location =
+await getLocation();
 
-        showLoading(
-            'در حال آماده‌سازی عکس، لطفاً صبر کنید...'
-        );
+if(
+    location.lat === null ||
+    location.lng === null
+){
 
-        try{
+    alert(
+        'موقعیت مکانی دریافت نشد. لطفاً GPS گوشی را روشن کنید.'
+    );
 
-            const file =
-            e.target.files[0];
+    hideLoading();
 
-            if(!file){
-
-                hideLoading();
-
-                return;
-            }
+    return;
+}
 
             showLoading(
                 'در حال دریافت موقعیت مکانی، لطفاً صبر کنید...'
