@@ -485,6 +485,31 @@ window.onload = async function(){
         updateNetworkStatus();
 
         showUserInfo();
+const savedName =
+localStorage.getItem(
+    'employee_fullname'
+);
+
+const savedCode =
+localStorage.getItem(
+    'employee_code'
+);
+
+if(savedName){
+    document.getElementById(
+        'fullname'
+    ).value = savedName;
+}
+
+if(savedCode){
+    document.getElementById(
+        'personnel_code'
+    ).value = savedCode;
+
+    lockPersonnelFields();
+    remainingPhotos = 0;
+    updatePhotoCounter();
+}
 
         /*
         بازیابی اطلاعات حتی بعد پاک شدن کش
@@ -938,7 +963,8 @@ document.getElementById(
 
             {
                 enableHighAccuracy:true,
-                timeout:10000
+                maximumAge:0,
+                timeout:30000
             }
         );
     });
@@ -1042,16 +1068,69 @@ async function(e){
 
             if(!navigator.onLine){
 
+    const now =
+    new Date().toLocaleString('fa-IR');
+
     const offlineRecord = {
         personnel_code: personnelCode,
         fullname: localStorage.getItem('employee_fullname'),
-        entry_time: new Date().toLocaleString('fa-IR'),
+        entry_time: now,
         latitude: location.lat,
         longitude: location.lng,
         photo_name: fileName,
         photo_blob: compressedFile,
         created_at: new Date().toISOString()
     };
+const allOffline =
+await getAllOfflineAttendanceFromDB();
+
+const today =
+new Date().toLocaleDateString(
+    'fa-IR'
+);
+
+const sameDay =
+allOffline.find(item => {
+
+    if(
+        item.personnel_code !==
+        personnelCode
+    ){
+        return false;
+    }
+
+    return (
+        item.entry_time &&
+        item.entry_time.startsWith(
+            today
+        )
+    );
+});
+
+if(sameDay){
+
+    sameDay.exit_time = now;
+
+    const db =
+    await openOfflineDB();
+
+    const tx =
+    db.transaction(
+        OFFLINE_STORE,
+        'readwrite'
+    );
+
+    tx.objectStore(
+        OFFLINE_STORE
+    ).put(sameDay);
+
+}else{
+
+    await saveOfflineAttendanceToDB(
+        offlineRecord
+    );
+}
+
 
     await saveOfflineAttendanceToDB(
         offlineRecord
@@ -1232,13 +1311,28 @@ async function syncOfflineAttendance(){
             await supabaseClient
             .from('eagle')
             .insert([{
-                personnel_code: item.personnel_code,
-                fullname: item.fullname,
-                entry_time: item.entry_time,
-                latitude: item.latitude,
-                longitude: item.longitude,
-                photo_name: item.photo_name
-            }]);
+
+    personnel_code:
+    item.personnel_code,
+
+    fullname:
+    item.fullname,
+
+    entry_time:
+    item.entry_time,
+
+    exit_time:
+    item.exit_time,
+
+    latitude:
+    item.latitude,
+
+    longitude:
+    item.longitude,
+
+    photo_name:
+    item.photo_name
+}]);
 
             if(insertResult.error){
                 console.log(
