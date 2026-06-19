@@ -788,7 +788,7 @@ function getLocation(){
 
             {
                 enableHighAccuracy:true,
-                timeout:10000,
+                timeout:30000,
                 maximumAge:0
             }
         );
@@ -872,23 +872,19 @@ async function saveAttendance(){
             const location =
             await getLocation();
 
-            if(
-                location.lat === null ||
-                location.lng === null
-            ){
+          if(
+    location.lat === null ||
+    location.lng === null
+){
 
-                const allow =
-                confirm(
-                    'GPS خاموش است یا موقعیت دریافت نشد. ادامه می‌دهید؟'
-                );
+    alert(
+        'موقعیت مکانی دریافت نشد. لطفاً GPS گوشی را روشن کنید.'
+    );
 
-                if(!allow){
+    hideLoading();
 
-                    hideLoading();
-
-                    return;
-                }
-            }
+    return;
+}
 
             showLoading(
                 'در حال فشرده‌سازی عکس و ثبت تردد، لطفاً صبر کنید...'
