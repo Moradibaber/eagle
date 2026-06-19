@@ -783,23 +783,21 @@ function getLocation(){
     /*
 ثبت تردد
 */
+    /*
+ثبت تردد
+*/
 async function saveAttendance(){
 
-    const fullnameInput =
-    document.getElementById(
-        'fullname'
-    );
+    // const fullnameInput = document.getElementById('fullname'); // این خطوط قبلی مربوط به نام و کد
+    // const codeInput = document.getElementById('personnel_code');
 
-    const codeInput =
-    document.getElementById(
-        'personnel_code'
-    );
+    // const fullname = fullnameInput.value.trim();
+    // const personnelCode = codeInput.value.trim();
 
-    const fullname =
-    fullnameInput.value.trim();
+    // اینها را از localStorage بخوان تا اگر قبلا وارد شده بود، دوباره نخواهد
+    const fullname = localStorage.getItem('employee_fullname');
+    const personnelCode = localStorage.getItem('employee_code');
 
-    const personnelCode =
-    codeInput.value.trim();
 
     if(!fullname || !personnelCode){
 
@@ -807,63 +805,125 @@ async function saveAttendance(){
             'لطفاً نام و کد پرسنلی را وارد کنید.'
         );
 
+        // اینجا باید یک کاری کنی که کاربر بتونه نام و کد را وارد کنه،
+        // مثلاً یک فرم نمایش بدی یا به صفحه ورود برگردانی.
+        // فعلاً فرض می‌کنیم این بخش حل شده و نام و کد از قبل هست.
+
         return;
     }
 
-    localStorage.setItem(
-        'employee_fullname',
-        fullname
-    );
+    // showUserInfo(); // اگر لازم است نمایش بده
+    // lockPersonnelFields(); // اگر لازم است فیلدها را قفل کن
 
-    localStorage.setItem(
-        'employee_code',
-        personnelCode
-    );
+    const attendanceInput = document.getElementById('attendancePhoto');
 
-    showUserInfo();
-
-    lockPersonnelFields();
-
-    showLoading(
-        'در حال دریافت موقعیت مکانی...'
-    );
-
-       const location = await getLocation();
-
-    // اگر در حالت آفلاین یا به هر دلیلی لوکیشن دریافت نشد، متوقف نشو و با صفر ادامه بده
-    if (location.lat === null || location.lng === null || location.lat === 0) {
-        console.log('موقعیت دریافت نشد یا دستگاه آفلاین است. ثبت بدون مختصات انجام می‌شود.');
-        location.lat = 0;
-        location.lng = 0;
-        location.accuracy = 0;
+    // اگر attendanceInput وجود نداشت، یعنی دکمه عکس هنوز ساخته نشده.
+    if (!attendanceInput) {
+        console.error("Element with id 'attendancePhoto' not found.");
+        alert("خطا: دکمه انتخاب عکس پیدا نشد.");
+        return;
     }
 
-    // بررسی دقت لوکیشن را فقط در حالت آنلاین فعال نگه می‌داریم تا در آفلاین مانع نشود
-    if (navigator.onLine && location.lat !== 0) {
-        const maxAllowedAccuracy = 5000;
-        if (
-            location.accuracy !== null &&
-            location.accuracy > maxAllowedAccuracy
-        ) {
-            hideLoading();
-            alert(
-                'دقت موقعیت مکانی کافی نیست.\n\n' +
-                'دقت فعلی حدود ' +
-                Math.round(location.accuracy) +
-                ' متر است.\n' +
-                'حداکثر دقت قابل قبول ۵۰۰۰ متر است.\n\n' +
-                'لطفاً Location گوشی را بررسی کنید یا در فضای بازتر دوباره تلاش کنید.'
+    attendanceInput.onchange = async function(e){
+
+        try{
+
+            const file = e.target.files[0];
+
+            if(!file){
+
+                hideLoading();
+
+                alert(
+                    'هیچ عکسی انتخاب نشد.'
+                );
+
+                return;
+            }
+
+            showLoading(
+                'در حال دریافت موقعیت مکانی...'
             );
-            return;
+
+            const location = await getLocation();
+
+            // اگر در حالت آفلاین یا به هر دلیلی لوکیشن دریافت نشد، متوقف نشو و با صفر ادامه بده
+            if (
+                location.lat == null ||
+                location.lng == null ||
+                location.lat === 0 ||
+                location.lng === 0
+            ) {
+                console.log('موقعیت دریافت نشد یا دستگاه آفلاین است. ثبت بدون مختصات انجام می‌شود.');
+
+                location.lat = 0;
+                location.lng = 0;
+                location.accuracy = 0;
+            }
+
+            // بررسی دقت لوکیشن را فقط در حالت آنلاین فعال نگه می‌داریم
+            if (navigator.onLine && location.lat !== 0 && location.lng !== 0) {
+                const maxAllowedAccuracy = 5000;
+
+                if (
+                    location.accuracy !== null &&
+                    location.accuracy > maxAllowedAccuracy
+                ) {
+                    hideLoading();
+
+                    alert(
+                        'دقت موقعیت مکانی کافی نیست.\n\n' +
+                        'دقت فعلی حدود ' +
+                        Math.round(location.accuracy) +
+                        ' متر است.\n' +
+                        'حداکثر دقت قابل قبول ۵۰۰۰ متر است.\n\n' +
+                        'لطفاً Location گوشی را بررسی کنید یا در فضای بازتر دوباره تلاش کنید.'
+                    );
+
+                    return;
+                }
+            }
+
+            showLoading(
+                'در حال فشرده‌سازی عکس و ثبت تردد...'
+            );
+
+            const compressedFile = await compressImage(file);
+
+            const fileName = 'attendance_' + personnelCode + '_' + Date.now() + '.jpg';
+
+            const attendanceItem = {
+                personnel_code: personnelCode,
+                fullname: fullname,
+                entry_time: new Date().toLocaleString('fa-IR'),
+                latitude: location.lat,
+                longitude: location.lng,
+                location_accuracy: location.accuracy,
+                photo_name: fileName
+            };
+
+            // اینجا باید تابع saveOffline یا saveOnline را صدا بزنی
+            // تابع saveOffline باید داده‌ها را در localStorage یا IndexedDB ذخیره کند
+            // تابع saveOnline باید عکس و اطلاعات را به سرور بفرستد
+            await saveOffline(attendanceItem, compressedFile, fileName);
+
+
+        } catch(error){
+
+            hideLoading();
+
+            console.error('Error in attendance photo onchange:', error); // ثبت خطا در کنسول
+
+            alert(
+                'خطا در ثبت تردد:\n' +
+                error.message
+            );
         }
-    }
+    };
 
-    const attendanceInput =
-    document.getElementById(
-        'attendancePhoto'
-    );
-
-    attendanceInput.value = '';
+    // این خط مهم است تا فایل پکیر انتخاب شود
+    attendanceInput.click();
+}
 
     attendanceInput.onchange = async function(e){
 
