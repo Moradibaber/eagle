@@ -866,13 +866,7 @@ if(
     return;
 }
 
-            showLoading(
-                'در حال دریافت موقعیت مکانی، لطفاً صبر کنید...'
-            );
-
-            const location =
-            await getLocation();
-
+          
           if(
     location.lat === null ||
     location.lng === null
@@ -892,8 +886,8 @@ if(
             );
 
             const compressedFile =
-            await compressImage(
-                file
+            await compressImage( file
+            const file = e.target.files[0];
             );
 
             const fileName =
@@ -1024,6 +1018,9 @@ if(!navigator.onLine || !supabaseClient){
             hideLoading();
 
             loadMyRecords();
+      attendanceInput.onchange = async function(e){
+
+    try{
 
         }catch(err){
 
