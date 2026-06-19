@@ -232,7 +232,167 @@ function hideLoading(){
     if(box){
         box.style.display =
         'none';
-    }
+   function openOfflineDB(){
+
+    return new Promise((resolve, reject) => {
+
+        const request =
+        indexedDB.open(
+            'attendance_offline_db',
+            1
+        );
+
+        request.onupgradeneeded =
+        function(event){
+
+            const db =
+            event.target.result;
+
+            if(
+                !db.objectStoreNames.contains(
+                    'attendance_photos'
+                )
+            ){
+                db.createObjectStore(
+                    'attendance_photos',
+                    {
+                        keyPath:'fileName'
+                    }
+                );
+            }
+        };
+
+        request.onsuccess =
+        function(event){
+            resolve(
+                event.target.result
+            );
+        };
+
+        request.onerror =
+        function(event){
+            reject(
+                event.target.error
+            );
+        };
+    });
+}
+
+async function saveAttendancePhotoOffline(fileName, blob){
+
+    const db =
+    await openOfflineDB();
+
+    return new Promise((resolve, reject) => {
+
+        const tx =
+        db.transaction(
+            'attendance_photos',
+            'readwrite'
+        );
+
+        const store =
+        tx.objectStore(
+            'attendance_photos'
+        );
+
+        store.put({
+            fileName:fileName,
+            blob:blob
+        });
+
+        tx.oncomplete =
+        function(){
+            resolve();
+        };
+
+        tx.onerror =
+        function(event){
+            reject(
+                event.target.error
+            );
+        };
+    });
+}
+
+async function getAttendancePhotoOffline(fileName){
+
+    const db =
+    await openOfflineDB();
+
+    return new Promise((resolve, reject) => {
+
+        const tx =
+        db.transaction(
+            'attendance_photos',
+            'readonly'
+        );
+
+        const store =
+        tx.objectStore(
+            'attendance_photos'
+        );
+
+        const request =
+        store.get(
+            fileName
+        );
+
+        request.onsuccess =
+        function(){
+
+            if(request.result){
+                resolve(
+                    request.result.blob
+                );
+            }else{
+                resolve(null);
+            }
+        };
+
+        request.onerror =
+        function(event){
+            reject(
+                event.target.error
+            );
+        };
+    });
+}
+
+async function deleteAttendancePhotoOffline(fileName){
+
+    const db =
+    await openOfflineDB();
+
+    return new Promise((resolve, reject) => {
+
+        const tx =
+        db.transaction(
+            'attendance_photos',
+            'readwrite'
+        );
+
+        const store =
+        tx.objectStore(
+            'attendance_photos'
+        );
+
+        store.delete(
+            fileName
+        );
+
+        tx.oncomplete =
+        function(){
+            resolve();
+        };
+
+        tx.onerror =
+        function(event){
+            reject(
+                event.target.error
+            );
+        };
+    });
 }
 
 /*
@@ -393,16 +553,6 @@ window.onload = async function(){
 
                     showUserInfo();
 
-                    remainingPhotos =
-                    Math.max(
-                        0,
-                        1 - (
-                            data.photo_count || 0
-                        )
-                    );
-
-                    updatePhotoCounter();
-
                     lockPersonnelFields();
                 }
 
@@ -506,219 +656,6 @@ async function compressImage(file){
         };
     });
 }
-
-/*
-ثبت عکس مرجع
-*/
-
-    localStorage.setItem(
-        'employee_fullname',
-        fullname
-    );
-
-    localStorage.setItem(
-        'employee_code',
-        personnelCode
-    );
-
-    lockPersonnelFields();
-
-    if(remainingPhotos <= 0){
-
-        alert(
-            'عکس تطبیقی قبلا ثبت شده است'
-        );
-document.getElementById(
-         'saveStatus'
-              ).style.display='none';
-        return;
-    }
-
-    const photoInput =
-    document.getElementById(
-        'photo'
-    );
-
-    photoInput.value = '';
-
-    photoInput.onchange =
-    async function(e){
-     showLoading(
-    'در حال فشرده‌سازی و ذخیره عکس تطبیقی، لطفاً صبر کنید...'
-);
-
-        try{
-
-            const file =
-            e.target.files[0];
-
-            if(!file){
-          document.getElementById(
-         'saveStatus'
-              ).style.display='none';
-                return;
-            }
-
-            const compressedFile =
-            await compressImage(file);
-
-            const fileName =
-            personnelCode +
-            '_' +
-            Date.now() +
-            '.jpg';
-
-            /*
-            اگر آفلاین بود
-            */
-
-            if(!navigator.onLine){
-
-                let offlinePhotos =
-                JSON.parse(
-                    localStorage.getItem(
-                        'offline_reference_photos'
-                    ) || '[]'
-                );
-
-                offlinePhotos.push({
-                    fileName:fileName
-                });
-
-                localStorage.setItem(
-                    'offline_reference_photos',
-                    JSON.stringify(
-                        offlinePhotos
-                    )
-                );
-
-                remainingPhotos--;
-
-                updatePhotoCounter();
-
-                alert(
-                    'عکس مرجع آفلاین ذخیره شد'
-                );
-                document.getElementById(
-         'saveStatus'
-              ) .style.display='none';
-                return;
-            }
-
-            /*
-            آپلود عکس
-            */
-
-            const uploadResult =
-            await supabaseClient.storage
-            .from('reference-photos')
-            .upload(
-                fileName,
-                compressedFile,
-                {
-                    upsert:true,
-                    contentType:'image/jpeg'
-                }
-            );
-
-            if(uploadResult.error){
-
-                alert(
-                    'خطا:\n' +
-                    uploadResult.error.message
-                );
-document.getElementById(
-         'saveStatus'
-              ) .style.display='none';
-                return;
-            }
-
-            remainingPhotos--;
-
-            const uploadedCount =
-            1 - remainingPhotos;
-
-            /*
-            ذخیره اطلاعات
-            */
-
-            const {
-                data: existingPerson
-            } =
-            await supabaseClient
-            .from('personnel')
-            .select('*')
-            .eq(
-                'personnel_code',
-                personnelCode
-            )
-            .maybeSingle();
-
-            if(existingPerson){
-
-                await supabaseClient
-                .from('personnel')
-                .update({
-
-                    fullname:
-                    fullname,
-
-                    photo_count:
-                    uploadedCount
-
-                })
-                .eq(
-                    'personnel_code',
-                    personnelCode
-                );
-
-            }else{
-
-                await supabaseClient
-                .from('personnel')
-                .insert([{
-
-                    personnel_code:
-                    personnelCode,
-
-                    fullname:
-                    fullname,
-
-                    photo_count:
-                    uploadedCount
-
-                }]);
-            }
-
-            updatePhotoCounter();
-
-            alert(
-                'عکس تطبیقی ذخیره شد'
-            );
-            document.getElementById(
-         'saveStatus'
-                ).style.display='none';
-
-        }catch(err){
-
-            console.log(err);
-
-            alert(
-                err.message
-            );
-            document.getElementById(
-            'saveStatus'
-            ).style.display='none';
-        }
-        
-    };
-
-    photoInput.click();
-}
-
-/*
-گرفتن GPS
-*/
 
 function getLocation(){
 
