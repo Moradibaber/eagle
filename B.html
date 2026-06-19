@@ -1,1 +1,2238 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
 
+<head>  
+
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+سیستم ثبت تردد پرسنل
+</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#1a2a6c">
+<style>
+
+body{
+    font-family:tahoma;
+    background:#f4f7fa;
+    margin:0;
+    padding:20px;
+}
+
+.container{
+    max-width:500px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 0 15px rgba(0,0,0,0.1);
+}
+
+h2{
+    text-align:center;
+    color:#1a2a6c;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin-bottom:15px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:16px;
+    box-sizing:border-box;
+}
+
+button{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:8px;
+    background:#1a2a6c;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+    margin-top:10px;
+}
+
+.record{
+    background:#fff;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:15px;
+    margin-top:15px;
+}
+
+#photoCounter{
+    text-align:center;
+    margin-top:10px;
+    font-size:14px;
+    color:#1a2a6c;
+    font-weight:bold;
+}
+
+.disabled{
+    background:#999 !important;
+    cursor:not-allowed;
+}
+
+.status{
+    text-align:center;
+    margin-bottom:15px;
+    font-weight:bold;
+}
+
+.online{
+    color:green;
+}
+
+.offline{
+    color:red;
+    
+}
+.loading-box{
+    text-align:center;
+    margin-top:10px;
+    font-weight:bold;
+    color:#1a2a6c;
+    display:none;
+    background:#eef3ff;
+    border:1px solid #c8d6ff;
+    border-radius:8px;
+    padding:10px;
+}
+
+.spinner{
+    display:inline-block;
+    width:16px;
+    height:16px;
+    border:3px solid #c8d6ff;
+    border-top:3px solid #1a2a6c;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+    vertical-align:middle;
+    margin-left:6px;
+}
+
+@keyframes spin{
+    from{
+        transform:rotate(0deg);
+    }
+    to{
+        transform:rotate(360deg);
+    }
+}
+
+</style>
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./service-worker.js')
+            .then(function (registration) {
+                console.log('Service Worker ثبت شد:', registration.scope);
+            })
+            .catch(function (error) {
+                console.log('خطا در ثبت Service Worker:', error);
+            });
+    });
+}
+</script>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>
+سیستم ثبت تردد پرسنل
+</h2>
+
+<!-- شروع وضعیت اینترنت و نمایش نام -->
+<div id="networkStatus" class="status online" style="color:green; text-align:center; margin-bottom:10px; font-weight:bold;">
+    🟢 آنلاین
+</div>
+
+<div id="userInfo" style="text-align:center; margin-bottom:15px; font-weight:bold; color:#1a2a6c; border-bottom:1px solid #ddd; padding-bottom:10px;">
+    نام: <span id="showName">در حال بارگذاری...</span> | 
+    کد پرسنلی: <span id="showCode">-</span>
+</div>
+<!-- پایان وضعیت اینترنت و نمایش نام -->
+
+<input
+type="text"
+id="fullname"
+placeholder="نام و نام خانوادگی"
+>
+
+<input
+type="text"
+id="personnel_code"
+placeholder="کد پرسنلی"
+>
+
+<input
+type="file"
+id="attendancePhoto"
+accept="image/*"
+capture="user"
+style="display:none"
+>
+<button
+    type="button"
+    onclick="saveAttendance();"
+    class="btn"
+>
+    📷 ثبت تردد
+</button>
+
+
+<div id="saveStatus" class="loading-box">
+    <span class="spinner"></span>
+    <span id="saveStatusText">در حال انجام عملیات، صبر کنید...</span>
+</div>
+<div id="offlineCounter" style="text-align:center; margin-top:10px; font-size:14px; color:#b45309; font-weight:bold;">
+    ترددهای ذخیره‌شده آفلاین: 0
+</div>
+
+
+<div id="myRecords"></div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+
+const SUPABASE_URL =
+'https://kddhnohquohbnemmegdy.supabase.co';
+
+const SUPABASE_ANON_KEY =
+'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
+
+let supabaseClient = null;
+
+if (typeof supabase !== 'undefined') {
+    supabaseClient =
+    supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY
+    );
+} else {
+    console.log('Supabase library لود نشده است. برنامه در حالت آفلاین ادامه می‌دهد.');
+}
+
+
+function showLoading(message){
+    const box =
+    document.getElementById(
+        'saveStatus'
+    );
+
+    const text =
+    document.getElementById(
+        'saveStatusText'
+    );
+
+    if(text){
+        text.innerText =
+        message || 'در حال انجام عملیات، صبر کنید...';
+    }
+
+    if(box){
+        box.style.display =
+        'block';
+    }
+}
+
+function hideLoading(){
+    const box =
+    document.getElementById(
+        'saveStatus'
+    );
+
+    if(box){
+        box.style.display =
+        'none';
+    }
+}
+    function updateOfflineCounter(){
+
+    const offlineAttendance =
+    JSON.parse(
+        localStorage.getItem('offline_attendance') || '[]'
+    );
+
+    const counter =
+    document.getElementById('offlineCounter');
+
+    if(counter){
+        counter.innerText =
+        'ترددهای ذخیره‌شده آفلاین: ' + offlineAttendance.length;
+    }
+}
+
+   function openOfflineDB(){
+
+    return new Promise((resolve, reject) => {
+
+        const request =
+        indexedDB.open(
+            'attendance_offline_db',
+            1
+        );
+
+        request.onupgradeneeded =
+        function(event){
+
+            const db =
+            event.target.result;
+
+            if(
+                !db.objectStoreNames.contains(
+                    'attendance_photos'
+                )
+            ){
+                db.createObjectStore(
+                    'attendance_photos',
+                    {
+                        keyPath:'fileName'
+                    }
+                );
+            }
+        };
+
+        request.onsuccess =
+        function(event){
+            resolve(
+                event.target.result
+            );
+        };
+
+        request.onerror =
+        function(event){
+            reject(
+                event.target.error
+            );
+        };
+    });
+}
+
+async function saveAttendancePhotoOffline(fileName, blob){
+
+    const db =
+    await openOfflineDB();
+
+    return new Promise((resolve, reject) => {
+
+        const tx =
+        db.transaction(
+            'attendance_photos',
+            'readwrite'
+        );
+
+        const store =
+        tx.objectStore(
+            'attendance_photos'
+        );
+
+        store.put({
+            fileName:fileName,
+            blob:blob
+        });
+
+        tx.oncomplete =
+        function(){
+            resolve();
+        };
+
+        tx.onerror =
+        function(event){
+            reject(
+                event.target.error
+            );
+        };
+    });
+}
+
+async function getAttendancePhotoOffline(fileName){
+
+    const db =
+    await openOfflineDB();
+
+    return new Promise((resolve, reject) => {
+
+        const tx =
+        db.transaction(
+            'attendance_photos',
+            'readonly'
+        );
+
+        const store =
+        tx.objectStore(
+            'attendance_photos'
+        );
+
+        const request =
+        store.get(
+            fileName
+        );
+
+        request.onsuccess =
+        function(){
+
+            if(request.result){
+                resolve(
+                    request.result.blob
+                );
+            }else{
+                resolve(null);
+            } 
+        };
+
+        request.onerror =
+        function(event){
+            reject(
+                event.target.error
+            );
+        };
+    });
+}
+
+async function deleteAttendancePhotoOffline(fileName){
+
+    const db =
+    await openOfflineDB();
+
+    return new Promise((resolve, reject) => {
+
+        const tx =
+        db.transaction(
+            'attendance_photos',
+            'readwrite'
+        );
+
+        const store =
+        tx.objectStore(
+            'attendance_photos'
+        );
+
+        store.delete(
+            fileName
+        );
+
+        tx.oncomplete =
+        function(){
+            resolve();
+        };
+
+        tx.onerror =
+        function(event){
+            reject(
+                event.target.error
+            );
+        };
+    });
+}
+
+/*
+وضعیت اینترنت
+*/
+
+// --- شروع توابع وضعیت و اطلاعات کاربر ---
+function updateNetworkStatus() {
+    const status = document.getElementById('networkStatus');
+    if (navigator.onLine) {
+        status.innerHTML = '🟢 آنلاین';
+        status.style.color = 'green';
+    } else {
+        status.innerHTML = '🔴 آفلاین';
+        status.style.color = 'red';
+    }
+}
+
+// چک کردن وضعیت آفلاین هر 3 ثانیه یکبار برای اطمینان
+setInterval(updateNetworkStatus, 3000);
+function showUserInfo() {
+    const name =
+    localStorage.getItem('employee_fullname');
+
+    const code =
+    localStorage.getItem('employee_code');
+
+    if (name) {
+        document.getElementById('showName').innerText = name;
+
+        const fullnameInput =
+        document.getElementById('fullname');
+
+        if(fullnameInput && !fullnameInput.value){
+            fullnameInput.value = name;
+        }
+    }
+
+    if (code) {
+        document.getElementById('showCode').innerText = code;
+
+        const codeInput =
+        document.getElementById('personnel_code');
+
+        if(codeInput && !codeInput.value){
+            codeInput.value = code;
+        }
+    }
+
+    if(name && code){
+        lockPersonnelFields();
+    }
+}
+
+// --- پایان توابع وضعیت و اطلاعات کاربر ---
+
+window.addEventListener(
+    'online',
+    async function(){
+
+        updateNetworkStatus();
+
+        showLoading(
+            'اینترنت وصل شد، در حال ارسال ترددهای آفلاین...'
+        );
+
+        try{
+
+            await syncOfflineAttendance();
+
+            await loadMyRecords();
+
+        }catch(err){
+
+            console.log(
+                err
+            );
+
+        }finally{
+
+            hideLoading();
+        }
+    }
+);
+
+window.addEventListener(
+    'offline',
+    updateNetworkStatus
+);
+
+/*
+قفل اطلاعات پرسنلی
+*/
+
+function lockPersonnelFields(){
+
+    const fullname =
+    document.getElementById(
+        'fullname'
+    );
+
+    const code =
+    document.getElementById(
+        'personnel_code'
+    );
+
+    fullname.readOnly = true;
+    code.readOnly = true;
+
+    fullname.style.background =
+    '#eee';
+
+    code.style.background =
+    '#eee';
+}
+
+/*
+شمارنده عکس
+*/
+
+window.onload = async function(){
+
+    showLoading(
+        'در حال بارگذاری فرم، لطفاً صبر کنید...'
+    );
+
+    try{
+
+        updateNetworkStatus();
+
+        showUserInfo();
+        updateOfflineCounter();
+
+
+        /*
+        بازیابی اطلاعات حتی بعد پاک شدن کش
+        */
+
+        let personnelCode =
+        localStorage.getItem(
+            'employee_code'
+        );
+
+        if(!personnelCode){
+
+            personnelCode =
+            prompt(
+                'کد پرسنلی خود را وارد کنید'
+            );
+        }
+
+       if(personnelCode && navigator.onLine && supabaseClient){
+
+    try{
+
+        const { data } =
+        await supabaseClient
+        .from('personnel')
+        .select('*')
+        .eq(
+            'personnel_code',
+            personnelCode
+        )
+        .maybeSingle();
+
+        if(data){
+
+
+                    document.getElementById(
+                        'fullname'
+                    ).value =
+                    data.fullname;
+
+                    document.getElementById(
+                        'personnel_code'
+                    ).value =
+                    data.personnel_code;
+
+                    localStorage.setItem(
+                        'employee_fullname',
+                        data.fullname
+                    );
+
+                    localStorage.setItem(
+                        'employee_code',
+                        data.personnel_code
+                    );
+
+                    showUserInfo();
+
+                    lockPersonnelFields();
+                }
+
+            }catch(err){
+
+                console.log(err);
+            }
+        }
+
+        await loadMyRecords();
+
+        await syncOfflineAttendance();
+
+        await loadMyRecords();
+
+    }catch(err){
+
+        console.log(err);
+
+    }finally{
+
+        hideLoading();
+    }
+};
+
+/*
+فشرده سازی عکس
+*/
+async function compressImage(file){
+
+    return new Promise((resolve, reject)=>{
+
+        const reader =
+        new FileReader();
+
+        reader.onload = function(event){
+
+            const img =
+            new Image();
+
+            img.onload = function(){
+
+                const canvas =
+                document.createElement('canvas');
+
+                const finalSize = 320;
+
+                canvas.width = finalSize;
+                canvas.height = finalSize;
+
+                const ctx =
+                canvas.getContext('2d');
+
+                /*
+                برش مربعی از مرکز تصویر
+                برای اینکه اگر کاربر صورت را وسط کادر بگیرد،
+                خروجی بیشتر روی صورت متمرکز باشد.
+                */
+
+                const sourceSize =
+                Math.min(
+                    img.width,
+                    img.height
+                );
+
+                const sourceX =
+                Math.floor(
+                    (img.width - sourceSize) / 2
+                );
+
+                const sourceY =
+                Math.floor(
+                    (img.height - sourceSize) / 2
+                );
+
+                ctx.drawImage(
+                    img,
+                    sourceX,
+                    sourceY,
+                    sourceSize,
+                    sourceSize,
+                    0,
+                    0,
+                    finalSize,
+                    finalSize
+                );
+
+                canvas.toBlob(
+                    function(blob){
+
+                        if(!blob){
+                            reject(
+                                new Error('خطا در فشرده‌سازی عکس')
+                            );
+                            return;
+                        }
+
+                        resolve(blob);
+
+                    },
+                    'image/jpeg',
+                    0.45
+                );
+            };
+
+            img.onerror = function(){
+                reject(
+                    new Error('خطا در خواندن تصویر')
+                );
+            };
+
+            img.src =
+            event.target.result;
+        };
+
+        reader.onerror = function(){
+            reject(
+                new Error('خطا در خواندن فایل عکس')
+            );
+        };
+
+        reader.readAsDataURL(file);
+    });
+}
+
+function getLocation(){
+    return new Promise(function(resolve){
+        if(!navigator.geolocation){
+            resolve({lat:0, lng:0, accuracy:0});
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            function(position){
+                resolve({
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                    accuracy: position.coords.accuracy
+                });
+            },
+            function(error){
+                console.log('Geolocation error:', error);
+                // به جای متوقف کردن برنامه، مختصات صفر برمی‌گردانیم
+                resolve({lat:0, lng:0, accuracy:0});
+            },
+            {
+                enableHighAccuracy: false, // در حالت آفلاین بهتر است خاموش باشد تا خطا ندهد
+                timeout: 8000,             // حداکثر ۸ ثانیه منتظر موقعیت بماند
+                maximumAge: 60000          // استفاده از آخرین موقعیت کش شده تا ۱ دقیقه قبل
+            }
+        );
+    });
+}
+
+    /*
+ثبت تردد
+*/
+    /*
+ثبت تردد
+*/
+async function saveAttendance(){
+
+    // const fullnameInput = document.getElementById('fullname'); // این خطوط قبلی مربوط به نام و کد
+    // const codeInput = document.getElementById('personnel_code');
+
+    // const fullname = fullnameInput.value.trim();
+    // const personnelCode = codeInput.value.trim();
+
+    // اینها را از localStorage بخوان تا اگر قبلا وارد شده بود، دوباره نخواهد
+    const fullname = localStorage.getItem('employee_fullname');
+    const personnelCode = localStorage.getItem('employee_code');
+
+
+    if(!fullname || !personnelCode){
+
+        alert(
+            'لطفاً نام و کد پرسنلی را وارد کنید.'
+        );
+
+        // اینجا باید یک کاری کنی که کاربر بتونه نام و کد را وارد کنه،
+        // مثلاً یک فرم نمایش بدی یا به صفحه ورود برگردانی.
+        // فعلاً فرض می‌کنیم این بخش حل شده و نام و کد از قبل هست.
+
+        return;
+    }
+
+    // showUserInfo(); // اگر لازم است نمایش بده
+    // lockPersonnelFields(); // اگر لازم است فیلدها را قفل کن
+
+    const attendanceInput = document.getElementById('attendancePhoto');
+
+    // اگر attendanceInput وجود نداشت، یعنی دکمه عکس هنوز ساخته نشده.
+    if (!attendanceInput) {
+        console.error("Element with id 'attendancePhoto' not found.");
+        alert("خطا: دکمه انتخاب عکس پیدا نشد.");
+        return;
+    }
+
+    attendanceInput.onchange = async function(e){
+
+        try{
+
+            const file = e.target.files[0];
+
+            if(!file){
+
+                hideLoading();
+
+                alert(
+                    'هیچ عکسی انتخاب نشد.'
+                );
+
+                return;
+            }
+
+            showLoading(
+                'در حال دریافت موقعیت مکانی...'
+            );
+
+            const location = await getLocation();
+
+            // اگر در حالت آفلاین یا به هر دلیلی لوکیشن دریافت نشد، متوقف نشو و با صفر ادامه بده
+            if (
+                location.lat == null ||
+                location.lng == null ||
+                location.lat === 0 ||
+                location.lng === 0
+            ) {
+                console.log('موقعیت دریافت نشد یا دستگاه آفلاین است. ثبت بدون مختصات انجام می‌شود.');
+
+                location.lat = 0;
+                location.lng = 0;
+                location.accuracy = 0;
+            }
+
+            // بررسی دقت لوکیشن را فقط در حالت آنلاین فعال نگه می‌داریم
+            if (navigator.onLine && location.lat !== 0 && location.lng !== 0) {
+                const maxAllowedAccuracy = 5000;
+
+                if (
+                    location.accuracy !== null &&
+                    location.accuracy > maxAllowedAccuracy
+                ) {
+                    hideLoading();
+
+                    alert(
+                        'دقت موقعیت مکانی کافی نیست.\n\n' +
+                        'دقت فعلی حدود ' +
+                        Math.round(location.accuracy) +
+                        ' متر است.\n' +
+                        'حداکثر دقت قابل قبول ۵۰۰۰ متر است.\n\n' +
+                        'لطفاً Location گوشی را بررسی کنید یا در فضای بازتر دوباره تلاش کنید.'
+                    );
+
+                    return;
+                }
+            }
+
+            showLoading(
+                'در حال فشرده‌سازی عکس و ثبت تردد...'
+            );
+
+            const compressedFile = await compressImage(file);
+
+            const fileName = 'attendance_' + personnelCode + '_' + Date.now() + '.jpg';
+
+            const attendanceItem = {
+                personnel_code: personnelCode,
+                fullname: fullname,
+                entry_time: new Date().toLocaleString('fa-IR'),
+                latitude: location.lat,
+                longitude: location.lng,
+                location_accuracy: location.accuracy,
+                photo_name: fileName
+            };
+
+            // اینجا باید تابع saveOffline یا saveOnline را صدا بزنی
+            // تابع saveOffline باید داده‌ها را در localStorage یا IndexedDB ذخیره کند
+            // تابع saveOnline باید عکس و اطلاعات را به سرور بفرستد
+            await saveOffline(attendanceItem, compressedFile, fileName);
+
+
+        } catch(error){
+
+            hideLoading();
+
+            console.error('Error in attendance photo onchange:', error); // ثبت خطا در کنسول
+
+            alert(
+                'خطا در ثبت تردد:\n' +
+                error.message
+            );
+        }
+    };
+
+    // این خط مهم است تا فایل پکیر انتخاب شود
+    attendanceInput.click();
+}
+
+    attendanceInput.onchange = async function(e){
+
+        try{
+
+            const file =
+            e.target.files[0];
+
+            if(!file){
+
+                hideLoading();
+
+                alert(
+                    'هیچ عکسی انتخاب نشد.'
+                );
+
+                return;
+            }
+
+            showLoading(
+                'در حال فشرده‌سازی عکس و ثبت تردد...'
+            );
+
+            const compressedFile =
+            await compressImage(
+                file
+            );
+
+            const fileName =
+            'attendance_' +
+            personnelCode +
+            '_' +
+            Date.now() +
+            '.jpg';
+
+            const attendanceItem = {
+
+                personnel_code:
+                personnelCode,
+
+                fullname:
+                fullname,
+
+                entry_time:
+                new Date()
+                .toLocaleString(
+                    'fa-IR'
+                ),
+
+                latitude:
+                location.lat,
+
+                longitude:
+                location.lng,
+
+                location_accuracy:
+                location.accuracy,
+
+                photo_name:
+                fileName
+            };
+
+            async function saveOffline(){
+
+                await saveAttendancePhotoOffline(
+                    fileName,
+                    compressedFile
+                );
+
+                let offlineAttendance =
+                JSON.parse(
+                    localStorage.getItem(
+                        'offline_attendance'
+                    ) || '[]'
+                );
+
+                offlineAttendance.push(
+                    attendanceItem
+                );
+
+                localStorage.setItem(
+                    'offline_attendance',
+                    JSON.stringify(
+                        offlineAttendance
+                    )
+                );
+
+                updateOfflineCounter();
+
+                await loadMyRecords();
+
+                hideLoading();
+
+                alert(
+                    'تردد به صورت آفلاین همراه با مختصات ذخیره شد.'
+                );
+            }
+
+            if(!navigator.onLine || !supabaseClient){
+
+                await saveOffline();
+
+                return;
+            }
+
+            try{
+
+                const uploadResult =
+                await supabaseClient.storage
+                .from(
+                    'reference-photos'
+                )
+                .upload(
+                    'attendance/' +
+                    fileName,
+                    compressedFile,
+                    {
+                        upsert:true,
+                        contentType:'image/jpeg'
+                    }
+                );
+
+                if(uploadResult.error){
+
+                    throw new Error(
+                        uploadResult.error.message
+                    );
+                }
+
+                const insertResult =
+                await supabaseClient
+                .from(
+                    'eagle'
+                )
+                .insert([
+                    attendanceItem
+                ]);
+
+                if(insertResult.error){
+
+                    throw new Error(
+                        insertResult.error.message
+                    );
+                }
+
+                hideLoading();
+
+                alert(
+                    'تردد همراه با مختصات ثبت شد.'
+                );
+
+                await loadMyRecords();
+
+            }catch(onlineError){
+
+                console.log(
+                    'ثبت آنلاین ناموفق بود، ذخیره آفلاین انجام می‌شود:',
+                    onlineError
+                );
+
+                await saveOffline();
+
+                return;
+            }
+
+        }catch(err){
+
+            console.log(
+                err
+            );
+
+            hideLoading();
+
+            alert(
+                'خطا:\n' + err.message
+            );
+        }
+    };
+
+    hideLoading();
+
+    attendanceInput.click();
+}
+
+
+async function syncOfflineAttendance(){
+
+    if(!navigator.onLine || !supabaseClient){
+        return;
+    }
+
+
+    let offlineAttendance =
+    JSON.parse(
+        localStorage.getItem(
+            'offline_attendance'
+        ) || '[]'
+    );
+
+    if(
+        offlineAttendance.length === 0
+    ){
+        return;
+    }
+
+    let notSynced = [];
+
+    for(
+        const item of offlineAttendance
+    ){
+
+        try{
+
+            const photoBlob =
+            await getAttendancePhotoOffline(
+                item.photo_name
+            );
+
+            if(!photoBlob){
+
+                console.log(
+                    'عکس آفلاین پیدا نشد:',
+                    item.photo_name
+                );
+
+                notSynced.push(
+                    item
+                );
+
+                continue;
+            }
+
+            const uploadResult =
+            await supabaseClient.storage
+            .from(
+                'reference-photos'
+            )
+            .upload(
+                'attendance/' +
+                item.photo_name,
+                photoBlob,
+                {
+                    upsert:true,
+                    contentType:'image/jpeg'
+                }
+            );
+
+            if(uploadResult.error){
+
+                console.log(
+                    uploadResult.error
+                );
+
+                notSynced.push(
+                    item
+                );
+
+                continue;
+            }
+
+            const insertResult =
+            await supabaseClient
+            .from(
+                'eagle'
+            )
+            .insert([
+                {
+                    personnel_code:
+                    item.personnel_code,
+
+                    fullname:
+                    item.fullname,
+
+                    entry_time:
+                    item.entry_time,
+
+                    latitude:
+                    item.latitude,
+
+                    longitude:
+                    item.longitude,
+
+                    photo_name:
+                    item.photo_name
+                }
+            ]);
+
+            if(insertResult.error){
+
+                console.log(
+                    insertResult.error
+                );
+
+                notSynced.push(
+                    item
+                );
+
+                continue;
+            }
+
+            await deleteAttendancePhotoOffline(
+                item.photo_name
+            );
+
+        }catch(err){
+
+            console.log(
+                err
+            );
+
+            notSynced.push(
+                item
+            );
+        }
+    }
+
+    if(
+        notSynced.length > 0
+    ){
+
+        localStorage.setItem(
+            'offline_attendance',
+            JSON.stringify(
+                notSynced
+            )
+        );
+
+    }else{
+
+        localStorage.removeItem(
+            'offline_attendance'
+        );
+    }
+    updateOfflineCounter();
+}
+
+/*
+نمایش سوابق
+*/
+
+async function loadMyRecords(){
+
+    const personnel_code =
+    localStorage.getItem(
+        'employee_code'
+    );
+
+    if(!personnel_code){
+        return;
+    }
+
+    try{
+
+        let allRecords = [];
+
+        /*
+        دریافت ترددهای آنلاین از Supabase
+        */
+
+       if(navigator.onLine && supabaseClient){
+
+    const { data } =
+    await supabaseClient
+
+            .from('eagle')
+            .select('*')
+            .eq(
+                'personnel_code',
+                personnel_code
+            )
+            .order(
+                'id',
+                {
+                    ascending:false
+                }
+            );
+
+            if(data){
+                allRecords =
+                allRecords.concat(
+                    data
+                );
+            }
+        }
+
+        /*
+        اضافه کردن ترددهای آفلاین ذخیره‌شده در موبایل
+        */
+
+        const offlineAttendance =
+        JSON.parse(
+            localStorage.getItem(
+                'offline_attendance'
+            ) || '[]'
+        );
+
+        const myOfflineRecords =
+        offlineAttendance.filter(
+            item =>
+            item.personnel_code === personnel_code
+        );
+
+        allRecords =
+        allRecords.concat(
+            myOfflineRecords
+        );
+
+        if(allRecords.length === 0){
+
+            document.getElementById(
+                'myRecords'
+            ).innerHTML =
+            '<div class="record">هنوز ترددی ثبت نشده است.</div>';
+
+            return;
+        }
+
+        /*
+        گروه‌بندی بر اساس روز
+        */
+
+        const groupedDays = {};
+
+        allRecords.forEach(item => {
+
+            if(!item.entry_time){
+                return;
+            }
+
+            const day =
+            item.entry_time.split('،')[0];
+
+            if(!groupedDays[day]){
+                groupedDays[day] = [];
+            }
+
+            groupedDays[day].push(item);
+        });
+
+        /*
+        مرتب‌سازی روزها بر اساس آخرین تردد همان روز
+        */
+
+        const sortedDays =
+        Object.keys(groupedDays)
+        .sort((a,b) => {
+
+            const lastA =
+            groupedDays[a][0];
+
+            const lastB =
+            groupedDays[b][0];
+
+            const idA =
+            lastA.id || 0;
+
+            const idB =
+            lastB.id || 0;
+
+            return idB - idA;
+        })
+        .slice(0,3);
+
+        let html = '';
+
+        sortedDays.forEach(day => {
+
+            const records =
+            groupedDays[day];
+
+            /*
+            چون اطلاعات آنلاین با id نزولی آمده،
+            ولی اطلاعات آفلاین id ندارد،
+            اینجا با همان ترتیب موجود کار می‌کنیم.
+            */
+
+            records.sort((a,b) => {
+
+                const idA =
+                a.id || 0;
+
+                const idB =
+                b.id || 0;
+
+                return idA - idB;
+            });
+
+            const firstRecord =
+            records[0];
+
+            const lastRecord =
+            records[
+                records.length - 1
+            ];
+
+            html += `
+            <div class="record">
+
+                <p>
+                    📅 تاریخ:
+                    ${day}
+                </p>
+
+                <hr>
+
+                <p>
+                    🟢 اولین ورود:
+                    ${firstRecord.entry_time}
+                </p>
+            `;
+
+            if(records.length > 1){
+
+                html += `
+                <p>
+                    🔴 آخرین خروج:
+                    ${lastRecord.entry_time}
+                </p>
+                `;
+
+            }else{
+
+                html += `
+                <p>
+                    🔴 آخرین خروج:
+                    هنوز ثبت نشده
+                </p>
+                `;
+            }
+
+            html += `
+            </div>
+            `;
+        });
+
+        document.getElementById(
+            'myRecords'
+        ).innerHTML = html;
+
+    }catch(err){
+
+        console.log(err);
+    }
+}
+
+
+</script>
+<!-- =========================
+     Offline / GPS / Camera Diagnostic Module
+     ========================= -->
+
+<style>
+  #diagnosticBox {
+    direction: rtl;
+    font-family: Tahoma, Arial, sans-serif;
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 14px;
+    margin: 16px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  #diagnosticBox h3 {
+    margin-top: 0;
+    color: #222;
+    font-size: 17px;
+  }
+
+  .diag-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    border-bottom: 1px dashed #eee;
+    padding: 6px 0;
+  }
+
+  .diag-row:last-child {
+    border-bottom: none;
+  }
+
+  .diag-title {
+    font-weight: bold;
+    color: #333;
+    min-width: 140px;
+  }
+
+  .diag-result {
+    flex: 1;
+    text-align: left;
+    direction: rtl;
+  }
+
+  .diag-ok {
+    color: #138a36;
+    font-weight: bold;
+  }
+
+  .diag-warn {
+    color: #c98200;
+    font-weight: bold;
+  }
+
+  .diag-error {
+    color: #c62828;
+    font-weight: bold;
+  }
+
+  .diag-info {
+    color: #1565c0;
+    font-weight: bold;
+  }
+
+  #diagnosticActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  #diagnosticActions button {
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    background: #1976d2;
+    color: #fff;
+    font-size: 13px;
+  }
+
+  #diagnosticActions button.secondary {
+    background: #555;
+  }
+
+  #diagnosticActions button.danger {
+    background: #c62828;
+  }
+
+  #diagnosticLog {
+    margin-top: 12px;
+    background: #111;
+    color: #d8ffd8;
+    padding: 10px;
+    border-radius: 8px;
+    max-height: 180px;
+    overflow: auto;
+    direction: ltr;
+    text-align: left;
+    font-size: 12px;
+    white-space: pre-wrap;
+  }
+</style>
+
+<div id="diagnosticBox">
+  <h3>تشخیص وضعیت برنامه</h3>
+
+  <div id="diagnosticResults">
+    <div class="diag-row">
+      <div class="diag-title">وضعیت</div>
+      <div class="diag-result diag-info">برای بررسی، دکمه «اجرای تشخیص» را بزنید.</div>
+    </div>
+  </div>
+
+  <div id="diagnosticActions">
+    <button type="button" onclick="runAppDiagnostics()">اجرای تشخیص</button>
+    <button type="button" onclick="testGPSNow()" class="secondary">تست GPS</button>
+    <button type="button" onclick="testCameraNow()" class="secondary">تست دوربین</button>
+    <button type="button" onclick="copyDiagnosticReport()" class="secondary">کپی گزارش</button>
+    <button type="button" onclick="clearDiagnosticLog()" class="danger">پاک کردن لاگ</button>
+  </div>
+
+  <pre id="diagnosticLog"></pre>
+</div>
+
+<script>
+(function () {
+  window.__diagnosticReport = [];
+
+  function nowTime() {
+    return new Date().toLocaleString('fa-IR');
+  }
+
+  function logDiagnostic(message, data) {
+    const logEl = document.getElementById('diagnosticLog');
+    const text = '[' + new Date().toISOString() + '] ' + message +
+      (data ? '\n' + safeStringify(data) : '') + '\n';
+
+    window.__diagnosticReport.push(text);
+
+    if (logEl) {
+      logEl.textContent += text;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    try {
+      console.log('[DIAGNOSTIC]', message, data || '');
+    } catch (e) {}
+  }
+
+  function safeStringify(data) {
+    try {
+      return JSON.stringify(data, null, 2);
+    } catch (e) {
+      return String(data);
+    }
+  }
+
+  function statusClass(type) {
+    if (type === 'ok') return 'diag-ok';
+    if (type === 'warn') return 'diag-warn';
+    if (type === 'error') return 'diag-error';
+    return 'diag-info';
+  }
+
+  function addRow(title, text, type) {
+    const container = document.getElementById('diagnosticResults');
+    if (!container) return;
+
+    const row = document.createElement('div');
+    row.className = 'diag-row';
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'diag-title';
+    titleEl.textContent = title;
+
+    const resultEl = document.createElement('div');
+    resultEl.className = 'diag-result ' + statusClass(type);
+    resultEl.textContent = text;
+
+    row.appendChild(titleEl);
+    row.appendChild(resultEl);
+    container.appendChild(row);
+  }
+
+  function resetRows() {
+    const container = document.getElementById('diagnosticResults');
+    if (container) {
+      container.innerHTML = '';
+    }
+  }
+
+  async function checkPermission(name) {
+    if (!navigator.permissions || !navigator.permissions.query) {
+      return {
+        supported: false,
+        state: 'unsupported'
+      };
+    }
+
+    try {
+      const result = await navigator.permissions.query({ name: name });
+      return {
+        supported: true,
+        state: result.state
+      };
+    } catch (err) {
+      return {
+        supported: false,
+        state: 'unsupported',
+        error: err.message
+      };
+    }
+  }
+
+  async function checkServiceWorker() {
+    const info = {
+      supported: 'serviceWorker' in navigator,
+      controller: false,
+      registrations: []
+    };
+
+    if (!info.supported) {
+      return info;
+    }
+
+    try {
+      info.controller = !!navigator.serviceWorker.controller;
+
+      if (navigator.serviceWorker.getRegistrations) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        info.registrations = regs.map(function (reg) {
+          return {
+            scope: reg.scope,
+            active: !!reg.active,
+            installing: !!reg.installing,
+            waiting: !!reg.waiting
+          };
+        });
+      }
+    } catch (err) {
+      info.error = err.message;
+    }
+
+    return info;
+  }
+
+  async function checkCaches() {
+    const info = {
+      supported: 'caches' in window,
+      keys: []
+    };
+
+    if (!info.supported) {
+      return info;
+    }
+
+    try {
+      info.keys = await caches.keys();
+    } catch (err) {
+      info.error = err.message;
+    }
+
+    return info;
+  }
+
+  function checkSupabase() {
+    const result = {
+      supabaseGlobalExists: typeof window.supabase !== 'undefined',
+      supabaseClientExists: typeof window.supabaseClient !== 'undefined'
+    };
+
+    if (result.supabaseGlobalExists) {
+      result.supabaseType = typeof window.supabase;
+    }
+
+    if (result.supabaseClientExists) {
+      result.supabaseClientType = typeof window.supabaseClient;
+    }
+
+    return result;
+  }
+
+  function checkAttendanceFunction() {
+    return {
+      saveAttendanceType: typeof window.saveAttendance,
+      exists: typeof window.saveAttendance === 'function'
+    };
+  }
+
+  function findAttendanceInput() {
+    const possibleSelectors = [
+      '#attendancePhoto',
+      '#attendanceInput',
+      '#photoInput',
+      '#cameraInput',
+      'input[type="file"][accept*="image"]',
+      'input[type="file"][capture]',
+      'input[type="file"]'
+    ];
+
+    for (let i = 0; i < possibleSelectors.length; i++) {
+      const el = document.querySelector(possibleSelectors[i]);
+      if (el) {
+        return {
+          found: true,
+          selector: possibleSelectors[i],
+          id: el.id || '',
+          name: el.name || '',
+          accept: el.getAttribute('accept') || '',
+          capture: el.getAttribute('capture') || '',
+          display: window.getComputedStyle(el).display,
+          disabled: !!el.disabled
+        };
+      }
+    }
+
+    return {
+      found: false
+    };
+  }
+
+  async function runAppDiagnostics() {
+    resetRows();
+
+    addRow('زمان بررسی', nowTime(), 'info');
+
+    logDiagnostic('Diagnostic started');
+
+    // 1. Internet
+    const online = navigator.onLine;
+    addRow(
+      'اینترنت',
+      online ? 'آنلاین' : 'آفلاین',
+      online ? 'ok' : 'warn'
+    );
+    logDiagnostic('navigator.onLine', { online: online });
+
+    // 2. Secure Context
+    const secure = window.isSecureContext;
+    const protocol = location.protocol;
+    addRow(
+      'HTTPS / امنیت صفحه',
+      secure ? 'مجاز - Secure Context' : 'نامجاز - GPS و دوربین ممکن است کار نکنند',
+      secure ? 'ok' : 'error'
+    );
+    logDiagnostic('Secure Context', {
+      isSecureContext: secure,
+      protocol: protocol,
+      href: location.href
+    });
+
+    // 3. Geolocation support
+    const geoSupported = 'geolocation' in navigator;
+    addRow(
+      'پشتیبانی GPS مرورگر',
+      geoSupported ? 'پشتیبانی می‌شود' : 'پشتیبانی نمی‌شود',
+      geoSupported ? 'ok' : 'error'
+    );
+    logDiagnostic('Geolocation support', { supported: geoSupported });
+
+    // 4. Location permission
+    const geoPerm = await checkPermission('geolocation');
+    let geoPermText = '';
+    let geoPermType = 'info';
+
+    if (!geoPerm.supported) {
+      geoPermText = 'Permissions API برای Location در این مرورگر قابل بررسی نیست';
+      geoPermType = 'warn';
+    } else if (geoPerm.state === 'granted') {
+      geoPermText = 'دسترسی Location داده شده است';
+      geoPermType = 'ok';
+    } else if (geoPerm.state === 'prompt') {
+      geoPermText = 'هنوز سؤال نشده یا نیازمند تأیید کاربر است';
+      geoPermType = 'warn';
+    } else if (geoPerm.state === 'denied') {
+      geoPermText = 'دسترسی Location مسدود شده است';
+      geoPermType = 'error';
+    } else {
+      geoPermText = geoPerm.state;
+      geoPermType = 'warn';
+    }
+
+    addRow('Permission موقعیت', geoPermText, geoPermType);
+    logDiagnostic('Geolocation permission', geoPerm);
+
+    // 5. Camera / mediaDevices support
+    const cameraSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    addRow(
+      'پشتیبانی دوربین',
+      cameraSupported ? 'getUserMedia پشتیبانی می‌شود' : 'پشتیبانی نمی‌شود یا محدود است',
+      cameraSupported ? 'ok' : 'error'
+    );
+    logDiagnostic('Camera getUserMedia support', { supported: cameraSupported });
+
+    // 6. Camera permission
+    const camPerm = await checkPermission('camera');
+    let camPermText = '';
+    let camPermType = 'info';
+
+    if (!camPerm.supported) {
+      camPermText = 'Permissions API برای Camera در این مرورگر قابل بررسی نیست';
+      camPermType = 'warn';
+    } else if (camPerm.state === 'granted') {
+      camPermText = 'دسترسی Camera داده شده است';
+      camPermType = 'ok';
+    } else if (camPerm.state === 'prompt') {
+      camPermText = 'هنوز سؤال نشده یا نیازمند تأیید کاربر است';
+      camPermType = 'warn';
+    } else if (camPerm.state === 'denied') {
+      camPermText = 'دسترسی Camera مسدود شده است';
+      camPermType = 'error';
+    } else {
+      camPermText = camPerm.state;
+      camPermType = 'warn';
+    }
+
+    addRow('Permission دوربین', camPermText, camPermType);
+    logDiagnostic('Camera permission', camPerm);
+
+    // 7. Service Worker
+    const swInfo = await checkServiceWorker();
+
+    if (!swInfo.supported) {
+      addRow('Service Worker', 'پشتیبانی نمی‌شود', 'error');
+    } else if (swInfo.registrations && swInfo.registrations.length > 0) {
+      addRow(
+        'Service Worker',
+        'ثبت شده - تعداد: ' + swInfo.registrations.length + 
+        (swInfo.controller ? ' - فعال روی صفحه' : ' - ثبت شده ولی controller ندارد'),
+        swInfo.controller ? 'ok' : 'warn'
+      );
+    } else {
+      addRow('Service Worker', 'هیچ Service Worker ثبت نشده است', 'warn');
+    }
+
+    logDiagnostic('Service Worker info', swInfo);
+
+    // 8. Cache API
+    const cacheInfo = await checkCaches();
+
+    if (!cacheInfo.supported) {
+      addRow('Cache API', 'پشتیبانی نمی‌شود', 'error');
+    } else if (cacheInfo.keys && cacheInfo.keys.length > 0) {
+      addRow('Cache آفلاین', 'Cache موجود است: ' + cacheInfo.keys.join(', '), 'ok');
+    } else {
+      addRow('Cache آفلاین', 'هیچ Cache ثبت نشده است', 'warn');
+    }
+
+    logDiagnostic('Cache info', cacheInfo);
+
+    // 9. Supabase
+    const supabaseInfo = checkSupabase();
+
+    if (supabaseInfo.supabaseGlobalExists || supabaseInfo.supabaseClientExists) {
+      addRow(
+        'Supabase',
+        'شناسایی شد' +
+        ' | supabase: ' + supabaseInfo.supabaseGlobalExists +
+        ' | supabaseClient: ' + supabaseInfo.supabaseClientExists,
+        'ok'
+      );
+    } else {
+      addRow(
+        'Supabase',
+        'در window شناسایی نشد. اگر آفلاین هستید و CDN استفاده شده باشد، احتمال خطا وجود دارد.',
+        'warn'
+      );
+    }
+
+    logDiagnostic('Supabase info', supabaseInfo);
+
+    // 10. saveAttendance
+    const attendanceFn = checkAttendanceFunction();
+
+    addRow(
+      'تابع saveAttendance',
+      attendanceFn.exists ? 'وجود دارد' : 'وجود ندارد یا global نیست',
+      attendanceFn.exists ? 'ok' : 'error'
+    );
+
+    logDiagnostic('saveAttendance check', attendanceFn);
+
+    // 11. input camera/file
+    const inputInfo = findAttendanceInput();
+
+    if (inputInfo.found) {
+      addRow(
+        'Input عکس/دوربین',
+        'پیدا شد: ' + inputInfo.selector +
+        (inputInfo.disabled ? ' - ولی disabled است' : ''),
+        inputInfo.disabled ? 'error' : 'ok'
+      );
+    } else {
+      addRow(
+        'Input عکس/دوربین',
+        'هیچ input فایل/عکس پیدا نشد',
+        'error'
+      );
+    }
+
+    logDiagnostic('Attendance photo input check', inputInfo);
+
+    // 12. localStorage
+    try {
+      localStorage.setItem('__diag_test__', 'ok');
+      const val = localStorage.getItem('__diag_test__');
+      localStorage.removeItem('__diag_test__');
+
+      addRow(
+        'localStorage',
+        val === 'ok' ? 'قابل استفاده است' : 'مشکل در خواندن/نوشتن',
+        val === 'ok' ? 'ok' : 'error'
+      );
+
+      logDiagnostic('localStorage test', { ok: val === 'ok' });
+    } catch (err) {
+      addRow('localStorage', 'خطا: ' + err.message, 'error');
+      logDiagnostic('localStorage error', { message: err.message });
+    }
+
+    // 13. IndexedDB
+    const indexedSupported = 'indexedDB' in window;
+
+    addRow(
+      'IndexedDB',
+      indexedSupported ? 'پشتیبانی می‌شود' : 'پشتیبانی نمی‌شود',
+      indexedSupported ? 'ok' : 'error'
+    );
+
+    logDiagnostic('IndexedDB support', { supported: indexedSupported });
+
+    addRow('نتیجه', 'تشخیص کامل شد. اگر لازم است GPS یا دوربین را جداگانه تست کنید.', 'info');
+
+    logDiagnostic('Diagnostic completed');
+  }
+
+  function testGPSNow() {
+    logDiagnostic('GPS test started');
+
+    if (!('geolocation' in navigator)) {
+      alert('مرورگر از GPS/Location پشتیبانی نمی‌کند.');
+      logDiagnostic('GPS test failed: geolocation not supported');
+      return;
+    }
+
+    if (!window.isSecureContext) {
+      alert('برای دریافت GPS، صفحه باید روی HTTPS باشد.');
+      logDiagnostic('GPS test failed: insecure context', {
+        protocol: location.protocol,
+        href: location.href
+      });
+      return;
+    }
+
+    alert('در حال دریافت موقعیت مکانی. لطفاً اگر مرورگر سؤال کرد، Allow را بزنید.');
+
+    navigator.geolocation.getCurrentPosition(
+      function (position) {
+        const coords = position.coords;
+
+        const result = {
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          accuracy: coords.accuracy,
+          altitude: coords.altitude,
+          altitudeAccuracy: coords.altitudeAccuracy,
+          heading: coords.heading,
+          speed: coords.speed,
+          timestamp: position.timestamp
+        };
+
+        logDiagnostic('GPS test success', result);
+
+        alert(
+          'GPS دریافت شد:\n' +
+          'Latitude: ' + coords.latitude + '\n' +
+          'Longitude: ' + coords.longitude + '\n' +
+          'Accuracy: ' + Math.round(coords.accuracy) + ' متر'
+        );
+      },
+      function (error) {
+        let message = '';
+
+        if (error.code === error.PERMISSION_DENIED) {
+          message = 'دسترسی Location رد شده یا مسدود است.';
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          message = 'موقعیت مکانی در دسترس نیست. GPS/Location را بررسی کنید.';
+        } else if (error.code === error.TIMEOUT) {
+          message = 'دریافت موقعیت مکانی زمان‌بر شد و timeout خورد.';
+        } else {
+          message = 'خطای نامشخص در GPS.';
+        }
+
+        logDiagnostic('GPS test error', {
+          code: error.code,
+          message: error.message,
+          readableMessage: message
+        });
+
+        alert(message + '\n\nجزئیات:\n' + error.message);
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 20000,
+        maximumAge: 300000
+      }
+    );
+  }
+
+  async function testCameraNow() {
+    logDiagnostic('Camera test started');
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert('مرورگر از دسترسی مستقیم به دوربین پشتیبانی نمی‌کند.');
+      logDiagnostic('Camera test failed: getUserMedia not supported');
+      return;
+    }
+
+    if (!window.isSecureContext) {
+      alert('برای دسترسی به دوربین، صفحه باید روی HTTPS باشد.');
+      logDiagnostic('Camera test failed: insecure context', {
+        protocol: location.protocol,
+        href: location.href
+      });
+      return;
+    }
+
+    try {
+      alert('در حال تست دوربین. اگر مرورگر سؤال کرد، Allow را بزنید.');
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: false
+      });
+
+      const tracks = stream.getTracks();
+      tracks.forEach(function (track) {
+        track.stop();
+      });
+
+      logDiagnostic('Camera test success', {
+        tracks: tracks.map(function (t) {
+          return {
+            kind: t.kind,
+            label: t.label,
+            readyState: t.readyState
+          };
+        })
+      });
+
+      alert('دوربین قابل دسترسی است.');
+    } catch (err) {
+      let message = '';
+
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        message = 'دسترسی دوربین رد شده یا مسدود است.';
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        message = 'دوربینی پیدا نشد.';
+      } else if (err.name === 'NotReadableError') {
+        message = 'دوربین توسط برنامه دیگری درگیر است یا قابل خواندن نیست.';
+      } else if (err.name === 'OverconstrainedError') {
+        message = 'تنظیمات درخواست‌شده با دوربین سازگار نیست.';
+      } else if (err.name === 'SecurityError') {
+        message = 'به دلیل محدودیت امنیتی، دسترسی به دوربین ممکن نیست.';
+      } else {
+        message = 'خطای نامشخص در تست دوربین.';
+      }
+
+      logDiagnostic('Camera test error', {
+        name: err.name,
+        message: err.message,
+        readableMessage: message
+      });
+
+      alert(message + '\n\nجزئیات:\n' + err.name + ': ' + err.message);
+    }
+  }
+
+  function copyDiagnosticReport() {
+    const report = window.__diagnosticReport.join('\n');
+
+    if (!report.trim()) {
+      alert('هنوز گزارشی تولید نشده است.');
+      return;
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(report).then(function () {
+        alert('گزارش تشخیص کپی شد.');
+      }).catch(function () {
+        fallbackCopy(report);
+      });
+    } else {
+      fallbackCopy(report);
+    }
+  }
+
+  function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+
+    try {
+      document.execCommand('copy');
+      alert('گزارش تشخیص کپی شد.');
+    } catch (err) {
+      alert('کپی خودکار ممکن نیست. گزارش در console موجود است.');
+      console.log(text);
+    }
+
+    document.body.removeChild(textarea);
+  }
+
+  function clearDiagnosticLog() {
+    window.__diagnosticReport = [];
+    const logEl = document.getElementById('diagnosticLog');
+    if (logEl) {
+      logEl.textContent = '';
+    }
+  }
+
+  window.runAppDiagnostics = runAppDiagnostics;
+  window.testGPSNow = testGPSNow;
+  window.testCameraNow = testCameraNow;
+  window.copyDiagnosticReport = copyDiagnosticReport;
+  window.clearDiagnosticLog = clearDiagnosticLog;
+
+  window.addEventListener('online', function () {
+    logDiagnostic('Browser event: online');
+  });
+
+  window.addEventListener('offline', function () {
+    logDiagnostic('Browser event: offline');
+  });
+
+  window.addEventListener('error', function (event) {
+    logDiagnostic('Global JavaScript error', {
+      message: event.message,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function (event) {
+    logDiagnostic('Unhandled Promise rejection', {
+      reason: event.reason && event.reason.message ? event.reason.message : String(event.reason)
+    });
+  });
+
+})();
+</script>
+
+</body>
+</html> 
