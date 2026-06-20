@@ -575,13 +575,10 @@ async function saveAttendance(){
     اول GPS
     */
 
-    showLoading(
-        'در حال دریافت موقعیت مکانی، لطفاً صبر کنید...'
-    );
-
-    const location =
-    await getLocation();
-
+   const location = {
+    lat: null,
+    lng: null
+};
 
     if(
         location.lat === null ||
