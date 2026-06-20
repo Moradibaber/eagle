@@ -655,29 +655,47 @@ async function(e){
                     ) || '[]'
                 );
 
-                offlineAttendance.push({
+               const photoBase64 =
+await new Promise((resolve,reject)=>{
 
-                    personnel_code:
-                    personnelCode,
+    const reader =
+    new FileReader();
 
-                    fullname:
-                        localStorage.getItem('employee_fullname'),
+    reader.onload =
+    ()=>resolve(reader.result);
 
-                    entry_time:
-                    new Date()
-                    .toLocaleString(
-                        'fa-IR'
-                    ),
+    reader.onerror =
+    reject;
 
-                    latitude:
-                    location.lat,
+    reader.readAsDataURL(
+        compressedFile
+    );
 
-                    longitude:
-                    location.lng,
+});
 
-                    photo_name:
-                    fileName
-                });
+offlineAttendance.push({
+
+    personnel_code:
+    personnelCode,
+
+    fullname:
+    localStorage.getItem('employee_fullname'),
+
+    entry_time:
+    new Date().toLocaleString('fa-IR'),
+
+    latitude:
+    location.lat,
+
+    longitude:
+    location.lng,
+
+    photo_name:
+    fileName,
+
+    photo:
+    photoBase64
+});
 
                 localStorage.setItem(
                     'offline_attendance',
