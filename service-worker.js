@@ -1,4 +1,4 @@
-const CACHE_NAME = 'attendance-pwa-v4';
+const CACHE_NAME = 'attendance-pwa-v6';
 
 const APP_SHELL = [
     './',
