@@ -547,6 +547,7 @@ async function compressImage(file){
 ثبت عکس مرجع
 */
 console.log('supabaseClient=', supabaseClient);
+    
 async function captureReferencePhoto(){
 
     const fullname =
@@ -667,7 +668,7 @@ document.getElementById(
             /*
             آپلود عکس
             */
-
+             console.log('before upload');
             const uploadResult =
             await supabaseClient.storage
             .from('reference-photos')
@@ -679,7 +680,7 @@ document.getElementById(
                     contentType:'image/jpeg'
                 }
             );
-
+console.log('uploadResult=', uploadResult);
             if(uploadResult.error){
 
                 alert(
@@ -976,7 +977,7 @@ return;
             /*
             آپلود عکس تردد
             */
-
+            console.log('before upload');
             const uploadResult =
             await supabaseClient.storage
             .from('reference-photos')
@@ -989,7 +990,7 @@ return;
                     contentType:'image/jpeg'
                 }
             );
-
+console.log('uploadResult=', uploadResult);
             if(uploadResult.error){
 
                 alert(
