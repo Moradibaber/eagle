@@ -216,7 +216,7 @@ const SUPABASE_ANON_KEY =
 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGhub2hxdW9oYm5lbW1lZ2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTgyOTcsImV4cCI6MjA5NjkzNDI5N30.AfYR7f7jnDfmsG07d6vngkr2Sy_HfWRpiarXQV3xxSc';
 
 let supabaseClient = null;
-</script>
+
 try{
 
     supabaseClient =
@@ -225,7 +225,8 @@ try{
         SUPABASE_ANON_KEY
     );
 
-}catch(err){
+}
+    catch(err){
 
     alert(
         'خطا در بارگذاری Supabase:\n' +
@@ -234,8 +235,8 @@ try{
 
 }
 
-
 let remainingPhotos = 1;
+    }
 function showLoading(message){
     const box =
     document.getElementById(
