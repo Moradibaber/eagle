@@ -838,9 +838,19 @@ async function syncOfflineAttendance(){
 
         try{
 
-            await supabaseClient
-            .from('eagle')
-            .insert([item]);
+            const {
+    photo,
+    ...attendanceData
+} = item;
+
+const result =
+await supabaseClient
+.from('eagle')
+.insert([attendanceData]);
+
+if(result.error){
+    throw result.error;
+}
 
         }catch(err){
 
@@ -848,9 +858,12 @@ async function syncOfflineAttendance(){
         }
     }
 
+    if(offlineAttendance.length > 0){
+
     localStorage.removeItem(
         'offline_attendance'
     );
+}
 }
 
 /*
