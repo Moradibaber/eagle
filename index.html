@@ -836,27 +836,48 @@ async function syncOfflineAttendance(){
 
     for(const item of offlineAttendance){
 
-        try{
+    try{
 
-            const {
-    photo,
-    ...attendanceData
-} = item;
+        if(item.photo){
 
-const result =
-await supabaseClient
-.from('eagle')
-.insert([attendanceData]);
+            const response =
+            await fetch(item.photo);
 
-if(result.error){
-    throw result.error;
-}
+            const blob =
+            await response.blob();
 
-        }catch(err){
-
-            console.log(err);
+            await supabaseClient.storage
+            .from('reference-photos')
+            .upload(
+                'attendance/' +
+                item.photo_name,
+                blob,
+                {
+                    upsert:true,
+                    contentType:'image/jpeg'
+                }
+            );
         }
+
+        const {
+            photo,
+            ...attendanceData
+        } = item;
+
+        const result =
+        await supabaseClient
+        .from('eagle')
+        .insert([attendanceData]);
+
+        if(result.error){
+            throw result.error;
+        }
+
+    }catch(err){
+
+        console.log(err);
     }
+}
 
     if(offlineAttendance.length > 0){
 
