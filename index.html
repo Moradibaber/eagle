@@ -527,15 +527,38 @@ function getLocation(){
                 lat:null,
                 lng:null
             });
-document.getElementById(
-         'saveStatus'
-              ) .style.display='none';
+
             return;
         }
+
+        let finished = false;
+
+        const timer = setTimeout(()=>{
+
+            if(finished){
+                return;
+            }
+
+            finished = true;
+
+            resolve({
+                lat:null,
+                lng:null
+            });
+
+        },30000);
 
         navigator.geolocation.getCurrentPosition(
 
             position => {
+
+                if(finished){
+                    return;
+                }
+
+                finished = true;
+
+                clearTimeout(timer);
 
                 resolve({
 
@@ -544,10 +567,19 @@ document.getElementById(
 
                     lng:
                     position.coords.longitude
+
                 });
             },
 
             error => {
+
+                if(finished){
+                    return;
+                }
+
+                finished = true;
+
+                clearTimeout(timer);
 
                 resolve({
                     lat:null,
@@ -557,7 +589,8 @@ document.getElementById(
 
             {
                 enableHighAccuracy:true,
-                timeout:10000
+                timeout:30000,
+                maximumAge:0
             }
         );
     });
@@ -577,29 +610,10 @@ async function saveAttendance(){
     اول GPS
     */
 
-   const location = {
-    lat: null,
-    lng: null
-};
+   const location =
+await getLocation();
 
-    if(
-        location.lat === null ||
-        location.lng === null
-    ){
-
-        const allow =
-        confirm(
-            'GPS خاموش است. ادامه می‌دهید؟'
-        );
-
-        if(!allow){
-            document.getElementById(
-         'saveStatus'
-              ) .style.display='none';
-            return;
-        }
-    }
-
+    
     const attendanceInput =
     document.getElementById(
         'attendancePhoto'
