@@ -401,17 +401,7 @@ alert('userinfo-ok');
 
                     showUserInfo();
 
-                    remainingPhotos =
-                    Math.max(
-                        0,
-                        1 - (
-                            data.photo_count || 0
-                        )
-                    );
-
-
-
-                    lockPersonnelFields();
+                                      lockPersonnelFields();
                 }
 
             }catch(err){
@@ -577,18 +567,7 @@ document.getElementById(
 
 async function saveAttendance(){
 
-    if(remainingPhotos > 0){
-
-        alert(
-            'ابتدا عکس تطبیقی را ثبت کنید'
-        );
-document.getElementById(
-         'saveStatus'
-              ) .style.display='none';
-        return;
-    }
-
-    /*
+       /*
     اول GPS
     */
 
