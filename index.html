@@ -612,7 +612,12 @@ async function saveAttendance(){
 
    const location =
 await getLocation();
-
+alert(
+'GPS=' +
+location.lat +
+',' +
+location.lng
+);
     
     const attendanceInput =
     document.getElementById(
