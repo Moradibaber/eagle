@@ -571,21 +571,28 @@ function getLocation(){
                 });
             },
 
-            error => {
+           error => {
 
-                if(finished){
-                    return;
-                }
+    alert(
+        'GPS Error: ' +
+        error.code +
+        '\n' +
+        error.message
+    );
 
-                finished = true;
+    if(finished){
+        return;
+    }
 
-                clearTimeout(timer);
+    finished = true;
 
-                resolve({
-                    lat:null,
-                    lng:null
-                });
-            },
+    clearTimeout(timer);
+
+    resolve({
+        lat:null,
+        lng:null
+    });
+},
 
             {
                 enableHighAccuracy:true,
