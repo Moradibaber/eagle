@@ -1144,5 +1144,10 @@ alert("JS IS RUNNING OFFLINE");
     <script>
 alert("JS IS RUNNING OFFLINE");
 </script>
+    <script>
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./service-worker.js');
+}
+</script>
 </body>
 </html> 
