@@ -196,11 +196,11 @@ onclick="saveAttendance()"
 
 <script src="./supabase.js"></script>
 <script>
-alert('supabase script loaded');
+
 </script>
     
 <script>
-    alert(typeof supabase);
+  
 
 const SUPABASE_URL =
 'https://kddhnohquohbnemmegdy.supabase.co';
@@ -341,13 +341,13 @@ window.onload = async function(){
     showLoading(
         'در حال بارگذاری فرم، لطفاً صبر کنید...'
     );
-alert('onload-start');
+
     try{
 
         updateNetworkStatus();
-alert('network-ok');
+
         showUserInfo();
-alert('userinfo-ok');
+
         /*
         بازیابی اطلاعات حتی بعد پاک شدن کش
         */
@@ -595,10 +595,10 @@ function getLocation(){
 },
 
             {
-                enableHighAccuracy:true,
-                timeout:30000,
-                maximumAge:0
-            }
+    enableHighAccuracy:true,
+    timeout:30000,
+    maximumAge:60000
+}
         );
     });
 }
@@ -619,12 +619,6 @@ async function saveAttendance(){
 
    const location =
 await getLocation();
-alert(
-'GPS=' +
-location.lat +
-',' +
-location.lng
-);
     
     const attendanceInput =
     document.getElementById(
