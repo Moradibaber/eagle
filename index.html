@@ -335,7 +335,14 @@ function lockPersonnelFields(){
 /*
 لود اولیه
 */
-
+window.onerror = function(msg,url,line){
+    alert(
+        'ERROR:\n' +
+        msg +
+        '\nLINE:' +
+        line
+    );
+};
 window.onload = async function(){
 
     showLoading(
