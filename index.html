@@ -365,13 +365,16 @@ window.onload = async function(){
             );
         }
 
-        if(personnelCode){
+        if(
+    personnelCode &&
+    navigator.onLine
+){
 
-            try{
+    try{
 
-                const { data } =
-                await supabaseClient
-                .from('personnel')
+        const { data } =
+        await supabaseClient
+        .from('personnel')
                 .select('*')
                 .eq(
                     'personnel_code',
